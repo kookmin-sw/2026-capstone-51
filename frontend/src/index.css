@@ -65,8 +65,33 @@
   .btn-default {
     @apply btn-base bg-paper border border-ink-200 text-ink-700 hover:bg-ink-50;
   }
+  /* primary CTA — 사이드바 톤(#1B306F)으로 통일. hover 는 한 단계 밝게(primary-800). */
   .btn-primary {
-    @apply btn-base bg-primary-900 border border-primary-900 text-white hover:bg-primary-800;
+    @apply btn-base bg-sidebar-bg border border-sidebar-bg text-white;
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      0 1px 2px 0 rgb(27 48 111 / 0.32),
+      0 4px 8px -2px rgb(27 48 111 / 0.24);
+    transition:
+      background-color 150ms ease-out,
+      box-shadow 150ms ease-out,
+      transform 150ms ease-out;
+  }
+  .btn-primary:hover {
+    @apply bg-primary-800 border-primary-800;
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      0 4px 12px -2px rgb(27 48 111 / 0.42),
+      0 8px 24px -4px rgb(27 48 111 / 0.28);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  .btn-primary:disabled {
+    transform: none;
+    opacity: 0.6;
+    cursor: not-allowed;
   }
   .btn-ghost {
     @apply btn-base bg-transparent border border-transparent text-ink-700 hover:bg-ink-100;
