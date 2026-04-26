@@ -31,9 +31,23 @@
 
 /* === 공통 컴포넌트 클래스 === */
 @layer components {
-  /* 카드 */
+  /* 카드 — 모더나이즈 (rounded-xl + 부드러운 ambient shadow + 더 generous padding) */
   .card {
-    @apply bg-paper border border-border rounded-md shadow-sm p-4;
+    @apply bg-paper border border-border/70 rounded-xl p-5;
+    box-shadow:
+      0 1px 2px 0 rgb(15 23 42 / 0.04),
+      0 4px 12px -2px rgb(15 23 42 / 0.06);
+  }
+  /* 클릭 가능한 카드 — Link 등으로 감싼 카드에 적용 */
+  .card-link {
+    @apply card transition-all duration-200;
+  }
+  .card-link:hover {
+    border-color: rgb(59 130 246 / 0.4);
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 2px 0 rgb(15 23 42 / 0.04),
+      0 10px 24px -6px rgb(37 99 235 / 0.18);
   }
 
   /* 페이지 헤더 (h1 + sub) */
