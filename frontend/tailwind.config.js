@@ -6,17 +6,19 @@
 export const theme = {
   extend: {
     colors: {
-      // KMU 포털 톤
+      // 밝은 블루 (Tailwind Blue 계열) — 순수한 블루 hue, 보랏빛 X.
+      // 옛 KMU 포털 톤 → Indigo 시도 → Blue 전환 (2026-05-09).
       primary: {
-        50: '#EEF4FF',
-        500: '#4978CF',
-        600: '#2F5FBC',
-        800: '#234B8C',
-        900: '#183B73',
+        50: '#EFF6FF',
+        500: '#3B82F6',
+        600: '#2563EB',
+        700: '#1D4ED8',
+        800: '#1E40AF',
+        900: '#1E3A8A',
       },
-      // 사이드바 전용
+      // 사이드바 전용 — Blue-950(#172554) 과 Blue-900(#1E3A8A) 의 RGB 중간값.
       sidebar: {
-        bg: '#2B3A66',
+        bg: '#1B306F',
         active: 'rgba(255,255,255,0.12)',
         hover: 'rgba(255,255,255,0.07)',
         divider: 'rgba(255,255,255,0.12)',
