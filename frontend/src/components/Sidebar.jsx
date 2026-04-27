@@ -122,12 +122,12 @@ export default function Sidebar({ open = false, onClose }) {
                 </NavLink>
               );
             }
-            // Group
+            // Group — 단일 항목과 동일한 사이즈의 라벨 행 + 항상 노출되는 자식 링크 리스트.
             const Icon = ICONS[item.icon];
             return (
-              <div key={item.id} className="pt-2">
-                <div className="flex items-center gap-2.5 px-3 py-1.5 text-white/55 text-[11.5px] font-semibold tracking-wide uppercase">
-                  {Icon && <Icon size={14} strokeWidth={1.8} />}
+              <div key={item.id}>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium text-white/80">
+                  {Icon && <Icon size={17} strokeWidth={1.8} />}
                   <span>{item.label}</span>
                 </div>
                 <div className="space-y-0.5 ml-3 mt-0.5">
