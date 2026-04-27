@@ -64,11 +64,12 @@ export default function Sidebar({ open = false, onClose }) {
 
       <aside
         className={cn(
-          'flex flex-col w-[232px] shrink-0 bg-sidebar-bg text-white/80',
-          // lg 이상: 정적 칼럼.
-          'lg:static lg:translate-x-0 lg:min-h-screen',
-          // lg 미만: drawer (fixed, 화면 밖에서 슬라이드).
-          'fixed inset-y-0 left-0 z-40 transform transition-transform duration-200 ease-out',
+          'flex flex-col w-[232px] bg-sidebar-bg text-white/80',
+          // lg 이상/미만 모두 fixed — 본문 페이지 길이와 무관하게 사이드바가 viewport 전체 높이를 차지하도록.
+          // (이전 lg:static 방식은 본문이 길어지면 flex 컬럼이 늘어나 하단 여백이 보임.)
+          'fixed inset-y-0 left-0 z-40',
+          // lg 미만: drawer 슬라이드. lg 이상: 항상 노출.
+          'transform transition-transform duration-200 ease-out lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
         aria-label="주 메뉴"
