@@ -8,6 +8,8 @@
  */
 export const qk = {
   me: () => ['me'],
+  dashboard: () => ['users', 'me', 'dashboard'],
+  stats: (groupBy) => ['users', 'me', 'stats', groupBy],
   experiences: {
     all: () => ['experiences'],
     one: (id) => ['experiences', id],
