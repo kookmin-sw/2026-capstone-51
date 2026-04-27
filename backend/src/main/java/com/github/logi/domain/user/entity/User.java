@@ -1,5 +1,6 @@
 package com.github.logi.domain.user.entity;
 
+import com.github.logi.domain.user.dto.request.UserMeRequest;
 import com.github.logi.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,7 +32,7 @@ public class User extends BaseEntity {
     private KookminDepartment major;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "major")
+    @Column(name = "minor")
     private KookminDepartment minor;
 
     @Column(name = "school_number", length = 20)
@@ -48,4 +49,16 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "job_third")
     private JobThird jobThird;
+
+    public void update(UserMeRequest request) {
+        this.userName = request.userName();
+        this.state = request.state();
+        this.score = request.score();
+        this.major = request.major();
+        this.minor = request.minor();
+        this.schoolNumber = request.schoolNumber();
+        this.jobFirst = request.jobFirst();
+        this.jobSecond = request.jobSecond();
+        this.jobThird = request.jobThird();
+    }
 }
