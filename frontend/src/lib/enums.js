@@ -79,6 +79,46 @@ export const STATS_GROUP_LABEL = {
   WORKER: '취업자',
 };
 
+/* ─────────────────── Statistics 백엔드 키 ↔ 프론트 키 매핑 ─────────────────── */
+// 백엔드 Statistics 응답: { partTime, external, internal, license, intern }
+// 프론트 5축 키 (CAT_LABELS / MOCK 들과 일관): { parttime, activity, internal, cert, intern }
+// (ExperienceCategory enum 의 EXTERNAL→activity 매핑과 동일한 어휘를 통계에서도 유지.)
+
+export const STATS_BACK_TO_FRONT = {
+  partTime: 'parttime',
+  external: 'activity',
+  internal: 'internal',
+  license: 'cert',
+  intern: 'intern',
+};
+
+/** 백엔드 Statistics 객체 → 프론트 5축 record 매핑.
+ * pick: 'avg' | 'userCount' | 'myCount' (CategoryStat 의 어떤 필드를 꺼낼지).
+ * 없는 키는 0. */
+export const pickStat = (statistics, pick) => {
+  const out = {};
+  if (!statistics) return out;
+  for (const [back, front] of Object.entries(STATS_BACK_TO_FRONT)) {
+    out[front] = statistics[back]?.[pick] ?? 0;
+  }
+  return out;
+};
+
+/** 백엔드 WeakPoint.type 을 프론트 카테고리 라벨로 정규화.
+ * 알 수 없는 값은 그대로 반환 (백엔드가 한글 카테고리명을 직접 줄 수도 있어서). */
+export const weakPointLabel = (type) => {
+  if (!type) return '';
+  // 백엔드가 enum 키(PARTTIME 등)를 줄 경우
+  const exp = EXPERIENCE_CATEGORY_TO_FRONT[type];
+  if (exp) return EXPERIENCE_CATEGORY_LABEL[exp];
+  if (type === 'LICENSE' || type === 'license')
+    return EXPERIENCE_CATEGORY_LABEL.cert;
+  // 백엔드 stats 키(partTime/external/...) 일 경우
+  const front = STATS_BACK_TO_FRONT[type];
+  if (front) return EXPERIENCE_CATEGORY_LABEL[front];
+  return type;
+};
+
 /* ──────────────────────── KookminDepartment ──────────────────────── */
 // 백엔드 직렬화 값 = '단과대학 학과명' (또는 단과대학만). KOOKMIN_DEPARTMENTS 의
 // 'value' 가 그 직렬화 값이라 select 의 value 로 그대로 사용해 PUT 으로 보내면 됨.
