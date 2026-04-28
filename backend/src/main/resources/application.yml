@@ -14,4 +14,12 @@ spring:
     show-sql: true
     open-in-view: true
 
+app:
+  jwt:
+    key: ${JWT_SECRET_KEY}
+    token-expiration: 24
+    refresh-expiration: 720
+  cors:
+    allowed-origins:
+      - http://localhost:3000
 
