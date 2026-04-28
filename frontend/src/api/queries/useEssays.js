@@ -50,7 +50,8 @@ export const useEssays = () =>
 export const useEssay = (id) =>
   useQuery({
     queryKey: qk.essays.one(id),
-    queryFn: () => api.get(`/essays/${id}`).then((r) => r.data),
+    queryFn: () =>
+      api.get(`/essays/${id}`).then((r) => normalizeEssayDetail(r.data)),
     enabled: !!id,
   });
 
