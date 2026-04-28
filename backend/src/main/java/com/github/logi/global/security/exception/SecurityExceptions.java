@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum SecurityExceptions implements ApiExceptions {
 
-    ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "엑세스 토큰이 만료 되었습니다.");
+    ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "엑세스 토큰이 만료 되었습니다."),
+    USER_NOT_FOUND(HttpStatus.UNAUTHORIZED,"유저 정보를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
