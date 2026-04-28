@@ -28,3 +28,51 @@ export const useUpdateMe = () => {
     },
   });
 };
+
+/**
+ * POST /auth/withdraw — 회원 탈퇴.
+ *  - body 없음. 인증된 사용자 본인을 삭제.
+ *  - onSuccess 후처리(토큰 비우기 / 캐시 wipe / 라우팅)는 호출부 책임.
+ *    여기서 직접 처리하지 않는 이유: useNavigate 가 컴포넌트 안에서만 동작 + 호출부마다 UX 분기 가능.
+ */
+export const useWithdraw = () =>
+  useMutation({
+    mutationFn: () => api.post('/auth/withdraw'),
+  });
+
+/**
+ * GET /users/me/dashboard — 메인 대시보드 데이터.
+ *
+ * 응답: {
+ *   statistics: { partTime, external, internal, license, intern } × { avg, userCount, myCount },
+ *   userExperiences: { partTimeHistory, internHistory, licenseHistory, internalHistory, externalHistory } — 각 ExperienceItem[]
+ *   graduateUserExperiences: [{ userId, ...History[] }, ...]  // 졸업생 N명
+ * }
+ *
+ * 본인 마일스톤(MyRoadmapCard)은 여전히 useExperiences/useCertificates 의 STAR/getDate 디테일을 쓰므로
+ * 본 훅은 PeersOrb(평균) + SeniorRoadmapCard(졸업생) 데이터에 사용.
+ */
+export const useDashboard = () =>
+  useQuery({
+    queryKey: qk.dashboard(),
+    queryFn: () => api.get('/users/me/dashboard').then((r) => r.data),
+  });
+
+/**
+ * GET /users/me/stats?groupBy= — 통계 페이지 데이터.
+ *
+ * groupBy: 'STATE' | 'SCHOOL_NUM' | 'WORKER' (lib/enums.js STATS_GROUP_LABEL 와 일치)
+ * 응답: {
+ *   statistics: { partTime, external, internal, license, intern } × { avg, userCount, myCount },
+ *   weakPoints: [{ type: string, recommendedItems: string[] }]
+ * }
+ */
+export const useMyStats = (groupBy) =>
+  useQuery({
+    queryKey: qk.stats(groupBy),
+    queryFn: () =>
+      api.get('/users/me/stats', { params: { groupBy } }).then((r) => r.data),
+    enabled: !!groupBy,
+    // groupBy 토글 시 이전 데이터를 즉시 보여줌 — Loading 스켈레톤이 깜빡이지 않음.
+    placeholderData: (prev) => prev,
+  });
