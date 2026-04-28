@@ -3,25 +3,43 @@ import api from '../axios';
 import { qk } from './keys';
 
 /**
- * 자소서 + 문항 CRUD 훅.
- * 백엔드 명세:
+ * 자소서 + 문항 CRUD + AI 응답 훅.
+ *
+ * 백엔드 진실 원천: https://logi.p-e.kr/api/swagger-ui/index.html (스펙 /api/v3/api-docs).
+ *
+ * 명세 (2026-05-10 스웨거 재검증):
  *   GET    /essays                              → { essays: [...] } (목록)
  *   GET    /essays/:id                          → 상세 (questions 포함)
- *   POST   /essays/create                       → { essayId }
- *   PATCH  /essays/:id                          → 메타 (companyName, wishJob, globalReq) 수정
- *   PATCH  /essays/:id/result                   → { progress: PASS|FAIL|IN_PROGRESS }
+ *   POST   /essays/create                       → { essayId }    body: { companyName, wishJob, globalReq }
+ *   PATCH  /essays/:id                          → 메타 수정       body: { companyName, wishJob, globalReq }
+ *   PATCH  /essays/:id/result                   → 합/불 수정     body: { progress: PASS|FAIL|IN_PROGRESS }
  *   DELETE /essays/:id                          → Void
- *   POST   /essays/:id/questions                → { questionId } 새 문항 저장
- *   PATCH  /essays/:id/questions/:qid           → 문항 수정
+ *   POST   /essays/:id/questions                → { questionId } body: { questionNum, question, response, maxLength, relatedExperience[] }
+ *   PATCH  /essays/:id/questions/:qid           → 문항 수정      body: { question, response, maxLength, relatedExperience[] } (questionNum 불변)
+ *   POST   /essays/recommend                    → 관련 경험 추천 body: { question } / 응답: { relatedExperience: [{ experienceId, experienceTitle, similarity }] }
+ *   POST   /essays/generate                     → 답변 생성      body: { essayId, questionId } / 응답: { response: string }
+ *   POST   /essays/regenerate                   → 답변 재생성    body: { essayId, questionId, currentResponse, questionReq } / 응답: { response: string }
  *
  * 알려진 contract 이슈 (백엔드 fix 대기):
- *   - EssayListResponse 의 essays[] 에 essayId 가 없음 → 목록→상세 라우팅 불가.
- *   - EssayDetailResponse 는 globalReq 대신 requirement, updatedAt 대신 modifiedDate 사용.
- *     페이지 단에서 normalize 어댑터 필요.
- *
- * 미구현 endpoint (백엔드 일정 대기 — 본 PR 에서는 훅 만들지 않음):
- *   POST /essays/recommand, /essays/generate, /essays/regenerate.
+ *   - EssayListResponse 의 essays[] 에 essayId 가 없음 → 목록→상세 라우팅 차단 (스웨거 기준).
+ *     단, 응답에 essayId 가 들어오면 페이지가 자동으로 활성화되도록 opportunistic 처리.
+ *   - EssayDetailResponse 가 작성용 globalReq / 목록 updatedAt 와 다른 키를 사용.
+ *     useEssay 훅이 normalize 어댑터를 적용해 호출부는 { globalReq, updatedAt } 으로만 보면 됨.
  */
+
+/**
+ * 백엔드 EssayDetailResponse 응답 키 정합화.
+ *  requirement → globalReq, modifiedDate → updatedAt.
+ *  원본 키도 같이 보존(레거시 호환).
+ */
+const normalizeEssayDetail = (raw) => {
+  if (!raw) return raw;
+  return {
+    ...raw,
+    globalReq: raw.globalReq ?? raw.requirement,
+    updatedAt: raw.updatedAt ?? raw.modifiedDate,
+  };
+};
 
 export const useEssays = () =>
   useQuery({
