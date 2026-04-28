@@ -113,3 +113,28 @@ export const useUpdateEssayQuestion = () => {
       qc.invalidateQueries({ queryKey: qk.essays.one(vars.essayId) }),
   });
 };
+
+/* ---------- AI 응답 ---------- */
+// 아래 3 종은 백엔드 상태를 변경하지 않고 결과만 반환하므로 캐시 invalidate 불필요.
+// 호출부가 받은 값을 자체 state 로 들고 화면에 반영. 저장은 useCreateEssayQuestion / useUpdateEssayQuestion 으로.
+
+/** POST /essays/recommend — body: { question } */
+export const useRecommendExperiences = () =>
+  useMutation({
+    mutationFn: (body) =>
+      api.post('/essays/recommend', body).then((r) => r.data),
+  });
+
+/** POST /essays/generate — body: { essayId, questionId } */
+export const useGenerateAnswer = () =>
+  useMutation({
+    mutationFn: (body) =>
+      api.post('/essays/generate', body).then((r) => r.data),
+  });
+
+/** POST /essays/regenerate — body: { essayId, questionId, currentResponse, questionReq } */
+export const useRegenerateAnswer = () =>
+  useMutation({
+    mutationFn: (body) =>
+      api.post('/essays/regenerate', body).then((r) => r.data),
+  });
