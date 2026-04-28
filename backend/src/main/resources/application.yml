@@ -19,5 +19,7 @@ app:
     key: ${JWT_SECRET_KEY}
     token-expiration: 24
     refresh-expiration: 720
-
+  cors:
+    allowed-origins:
+      - http://localhost:3000
 
