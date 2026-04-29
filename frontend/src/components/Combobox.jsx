@@ -182,6 +182,46 @@ export default function Combobox({
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);
-
-  return null;
+                    setActive(0);
+                  }}
+                  onKeyDown={onSearchKey}
+                  placeholder={searchPlaceholder}
+                  className="w-full pl-7 pr-2 py-1.5 rounded-md border border-ink-200 bg-paper text-[13px] outline-none focus:border-primary-600"
+                />
+              </div>
+            </div>
+          )}
+          <ul
+            ref={listRef}
+            className="max-h-60 overflow-y-auto py-1"
+            tabIndex={-1}
+          >
+            {filtered.length === 0 ? (
+              <li className="px-3 py-3 text-[12.5px] text-ink-400 text-center break-keep">
+                {emptyText}
+              </li>
+            ) : (
+              filtered.map((o, i) => (
+                <li key={String(o.value)} data-idx={i}>
+                  <button
+                    type="button"
+                    onMouseEnter={() => setActive(i)}
+                    onClick={() => select(o.value)}
+                    className={cn(
+                      'w-full text-left px-3 py-1.5 text-[13.5px] cursor-pointer break-keep',
+                      i === active && 'bg-ink-100',
+                      String(o.value) === String(value ?? '') &&
+                        'bg-primary-50 text-primary-800 font-semibold'
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
