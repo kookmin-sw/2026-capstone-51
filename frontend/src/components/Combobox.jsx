@@ -52,5 +52,16 @@ export default function Combobox({
     return options.filter((o) => o.label.toLowerCase().includes(q));
   }, [options, query]);
 
+  // 열릴 때 검색창 포커스 (DOM side-effect 만 effect 에 둠 — setState 는 trigger 핸들러에서)
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => searchRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [open]);
+
+  // 외부 클릭 / Esc 로 닫기
+  useEffect(() => {
+    if (!open) return;
+
   return null;
 }
