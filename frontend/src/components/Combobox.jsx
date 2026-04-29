@@ -112,6 +112,20 @@ export default function Combobox({
 
   const onSearchKey = (e) => {
     if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const it = filtered[active];
+      if (it) select(it.value);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
 
   return null;
 }
