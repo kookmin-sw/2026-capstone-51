@@ -84,6 +84,28 @@ export default function Combobox({
   }, [active, open]);
 
   const trigger = () => {
+    if (disabled) return;
+    if (!open) {
+      // 열기 직전: 초기화 + 방향 결정 (forceDirection 우선, 아니면 viewport 잔여 공간 기반 자동)
+      setActive(0);
+      setQuery('');
+      if (forceDirection) {
+        setDirection(forceDirection);
+      } else {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect) {
+          // 검색바(~52) + 옵션 영역 max-h-60(240) ≈ 약 290px 필요
+          const DROPDOWN_H = searchable ? 290 : 240;
+          const below = window.innerHeight - rect.bottom;
+          const above = rect.top;
+          setDirection(below < DROPDOWN_H && above > below ? 'up' : 'down');
+        }
+      }
+    }
+    setOpen((o) => !o);
+  };
+
+  const select = (v) => {
 
   return null;
 }
