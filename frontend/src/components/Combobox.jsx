@@ -41,5 +41,16 @@ export default function Combobox({
   const searchRef = useRef(null);
   const listRef = useRef(null);
 
+  const selected = useMemo(
+    () => options.find((o) => String(o.value) === String(value ?? '')),
+    [options, value]
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(q));
+  }, [options, query]);
+
   return null;
 }
