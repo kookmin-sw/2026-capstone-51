@@ -12,6 +12,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +24,19 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
+    private static final Set<String> SKIP_PATHS = Set.of(
+            "/auth/login",
+            "/auth/reissue"
+    );
+
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        return SKIP_PATHS.contains(request.getRequestURI());
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -34,6 +45,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             if (jwtUtil.validateToken(accessToken)) {
+
+                if (!jwtUtil.isAccessToken(accessToken)) {
+                    throw SecurityExceptions.INVALID_ACCESS_TOKEN.toException();
+                }
 
                 UUID userId = jwtUtil.extractUUID(accessToken);
 

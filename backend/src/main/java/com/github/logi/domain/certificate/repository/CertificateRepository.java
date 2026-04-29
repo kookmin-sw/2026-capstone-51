@@ -9,4 +9,6 @@ import java.util.UUID;
 
 public interface CertificateRepository extends JpaRepository<Certificate, UUID> {
     List<Certificate> findAllByUser(User user);
+
+    void deleteAllByUser(User user);
 }

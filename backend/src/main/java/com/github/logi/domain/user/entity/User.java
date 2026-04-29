@@ -17,6 +17,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
+    @Column(name = "email", length = 100, nullable = false, unique = true)
+    private String email;
+
     @Column(name = "user_name", length = 50)
     private String userName;
 
@@ -49,6 +52,13 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "job_third")
     private JobThird jobThird;
+
+    public static User create(String email, String userName) {
+        User user = new User();
+        user.email = email;
+        user.userName = userName;
+        return user;
+    }
 
     public void update(UserMeRequest request) {
         this.userName = request.userName();
