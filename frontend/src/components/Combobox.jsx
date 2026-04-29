@@ -62,6 +62,21 @@ export default function Combobox({
   // 외부 클릭 / Esc 로 닫기
   useEffect(() => {
     if (!open) return;
+    const onDocClick = (e) => {
+      if (!containerRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  // active 변경 시 해당 항목 가시 영역으로 스크롤
 
   return null;
 }
