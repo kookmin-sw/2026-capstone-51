@@ -155,5 +155,23 @@ export default function DatePicker({
     [max]
   );
 
+  // day view ◀▶: 다음/이전 달이 max/min 범위 밖이면 비활성
+  const dayNextDisabled =
+    !!maxYM &&
+    (view.year > maxYM.year ||
+      (view.year === maxYM.year && view.month >= maxYM.month));
+  const dayPrevDisabled =
+    !!minYM &&
+    (view.year < minYM.year ||
+      (view.year === minYM.year && view.month <= minYM.month));
+
+  // month view ◀▶: 다음/이전 연도가 max/min 범위 밖이면 비활성
+  const monthNextDisabled = !!maxYM && view.year >= maxYM.year;
+  const monthPrevDisabled = !!minYM && view.year <= minYM.year;
+
+  // year view ◀▶: 다음/이전 12년 페이지가 범위 밖이면 비활성
+  const yearNextDisabled = !!maxYM && yearBlockStart + 12 > maxYM.year;
+  const yearPrevDisabled = !!minYM && yearBlockStart <= minYM.year;
+
   return null;
 }
