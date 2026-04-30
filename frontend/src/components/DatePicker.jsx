@@ -134,5 +134,10 @@ export default function DatePicker({
   const goPrevBlock = () => setView((v) => ({ ...v, year: v.year - 12 }));
   const goNextBlock = () => setView((v) => ({ ...v, year: v.year + 12 }));
 
+  const todayIso = useMemo(() => {
+    const t = new Date();
+    return fmtIso(t.getFullYear(), t.getMonth(), t.getDate());
+  }, []);
+
   return null;
 }
