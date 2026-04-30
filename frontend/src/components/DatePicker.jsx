@@ -60,5 +60,22 @@ export default function DatePicker({
 
   const [view, setView] = useState(initialView);
 
+  // 외부 클릭 / Esc 로 닫기
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => {
+      if (!containerRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
   return null;
 }
