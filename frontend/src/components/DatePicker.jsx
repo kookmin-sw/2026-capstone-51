@@ -41,6 +41,10 @@ export default function DatePicker({
   max,
   forceDirection,
 }) {
+  const [open, setOpen] = useState(false);
+  const [direction, setDirection] = useState('down');
+  const [mode, setMode] = useState('day'); // 'day' | 'month' | 'year'
+  const containerRef = useRef(null);
 
   return null;
 }
