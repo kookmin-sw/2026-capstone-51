@@ -126,6 +126,13 @@ export default function DatePicker({
   // month-view 화살표 (1년 단위)
   const goPrevYear = () => setView((v) => ({ ...v, year: v.year - 1 }));
   const goNextYear = () => setView((v) => ({ ...v, year: v.year + 1 }));
+  // year-view 화살표 (12년 페이지 단위)
+  const yearBlockStart = useMemo(
+    () => Math.floor(view.year / 12) * 12,
+    [view.year]
+  );
+  const goPrevBlock = () => setView((v) => ({ ...v, year: v.year - 12 }));
+  const goNextBlock = () => setView((v) => ({ ...v, year: v.year + 12 }));
 
   return null;
 }
