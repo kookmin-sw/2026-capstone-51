@@ -46,5 +46,19 @@ export default function DatePicker({
   const [mode, setMode] = useState('day'); // 'day' | 'month' | 'year'
   const containerRef = useRef(null);
 
+  // 캘린더가 보고 있는 월·연 (사용자가 화살표로 이동, 외부 value 와 별개).
+  const initialView = useMemo(() => {
+    if (value) {
+      const [y, m] = value.split('-').map(Number);
+      if (Number.isFinite(y) && Number.isFinite(m)) {
+        return { year: y, month: m - 1 };
+      }
+    }
+    const today = new Date();
+    return { year: today.getFullYear(), month: today.getMonth() };
+  }, [value]);
+
+  const [view, setView] = useState(initialView);
+
   return null;
 }
