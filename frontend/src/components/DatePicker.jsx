@@ -114,5 +114,18 @@ export default function DatePicker({
     setMode('month');
   };
 
+  // day-view 화살표
+  const goPrevMonth = () =>
+    setView(({ year, month }) =>
+      month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }
+    );
+  const goNextMonth = () =>
+    setView(({ year, month }) =>
+      month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }
+    );
+  // month-view 화살표 (1년 단위)
+  const goPrevYear = () => setView((v) => ({ ...v, year: v.year - 1 }));
+  const goNextYear = () => setView((v) => ({ ...v, year: v.year + 1 }));
+
   return null;
 }
