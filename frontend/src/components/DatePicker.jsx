@@ -248,3 +248,38 @@ export default function DatePicker({
               disablePrev={monthPrevDisabled}
               disableNext={monthNextDisabled}
             />
+          )}
+          {mode === 'year' && (
+            <YearView
+              view={view}
+              blockStart={yearBlockStart}
+              value={value}
+              todayIso={todayIso}
+              min={min}
+              max={max}
+              onPrev={goPrevBlock}
+              onNext={goNextBlock}
+              onPick={selectYear}
+              disablePrev={yearPrevDisabled}
+              disableNext={yearNextDisabled}
+            />
+          )}
+
+          {/* 푸터: today / clear (모든 view 공통) */}
+          <div className="flex items-center justify-between px-2 py-2 border-t border-ink-150 bg-paper">
+            <button
+              type="button"
+              onClick={() => {
+                const t = new Date();
+                if ((!min || todayIso >= min) && (!max || todayIso <= max)) {
+                  selectDay(t.getFullYear(), t.getMonth(), t.getDate());
+                }
+              }}
+              className="text-[12px] font-semibold text-primary-700 hover:text-primary-900 px-2 py-1 rounded"
+            >
+              오늘
+            </button>
+            {allowClear && value ? (
+              <button
+                type="button"
+                onClick={() => {
