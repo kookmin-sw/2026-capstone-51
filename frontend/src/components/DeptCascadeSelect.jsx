@@ -37,5 +37,24 @@ export default function DeptCascadeSelect({
   const [pendingCollege, setPendingCollege] = useState('');
   const college = matchedCollege || pendingCollege;
 
+  const collegeOptions = useMemo(
+    () => KOOKMIN_COLLEGES.map((c) => ({ value: c, label: c })),
+    []
+  );
+
+  const deptOptions = useMemo(
+    () =>
+      KOOKMIN_DEPT_OPTIONS.filter(
+        (d) => d.group === college && d.value !== excludeValue
+      ).map((d) => ({ value: d.value, label: d.label })),
+    [college, excludeValue]
+  );
+
+  const onCollegeChange = (next) => {
+    setPendingCollege(next);
+    // 단과대가 바뀌면 기존 학과 선택은 무효
+    if (value) onChange('');
+  };
+
   return null;
 }
