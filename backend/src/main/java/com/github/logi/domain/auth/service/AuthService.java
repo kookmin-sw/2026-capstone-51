@@ -10,6 +10,7 @@ import com.github.logi.domain.auth.entity.RefreshToken;
 import com.github.logi.domain.auth.exception.AuthExceptions;
 import com.github.logi.domain.auth.repository.RefreshTokenRepository;
 import com.github.logi.domain.certificate.repository.CertificateRepository;
+import com.github.logi.domain.experience.repository.ExperienceRepository;
 import com.github.logi.domain.user.entity.User;
 import com.github.logi.domain.user.repository.UserRepository;
 import com.github.logi.global.security.jwt.JwtUtil;
@@ -29,6 +30,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final CertificateRepository certificateRepository;
+    private final ExperienceRepository experienceRepository;
     private final JwtUtil jwtUtil;
 
     @Transactional
@@ -104,6 +106,7 @@ public class AuthService {
         }
 
         certificateRepository.deleteAllByUser(user);
+        experienceRepository.hardDeleteAllByUserId(user.getId());
         refreshTokenRepository.deleteAllByUserId(user.getId());
         userRepository.deleteById(user.getId());
     }
