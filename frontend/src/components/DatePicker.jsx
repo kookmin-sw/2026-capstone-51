@@ -477,3 +477,69 @@ function MonthView({
     </>
   );
 }
+
+function YearView({
+  blockStart,
+  value,
+  todayIso,
+  min,
+  max,
+  onPrev,
+  onNext,
+  onPick,
+  disablePrev,
+  disableNext,
+}) {
+  const years = Array.from({ length: 12 }, (_, i) => blockStart + i);
+  const selectedYear = value ? Number(value.slice(0, 4)) : null;
+  const todayYear = Number(todayIso.slice(0, 4));
+
+  // 연 단위 disabled 판정
+  const isYearDisabled = (y) => {
+    const firstIso = `${y}-01-01`;
+    const lastIso = `${y}-12-31`;
+    if (max && firstIso > max) return true;
+    if (min && lastIso < min) return true;
+    return false;
+  };
+
+  return (
+    <>
+      <NavHeader
+        label={`${blockStart} - ${blockStart + 11}`}
+        onPrev={onPrev}
+        onNext={onNext}
+        disablePrev={disablePrev}
+        disableNext={disableNext}
+      />
+      <div className="grid grid-cols-4 gap-2 p-3">
+        {years.map((y) => {
+          const isSelected = selectedYear === y;
+          const isCurrent = todayYear === y;
+          const isDisabled = isYearDisabled(y);
+          return (
+            <button
+              key={y}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => onPick(y)}
+              className={cn(
+                'h-10 rounded-md text-[13px] font-semibold tabular-nums transition-colors',
+                isSelected
+                  ? 'bg-primary-600 text-white'
+                  : isCurrent
+                    ? 'bg-primary-50 text-primary-800 hover:bg-primary-100'
+                    : !isDisabled && 'text-ink-800 hover:bg-ink-100',
+                isDisabled && 'text-ink-300 cursor-not-allowed'
+              )}
+            >
+              {y}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/* ---------- 공통 헤더 ---------- */
