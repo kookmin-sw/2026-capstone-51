@@ -283,3 +283,20 @@ export default function DatePicker({
               <button
                 type="button"
                 onClick={() => {
+                  onChange('');
+                  setOpen(false);
+                  setMode('day');
+                }}
+                className="text-[12px] font-semibold text-ink-500 hover:text-ink-900 px-2 py-1 rounded"
+              >
+                지우기
+              </button>
+            ) : (
+              <span />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
