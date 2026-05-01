@@ -28,6 +28,14 @@ export default function DeptCascadeSelect({
   departmentPlaceholder,
 }) {
   // 외부 value 에 맞는 단과대 (파생값)
+  const matchedCollege = useMemo(() => {
+    if (!value) return '';
+    return KOOKMIN_DEPT_OPTIONS.find((d) => d.value === value)?.group ?? '';
+  }, [value]);
+
+  // 학과 미선택 상태에서 사용자가 단과대만 골라둘 수 있도록 interim state 유지
+  const [pendingCollege, setPendingCollege] = useState('');
+  const college = matchedCollege || pendingCollege;
 
   return null;
 }
