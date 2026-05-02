@@ -177,8 +177,6 @@ export default function MyRoadmapCard() {
                       }
                     />
                   </div>
-
-                  {/* 마일스톤 stack */}
                   <div className="mt-3 flex flex-col items-stretch gap-1.5 w-full">
                     {buckets[i].map((m, j) => (
                       <Milestone key={j} item={m} />
