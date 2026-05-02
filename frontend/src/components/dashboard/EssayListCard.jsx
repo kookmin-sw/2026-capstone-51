@@ -72,3 +72,39 @@ export default function EssayListCard({ embedded = false }) {
     </section>
   );
 }
+
+function EssayRow({ item }) {
+  const tone = PROGRESS_TONE[item.progress] || 'gray';
+  const label = PROGRESS_LABEL[item.progress] || item.progress || '작성 중';
+  const inner = (
+    <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+          <span className="text-[12px] font-semibold text-ink-800 truncate">
+            {item.companyName || '회사명 없음'}
+          </span>
+          <span className={`badge-${tone}`}>{label}</span>
+        </div>
+        <div className="text-[11.5px] text-ink-500 truncate">
+          {item.wishJob || '직무 미입력'}
+        </div>
+      </div>
+      {item.updatedAt && (
+        <div className="text-[10.5px] text-ink-400 tabular-nums shrink-0">
+          {fmtDate(item.updatedAt)}
+        </div>
+      )}
+    </div>
+  );
+  if (item.essayId) {
+    return (
+      <li>
+        <Link
+          to={`/essays/${item.essayId}`}
+          className="block rounded-md border border-ink-150 px-3 py-2 hover:bg-ink-50/40 hover:border-ink-300 transition-colors"
+        >
+          {inner}
+        </Link>
+      </li>
+    );
+  }
