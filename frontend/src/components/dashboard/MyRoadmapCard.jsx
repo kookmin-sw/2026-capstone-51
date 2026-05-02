@@ -185,8 +185,6 @@ export default function MyRoadmapCard() {
                       <div className="h-1" aria-hidden />
                     )}
                   </div>
-
-                  {/* 보조 라벨 */}
                   <div className="text-[10px] text-ink-400 mt-2">{s.sub}</div>
                 </div>
               );
