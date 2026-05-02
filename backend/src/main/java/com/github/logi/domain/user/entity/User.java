@@ -1,17 +1,12 @@
 package com.github.logi.domain.user.entity;
 
-import com.github.logi.domain.essay.entity.Essay;
 import com.github.logi.domain.user.dto.request.UserMeRequest;
 import com.github.logi.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -57,9 +52,6 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "job_third")
     private JobThird jobThird;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<Essay> essays = new ArrayList<>();
 
     public static User create(String email, String userName) {
         User user = new User();
