@@ -1,5 +1,6 @@
 package com.github.logi.domain.essay.controller;
 
+import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
 import com.github.logi.domain.essay.service.EssayService;
 import com.github.logi.domain.user.entity.User;
@@ -9,8 +10,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @Tag(name = "Essay", description = "자소서 API")
 @RestController
@@ -26,5 +30,14 @@ public class EssayController {
             @AuthenticationPrincipal User user
     ) {
         return ApiResponse.ok(essayService.getEssays(user));
+    }
+
+    @Operation(summary = "자소서 상세 조회", description = "자소서 상세 정보(회사명, 공통 요구사항, 문항 목록, 희망 직무, 진행 상태, 최종 수정 일자)를 조회합니다.")
+    @GetMapping("/{essayId}")
+    public ApiResponse<EssayDetailResponse> getEssay(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID essayId
+    ) {
+        return ApiResponse.ok(essayService.getEssay(user, essayId));
     }
 }
