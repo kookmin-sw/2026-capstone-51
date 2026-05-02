@@ -240,3 +240,92 @@ function Legend() {
     </ul>
   );
 }
+
+function SkeletonCard() {
+  return (
+    <section className="card animate-pulse">
+      <div className="h-4 w-24 bg-ink-100 rounded mb-2" />
+      <div className="h-3 w-40 bg-ink-100 rounded mb-5" />
+      <div className="grid grid-cols-8 gap-1">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2">
+            <div className="h-3 w-8 bg-ink-100 rounded" />
+            <div className="w-3 h-3 bg-ink-100 rounded-full" />
+            <div className="h-12 w-full bg-ink-100 rounded" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NoticeCard({ title, sub, ctaTo, ctaLabel, ctas }) {
+  return (
+    <section className="card text-center py-8">
+      <h2 className="text-[14px] font-bold text-ink-900 mb-1">{title}</h2>
+      <p className="text-[12.5px] text-ink-500 mb-4 break-keep">{sub}</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {ctas
+          ? ctas.map((c) => (
+              <Link key={c.to} to={c.to} className="btn-default btn-sm">
+                <Plus size={12} strokeWidth={2.2} />
+                {c.label}
+              </Link>
+            ))
+          : ctaTo && (
+              <Link to={ctaTo} className="btn-default btn-sm">
+                {ctaLabel}
+              </Link>
+            )}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- 헬퍼 ---------- */
+
+/** y, m → cohortYear 기준 학기 인덱스. 1학기=1~6월, 2학기=7~12월. */
+function ymToSemIdx(cohortYear, year, month) {
+  const h = month <= 6 ? 1 : 2;
+  const yearOffset = year - cohortYear;
+  return yearOffset * 2 + (h === 1 ? 0 : 1);
+}
+
+/** 입학년도부터 count 학기를 자동 생성. label 은 "1-1" ~ "N-2" 형태. */
+function buildSemesters(cohortYear, count) {
+  const sems = [];
+  for (let i = 0; i < count; i++) {
+    const yearOffset = Math.floor(i / 2);
+    const h = (i % 2) + 1;
+    const grade = yearOffset + 1;
+    const semInGrade = h;
+    const y = cohortYear + yearOffset;
+    sems.push({
+      id: `${grade}-${semInGrade}`,
+      y,
+      h,
+      label: `${grade}-${semInGrade}`,
+      sub: `'${String(y).slice(2)}-${h}`,
+    });
+  }
+  return sems;
+}
+
+/** 'YYYY-MM-DD' → 'YY.MM' */
+function shortYM(d) {
+  if (!d) return '—';
+  const [y, m] = d.split('-');
+  return `${y.slice(2)}.${m}`;
+}
+
+/** 'YYYY-MM-DD' → 'YY.MM.DD' */
+function shortDate(d) {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  return `${y.slice(2)}.${m}.${day || ''}`.replace(/\.$/, '');
+}
+
+function truncate(s, n) {
+  if (!s) return '';
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
