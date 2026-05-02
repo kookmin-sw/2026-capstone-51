@@ -1,85 +1,131 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
-import {
-  SEMESTERS,
-  SENIOR_ROADMAPS,
-  CAT_LABELS,
-  CAT_COLORS,
-  ymToSemIndex,
-} from '../../data/dashboard';
+import { useMemo, useState } from 'react';
+import { CAT_COLORS } from '../../data/dashboard';
 
 /**
- * 선배 3명을 좌우 화살표로 넘기며 보는 carousel.
- *  - 각 선배의 학기별 마일스톤을 같은 학기 축 위에 표시.
- *  - 카드 헤더에 합격 회사 / 시즌 메타.
+ * 선배(졸업생) N명을 탭으로 전환하며 보는 카드.
+ *
+ * 데이터 소스: GET /users/me/dashboard 의 graduateUserExperiences[].
+ *  shape: [{ userId, partTimeHistory[], internHistory[], licenseHistory[],
+ *            internalHistory[], externalHistory[] }, ...]
+ *  각 history element: { name, experienceId, startDate, endDate }
+ *
+ * 백엔드 응답에 졸업생 표시명 / 합격 회사 / 합격 시즌 메타가 없어
+ * 탭은 "선배 1·2·3" index 라벨로 노출. 메타 필드 추가되면 같은 위치에 끼우면 됨.
+ *
+ * 학기 축은 졸업생의 가장 이른 startDate 부터 가장 늦은 endDate 까지 자동 확장.
+ * 데이터 비어있으면 안내 카드.
  */
-export default function SeniorRoadmapCard() {
+export default function SeniorRoadmapCard({
+  graduates = [],
+  isLoading = false,
+  isError = false,
+  onRetry,
+}) {
   const [idx, setIdx] = useState(0);
-  const total = SENIOR_ROADMAPS.length;
-  const senior = SENIOR_ROADMAPS[idx];
+  const safeIdx = idx < graduates.length ? idx : 0;
+  const senior = graduates[safeIdx];
 
-  const buckets = SEMESTERS.map(() => []);
-  senior.items.forEach((it) => {
-    const i = ymToSemIndex(it.y, it.m);
-    buckets[i].push(it);
-  });
+  // 카테고리 history → 마일스톤 통일 shape: { y, m, cat, title, date }
+  const milestones = useMemo(() => {
+    if (!senior) return [];
+    const out = [];
+    const push = (cat, list) => {
+      (list || []).forEach((it) => {
+        if (!it.startDate) return;
+        const [y, m] = it.startDate.split('-').map(Number);
+        out.push({
+          y,
+          m,
+          cat,
+          title: it.name || '제목 없음',
+          date: `${shortYM(it.startDate)} ~ ${shortYM(it.endDate)}`,
+        });
+      });
+    };
+    push('parttime', senior.partTimeHistory);
+    push('intern', senior.internHistory);
+    push('cert', senior.licenseHistory);
+    push('internal', senior.internalHistory);
+    push('activity', senior.externalHistory);
+    return out;
+  }, [senior]);
 
-  const prev = () => setIdx((i) => (i - 1 + total) % total);
-  const next = () => setIdx((i) => (i + 1) % total);
+  // 학기 축 — 가장 이른 (year, half) 부터 가장 늦은 까지.
+  const semesters = useMemo(() => buildSemestersFrom(milestones), [milestones]);
+
+  const buckets = useMemo(() => {
+    const arr = semesters.map(() => []);
+    if (!semesters.length) return arr;
+    const baseY = semesters[0].y;
+    const baseH = semesters[0].h;
+    milestones.forEach((mile) => {
+      const idx = semIndex(baseY, baseH, mile.y, mile.m);
+      if (idx >= 0 && idx < arr.length) arr[idx].push(mile);
+    });
+    return arr;
+  }, [semesters, milestones]);
+
+  // ---------- Fallback states ----------
+  if (isLoading) return <SkeletonCard />;
+  if (isError) {
+    return (
+      <NoticeCard
+        title="선배 로드맵을 불러오지 못했어요"
+        sub="잠시 후 다시 시도해주세요."
+        onRetry={onRetry}
+      />
+    );
+  }
+  if (graduates.length === 0) {
+    return (
+      <NoticeCard
+        title="아직 비교할 선배 데이터가 없어요"
+        sub="졸업생 데이터가 쌓이면 학기별 비교 타임라인이 나타납니다."
+      />
+    );
+  }
+  if (!senior || milestones.length === 0) {
+    return (
+      <section className="card">
+        <header className="mb-4">
+          <h2 className="text-[15px] font-bold text-ink-900 mb-2">
+            선배 로드맵
+          </h2>
+          <SeniorTabs graduates={graduates} idx={safeIdx} setIdx={setIdx} />
+        </header>
+        <div className="text-center py-6 text-[12.5px] text-ink-500 break-keep">
+          선택한 선배의 활동 내역이 비어있어요.
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="card">
-      <header className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-primary-50 text-primary-800 flex items-center justify-center font-bold text-[13px]">
-            {senior.name.replace('선배 ', '')}
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-[15px] font-bold text-ink-900 truncate">
-              {senior.name}의 로드맵
-            </h2>
-            <p className="text-[12px] text-ink-500 mt-0.5 flex items-center gap-1.5">
-              <Building2 size={12} strokeWidth={2} />
-              {senior.co} · {senior.year} 합격
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={prev}
-            aria-label="이전 선배"
-            className="btn-ghost btn-sm !p-1.5"
-          >
-            <ChevronLeft size={14} strokeWidth={2} />
-          </button>
-          <span className="text-[11px] text-ink-500 tabular-nums px-1.5">
-            {idx + 1} / {total}
-          </span>
-          <button
-            type="button"
-            onClick={next}
-            aria-label="다음 선배"
-            className="btn-ghost btn-sm !p-1.5"
-          >
-            <ChevronRight size={14} strokeWidth={2} />
-          </button>
-        </div>
+      <header className="mb-4">
+        <h2 className="text-[15px] font-bold text-ink-900 mb-2">선배 로드맵</h2>
+        <SeniorTabs graduates={graduates} idx={safeIdx} setIdx={setIdx} />
       </header>
 
-      {/* Track — 좁은 화면에서는 가로 스크롤로 8학기 칼럼 유지 */}
       <div className="overflow-x-auto -mx-1 px-1">
-        <div className="relative pt-2 pb-1 min-w-[640px]">
+        <div
+          className="relative pt-2 pb-1"
+          style={{ minWidth: `${Math.max(640, semesters.length * 80)}px` }}
+        >
           <div className="absolute left-0 right-0 top-[34px] h-px bg-ink-200" />
-          <div className="grid grid-cols-8 gap-1">
-            {SEMESTERS.map((s, i) => (
+          <div
+            className="grid gap-1"
+            style={{
+              gridTemplateColumns: `repeat(${semesters.length}, 1fr)`,
+            }}
+          >
+            {semesters.map((s, i) => (
               <div key={s.id} className="flex flex-col items-center">
                 <div className="text-[11px] font-semibold text-ink-500 mb-2">
                   {s.label}
                 </div>
-                <div className="relative h-3 w-full flex justify-center">
-                  <span className="block w-2 h-2 rounded-full bg-ink-200" />
+                <div className="relative h-3 w-full flex justify-center items-center">
+                  <span className="block w-2 h-2 rounded-full bg-ink-300" />
                 </div>
                 <div className="mt-3 flex flex-col items-stretch gap-1.5 w-full">
                   {buckets[i].map((m, j) => (
