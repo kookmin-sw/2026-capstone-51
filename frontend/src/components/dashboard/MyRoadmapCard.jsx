@@ -192,29 +192,32 @@ export default function MyRoadmapCard() {
           </div>
         </div>
       </div>
-
-      <div className="mt-4 flex justify-end">
-        <Link to="/my-experience" className="btn-default btn-sm">
-          내 경험 전체 보기
-        </Link>
-      </div>
     </section>
   );
 }
 
+/* ---------- 빌딩블록 ---------- */
+
 function Milestone({ item }) {
   const color = CAT_COLORS[item.cat] || '#6B7280';
+  const isCert = item.cat === 'cert';
   return (
-    <div
-      className="rounded-md border border-ink-150 bg-paper px-2 py-1.5"
+    <Link
+      to={item.to}
+      className="block rounded-md border border-ink-150 bg-paper px-2 py-1.5 hover:bg-ink-50 hover:border-ink-300 transition-colors"
       style={{ borderLeft: `3px solid ${color}` }}
-      title={`${item.title} · ${item.date}`}
+      title={`${item.title} · ${item.date}${item.detail ? '\n' + item.detail : ''}`}
     >
-      <div className="text-[11px] font-semibold text-ink-800 truncate">
-        {item.title}
+      <div className="flex items-center gap-1 mb-0.5">
+        {isCert && <Award size={10} strokeWidth={2.2} style={{ color }} />}
+        <div className="text-[11px] font-semibold text-ink-800 truncate">
+          {item.title}
+        </div>
       </div>
-      <div className="text-[10px] text-ink-500 truncate">{item.detail}</div>
-    </div>
+      {item.detail && (
+        <div className="text-[10px] text-ink-500 truncate">{item.detail}</div>
+      )}
+    </Link>
   );
 }
 
