@@ -16,5 +16,59 @@ export default function EssayListCard({ embedded = false }) {
   const items = list.data || [];
   const visible = items.slice(0, 5);
 
-  return null;
+  return (
+    <section
+      className={embedded ? 'flex flex-col h-full' : 'card !p-4 flex flex-col'}
+    >
+      <header className="flex items-start gap-2">
+        <FileText size={18} strokeWidth={2} className="text-ink-500 mt-0.5" />
+        <div>
+          <h2 className="text-[15px] font-bold text-ink-900 leading-tight">
+            내 자소서
+          </h2>
+          <div className="text-[11px] text-ink-500 mt-0.5">
+            최근 작성·수정한 자소서 모음
+          </div>
+        </div>
+      </header>
+
+      <div className="mt-3 flex-1 min-h-[180px]">
+        {list.isLoading ? (
+          <Loading />
+        ) : list.isError ? (
+          <ErrorState
+            message={
+              list.error?.apiMessage || '자소서 목록을 불러오지 못했습니다.'
+            }
+            onRetry={() => list.refetch()}
+          />
+        ) : items.length === 0 ? (
+          <Empty />
+        ) : (
+          <ul className="grid gap-2">
+            {visible.map((e, i) => (
+              <EssayRow key={i} item={e} />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-ink-150 flex items-center justify-between gap-2">
+        {items.length > 5 ? (
+          <Link
+            to="/essays"
+            className="text-[12px] text-ink-500 hover:text-ink-800 underline-offset-2 hover:underline"
+          >
+            전체 보기 ({items.length})
+          </Link>
+        ) : (
+          <span />
+        )}
+        <Link to="/write" className="btn-primary btn-sm">
+          <PencilLine size={13} strokeWidth={2.2} />
+          자소서 작성하기
+        </Link>
+      </div>
+    </section>
+  );
 }
