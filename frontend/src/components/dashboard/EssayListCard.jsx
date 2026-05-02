@@ -108,3 +108,38 @@ function EssayRow({ item }) {
       </li>
     );
   }
+  return (
+    <li className="rounded-md border border-ink-150 px-3 py-2">{inner}</li>
+  );
+}
+
+function Loading() {
+  return (
+    <div className="grid gap-2">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="h-[46px] rounded-md border border-ink-150 bg-ink-50/40 animate-pulse"
+        />
+      ))}
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div className="text-center py-6">
+      <p className="text-[12.5px] text-ink-700 mb-2 break-keep">{message}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="btn-default btn-sm">
+          다시 시도
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Empty() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-center py-6">
+      <p className="text-[12.5px] font-semibold text-ink-700 mb-1">
