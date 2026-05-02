@@ -143,3 +143,16 @@ function Empty() {
   return (
     <div className="h-full flex flex-col items-center justify-center text-center py-6">
       <p className="text-[12.5px] font-semibold text-ink-700 mb-1">
+        아직 작성한 자소서가 없어요.
+      </p>
+      <p className="text-[11.5px] text-ink-500 break-keep">
+        첫 자소서를 시작해 동기 비교를 더 정확하게 만들어보세요.
+      </p>
+    </div>
+  );
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  return d.slice(0, 10).replaceAll('-', '.');
+}
