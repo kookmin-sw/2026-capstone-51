@@ -285,62 +285,76 @@ export default function PeersOrb({
         else shape.lineTo(p.x, p.y);
       }
       shape.closePath();
+
       const geo = new THREE.ExtrudeGeometry(shape, {
         depth,
         bevelEnabled: true,
-        bevelThickness: 0.015,
-        bevelSize: 0.015,
+        bevelThickness: 0.018,
+        bevelSize: 0.018,
         bevelSegments: 2,
         curveSegments: 1,
       });
-      const mat = new THREE.MeshPhysicalMaterial({
+
+      const mat = new THREE.MeshPhongMaterial({
         color,
         transparent: true,
         opacity,
-        roughness: 0.35,
-        metalness: 0.15,
-        clearcoat: 0.6,
-        clearcoatRoughness: 0.3,
+        shininess: 80,
+        specular: 0xffffff,
         side: THREE.DoubleSide,
       });
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.z = zOffset - depth / 2;
+      // z=0 중심으로 정렬 — extrude 는 0..depth 로 만들어지니 -depth/2 만큼 뒤로.
+      mesh.position.z = -depth / 2;
 
-      const edgePts = [];
-      for (let i = 0; i <= N; i++) edgePts.push(pointAt(i % N, data[i % N]));
-      const edgeLine = new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(edgePts),
-        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.95 })
-      );
-      edgeLine.position.z = zOffset + depth / 2 + 0.001;
+      // 앞/뒤 양쪽 cap 모두에 외곽선 — 회전 시 어느 쪽에서 봐도 윤곽이 또렷.
+      const makeEdge = (z) => {
+        const pts = [];
+        for (let i = 0; i <= N; i++) {
+          const p = pointAt(i % N, data[i % N]);
+          pts.push(new THREE.Vector3(p.x, p.y, z));
+        }
+        return new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({
+            color,
+            transparent: true,
+            opacity: edgeOpacity,
+          })
+        );
+      };
+      const frontEdge = makeEdge(depth / 2 + 0.004);
+      const backEdge = makeEdge(-depth / 2 - 0.004);
 
       const grp = new THREE.Group();
       grp.add(mesh);
-      grp.add(edgeLine);
+      grp.add(frontEdge);
+      grp.add(backEdge);
       return grp;
     };
 
-    const avgMesh = buildDataMesh(avgData, 0x8b5cf6, 0.55, 0.04, -0.02);
-    orbGroup.add(avgMesh);
-    const myMesh = buildDataMesh(myData, 0x2563eb, 0.6, 0.06, 0.08);
-    orbGroup.add(myMesh);
+    // 깊이는 "예상 면적 순"으로 분배 — 보통 선배(많이 활동) > 동기 > 나 라 가정.
+    // 면적이 작은 쪽이 더 두껍게(양쪽으로 더 빼꼼) 솟아 보이도록 depth 분배.
+    const seniorsMesh = buildDataMesh(
+      seniorsData,
+      colors.seniors,
+      0.55,
+      0.85,
+      0.07
+    );
+    seniorsMesh.visible = showSeniors;
+    seniorsMeshRef.current = seniorsMesh;
+    orbGroup.add(seniorsMesh);
 
-    // 꼭짓점 (나)
-    myData.forEach((v, i) => {
-      const p = pointAt(i, v);
-      const dot = new THREE.Mesh(
-        new THREE.SphereGeometry(0.045, 16, 16),
-        new THREE.MeshPhysicalMaterial({
-          color: 0xffffff,
-          roughness: 0.2,
-          metalness: 0.3,
-          emissive: 0x2563eb,
-          emissiveIntensity: 0.2,
-        })
-      );
-      dot.position.set(p.x, p.y, 0.13);
-      orbGroup.add(dot);
-    });
+    const peersMesh = buildDataMesh(peersData, colors.peers, 0.55, 0.85, 0.1);
+    peersMesh.visible = showPeers;
+    peersMeshRef.current = peersMesh;
+    orbGroup.add(peersMesh);
+
+    const myMesh = buildDataMesh(myData, colors.me, 0.7, 1.0, 0.13);
+    myMesh.visible = showMe;
+    myMeshRef.current = myMesh;
+    orbGroup.add(myMesh);
 
     /* ===== Labels (sprite) ===== */
     const makeLabel = (text) => {
