@@ -64,9 +64,30 @@ export default function PeersOrb({
   axes,
   title = '내 동기들은 뭐하고 있을까?',
   sub = '소프트웨어학부 22학번 · 익명 집계 · 214명 기준',
+  embedded = false,
+  chartMaxWidth = 360,
+  onExpand,
 }) {
   const wrapRef = useRef(null);
   const [webglOK, setWebglOK] = useState(isWebGLAvailable);
+  const [showMe, setShowMe] = useState(true);
+  const [showPeers, setShowPeers] = useState(true);
+  const [showSeniors, setShowSeniors] = useState(true);
+  const [colors, setColors] = useState(loadColors);
+  // 메쉬 가시성/색을 토글로 즉시 반영하기 위해 ref 보관 (scene 재구축 회피).
+  const myMeshRef = useRef(null);
+  const peersMeshRef = useRef(null);
+  const seniorsMeshRef = useRef(null);
+
+  // 색 변경 — localStorage 영속화.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(COLOR_STORAGE_KEY, JSON.stringify(colors));
+    } catch {
+      /* quota / private mode — 무시 */
+    }
+  }, [colors]);
 
   useEffect(() => {
     if (!webglOK) return;
