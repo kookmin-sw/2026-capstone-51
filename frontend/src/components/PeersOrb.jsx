@@ -23,6 +23,27 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { Maximize2 } from 'lucide-react';
+import { cn } from '../lib/cn';
+
+const COLOR_DEFAULTS = {
+  me: '#1e40af', // Blue-800
+  peers: '#94a3b8', // Slate-400
+  seniors: '#c2410c', // Orange-700
+};
+const COLOR_STORAGE_KEY = 'peersOrb.colors.v1';
+
+function loadColors() {
+  if (typeof window === 'undefined') return COLOR_DEFAULTS;
+  try {
+    const raw = window.localStorage.getItem(COLOR_STORAGE_KEY);
+    if (!raw) return COLOR_DEFAULTS;
+    const parsed = JSON.parse(raw);
+    return { ...COLOR_DEFAULTS, ...parsed };
+  } catch {
+    return COLOR_DEFAULTS;
+  }
+}
 
 function isWebGLAvailable() {
   if (typeof window === 'undefined') return false;
