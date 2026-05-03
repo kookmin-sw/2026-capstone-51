@@ -35,4 +35,14 @@ public class EssayQuestion extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "experience_id")
     )
     private List<Experience> experiences = new ArrayList<>();
+
+    public static EssayQuestion create(Essay essay, Integer questionNum, String question, String response, List<Experience> experiences) {
+        EssayQuestion eq = new EssayQuestion();
+        eq.essay = essay;
+        eq.questionNum = questionNum;
+        eq.question = question;
+        eq.response = response;
+        eq.experiences = experiences;
+        return eq;
+    }
 }

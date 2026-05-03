@@ -1,9 +1,11 @@
 package com.github.logi.domain.essay.controller;
 
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
+import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
+import com.github.logi.domain.essay.dto.response.EssayQuestionCreateResponse;
 import com.github.logi.domain.essay.service.EssayService;
 import com.github.logi.domain.user.entity.User;
 import com.github.logi.global.dto.ApiResponse;
@@ -31,6 +33,16 @@ public class EssayController {
             @Valid @RequestBody EssayCreateRequest request
     ) {
         return ApiResponse.ok(essayService.createEssay(user, request));
+    }
+
+    @Operation(summary = "자소서 질문 생성", description = "자소서에 질문 항목을 추가하고 questionId를 반환합니다.")
+    @PostMapping("/{essayId}/questions")
+    public ApiResponse<EssayQuestionCreateResponse> createQuestion(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID essayId,
+            @Valid @RequestBody EssayQuestionCreateRequest request
+    ) {
+        return ApiResponse.ok(essayService.createQuestion(user, essayId, request));
     }
 
     @Operation(summary = "내 자소서 목록 조회", description = "사용자의 자소서 목록을 회사명, 희망 직무, 진행 상태, 최종 수정 일시와 함께 조회합니다.")
