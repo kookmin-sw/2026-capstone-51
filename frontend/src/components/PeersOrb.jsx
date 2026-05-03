@@ -1,12 +1,20 @@
 /**
- * 동기 비교 — 5축 입체 레이더 (유리 구체 안에 입체 차트).
+ * 동기/선배 비교 — 5축 입체 레이더 (유리 구체 안에 입체 차트).
  * Three.js 사용. 기본 정지, 마우스 드래그로만 회전 (놓으면 모멘텀 감쇠 후 정지).
  *
  * props:
- *   axes  — [{ label, me, peers }] (값 0~100)
+ *   axes  — [{ label, me, peers, seniors? }] (값 0~100, seniors 없으면 0 처리)
  *   title, sub
+ *   embedded — true 면 외곽 .card 래퍼/패딩 제거. 상단 통합 카드의 한 칸으로 들어갈 때 사용.
+ *   chartMaxWidth — 차트 wrap 의 maxWidth(px). 모달 확대 모드에서 키워 사용.
+ *   onExpand — 헤더 우측 확대 아이콘 클릭 콜백. 미지정이면 아이콘 자체가 안 보임.
  *
- * 5축 파라미터(label/me/peers)는 절대 변경하지 않고, 시각화만 입체로 바꿉니다.
+ * 시각 정책:
+ *  - 세 폴리곤(나/동기/선배) 모두 grid 평면(z=0) 을 가운데로 두고 +z / -z 양쪽으로
+ *    반씩 솟는 "샌드위치" prism. 어느 방향에서 봐도 폴리곤이 튀어나와 보임.
+ *  - depth 만 단계화(선배 0.07 / 동기 0.10 / 나 0.13) — 작은 폴리곤(예: 나)이 더 두껍게
+ *    양쪽으로 빼꼼히 솟아 stepped 중첩이 회전 어느 각도에서도 유지.
+ *  - 색은 사용자가 범례 swatch 를 눌러 바꿀 수 있고 localStorage 에 저장됨.
  *
  * WebGL 미지원 / 컨텍스트 생성 실패 시 막대 그래프로 graceful degradation.
  *  - 마운트 전에 canvas.getContext('webgl') 으로 사전 체크
