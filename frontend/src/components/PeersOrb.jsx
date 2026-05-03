@@ -651,16 +651,19 @@ function PeersFallbackChart({ axes, showMe, showPeers, showSeniors, colors }) {
             {a.label}
           </div>
           <div className="grid gap-1.5">
-            <FallbackBar
-              label="나"
-              value={a.me}
-              color="linear-gradient(90deg, #3b82f6, #1e40af)"
-            />
-            <FallbackBar
-              label="동기"
-              value={a.peers}
-              color="linear-gradient(90deg, #c4b5fd, #7c3aed)"
-            />
+            {showMe && (
+              <FallbackBar label="나" value={a.me} color={colors.me} />
+            )}
+            {showPeers && (
+              <FallbackBar label="동기" value={a.peers} color={colors.peers} />
+            )}
+            {showSeniors && (
+              <FallbackBar
+                label="선배"
+                value={a.seniors ?? 0}
+                color={colors.seniors}
+              />
+            )}
           </div>
         </div>
       ))}
