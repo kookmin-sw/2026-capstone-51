@@ -97,7 +97,8 @@ export default function PeersOrb({
     // 0~1 정규화
     const labels = axes.map((a) => a.label);
     const myData = axes.map((a) => a.me / 100);
-    const avgData = axes.map((a) => a.peers / 100);
+    const peersData = axes.map((a) => a.peers / 100);
+    const seniorsData = axes.map((a) => (a.seniors ?? 0) / 100);
     const N = axes.length;
 
     const SPHERE_R = 2.5;
