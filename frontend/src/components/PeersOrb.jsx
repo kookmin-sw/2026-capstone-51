@@ -461,7 +461,6 @@ export default function PeersOrb({
     const ro = new ResizeObserver(onResize);
     ro.observe(wrap);
 
-    /* ========== Cleanup ========== */
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
