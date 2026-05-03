@@ -451,7 +451,6 @@ export default function PeersOrb({
     };
     tick();
 
-    /* ========== Resize ========== */
     const onResize = () => {
       const w = wrap.clientWidth,
         h = wrap.clientHeight;
