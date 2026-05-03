@@ -179,7 +179,6 @@ export default function PeersOrb({
       )
     );
 
-    // 적도 라인
     {
       const points = [];
       const seg = 64;
