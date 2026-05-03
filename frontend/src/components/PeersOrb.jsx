@@ -390,7 +390,6 @@ export default function PeersOrb({
     }
 
     /* ========== Interaction (drag rotate) ========== */
-    // 기본 정지. 드래그 시 velY/velX 가 채워지고, 손 떼면 0.93 배씩 감쇠해 자연스럽게 멈춤.
     let rotY = 0.0,
       rotX = 0.18,
       velY = 0,
