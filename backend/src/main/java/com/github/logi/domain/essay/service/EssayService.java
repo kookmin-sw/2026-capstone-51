@@ -1,5 +1,7 @@
 package com.github.logi.domain.essay.service;
 
+import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
+import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
 import com.github.logi.domain.essay.entity.Essay;
@@ -18,6 +20,12 @@ import java.util.UUID;
 public class EssayService {
 
     private final EssayRepository essayRepository;
+
+    @Transactional
+    public EssayCreateResponse createEssay(User user, EssayCreateRequest request) {
+        Essay essay = Essay.create(user, request.companyName(), request.wishJob(), request.globalReq());
+        return EssayCreateResponse.from(essayRepository.save(essay));
+    }
 
     public EssayListResponse getEssays(User user) {
         return EssayListResponse.from(essayRepository.findAllByUser(user));

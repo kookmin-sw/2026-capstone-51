@@ -22,11 +22,11 @@ public class Essay extends BaseEntity {
     @Column(name = "company_name", length = 100, nullable = false)
     private String companyName;
 
-    @Column(name = "global_req", columnDefinition = "TEXT", nullable = false)
-    private String globalReq;
-
     @Column(name = "wish_job", length = 100, nullable = false)
     private String wishJob;
+
+    @Column(name = "global_req", columnDefinition = "TEXT", nullable = false)
+    private String globalReq;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "progress", length = 20, nullable = false)
@@ -34,4 +34,16 @@ public class Essay extends BaseEntity {
 
     @OneToMany(mappedBy = "essay", fetch = FetchType.LAZY)
     private List<EssayQuestion> questions = new ArrayList<>();
+
+    public static Essay create(User user, String companyName, String wishJob, String globalReq) {
+        Essay essay = new Essay();
+        essay.user = user;
+        essay.companyName = companyName;
+        essay.wishJob = wishJob;
+        essay.globalReq = globalReq;
+        essay.progress = Progress.IN_PROGRESS;
+        return essay;
+    }
+
+
 }
