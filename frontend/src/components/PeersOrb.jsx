@@ -238,12 +238,11 @@ export default function PeersOrb({
       orbGroup.add(
         new THREE.Line(
           new THREE.BufferGeometry().setFromPoints(pts),
-          gridMat.clone()
+          axisMat.clone()
         )
       );
     }
 
-    // 눈금 숫자
     const makeScaleText = (text) => {
       const c = document.createElement('canvas');
       c.width = 64;
