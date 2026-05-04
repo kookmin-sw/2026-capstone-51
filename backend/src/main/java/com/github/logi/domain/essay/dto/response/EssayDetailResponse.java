@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Schema(description = "자소서 상세 응답")
 public record EssayDetailResponse(
@@ -30,6 +31,9 @@ public record EssayDetailResponse(
 ) {
     @Schema(description = "자소서 문항")
     public record QuestionResponse(
+            @Schema(description = "문항 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+            UUID questionId,
+
             @Schema(description = "문항 번호", example = "1")
             Integer questionNum,
 
@@ -41,6 +45,7 @@ public record EssayDetailResponse(
     ) {
         public static QuestionResponse from(EssayQuestion question) {
             return new QuestionResponse(
+                    question.getId(),
                     question.getQuestionNum(),
                     question.getQuestion(),
                     question.getResponse()
