@@ -40,5 +40,28 @@ export default function CertificateForm({
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const handlePdfPick = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') {
+      setPdfError('PDF 파일만 업로드할 수 있어요.');
+      e.target.value = '';
+      return;
+    }
+    if (f.size > FILE_MAX_BYTES) {
+      setPdfError('파일 크기는 10MB 이하여야 해요.');
+      e.target.value = '';
+      return;
+    }
+    setPdfError('');
+    setPdfFile(f);
+  };
+
+  const handlePdfRemove = () => {
+    setPdfFile(null);
+    setPdfError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return null;
 }
