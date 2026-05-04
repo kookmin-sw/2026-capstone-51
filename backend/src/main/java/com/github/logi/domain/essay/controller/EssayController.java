@@ -2,6 +2,7 @@ package com.github.logi.domain.essay.controller;
 
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
+import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
@@ -60,5 +61,16 @@ public class EssayController {
             @PathVariable UUID essayId
     ) {
         return ApiResponse.ok(essayService.getEssay(user, essayId));
+    }
+
+    @Operation(summary = "자소서 수정", description = "자소서의 회사명, 희망 직무, 공통 요구사항을 수정합니다.")
+    @PatchMapping("/{essayId}")
+    public ApiResponse<Void> updateEssay(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID essayId,
+            @Valid @RequestBody EssayUpdateRequest request
+    ) {
+        essayService.updateEssay(user, essayId, request);
+        return ApiResponse.ok();
     }
 }

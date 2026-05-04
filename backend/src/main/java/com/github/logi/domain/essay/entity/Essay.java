@@ -45,5 +45,10 @@ public class Essay extends BaseEntity {
         return essay;
     }
 
+    public void update(String companyName, String wishJob, String globalReq) {
+        this.companyName = companyName;
+        this.wishJob = wishJob;
+        this.globalReq = globalReq;
+    }
 
 }

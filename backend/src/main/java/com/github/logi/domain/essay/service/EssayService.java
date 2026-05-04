@@ -2,6 +2,7 @@ package com.github.logi.domain.essay.service;
 
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
+import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
@@ -69,5 +70,17 @@ public class EssayService {
         }
 
         return EssayDetailResponse.from(essay);
+    }
+
+    @Transactional
+    public void updateEssay(User user, UUID essayId, EssayUpdateRequest request) {
+        Essay essay = essayRepository.findById(essayId)
+                .orElseThrow(EssayExceptions.ESSAY_NOT_FOUND::toException);
+
+        if (!essay.getUser().getId().equals(user.getId())) {
+            throw EssayExceptions.FORBIDDEN_ESSAY.toException();
+        }
+
+        essay.update(request.companyName(), request.wishJob(), request.globalReq());
     }
 }
