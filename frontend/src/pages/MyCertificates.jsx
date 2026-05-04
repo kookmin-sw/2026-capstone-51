@@ -26,5 +26,20 @@ export default function MyCertificates() {
 
   const items = useMemo(() => list.data || [], [list.data]);
 
+  const handleConfirmDelete = () => {
+    if (!pendingDel) return;
+    del.mutate(pendingDel.certificateId, {
+      onSuccess: () => {
+        toast.success('자격증을 삭제했어요.');
+        setPendingDel(null);
+      },
+      onError: (e) => {
+        toast.error(
+          e?.apiMessage || '삭제 중 오류가 발생했습니다. 다시 시도해주세요.'
+        );
+      },
+    });
+  };
+
   return null;
 }
