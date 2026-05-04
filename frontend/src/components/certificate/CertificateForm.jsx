@@ -31,6 +31,14 @@ export default function CertificateForm({
   isPending,
   submitLabel = '저장',
 }) {
+  const [form, setForm] = useState(() => toDraft(initialValue));
+  const [submitted, setSubmitted] = useState(false);
+  const [pdfFile, setPdfFile] = useState(null); // File | null
+  const [pdfError, setPdfError] = useState('');
+  const fileInputRef = useRef(null);
+  const errors = submitted ? validate(form) : {};
+
+  const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   return null;
 }
