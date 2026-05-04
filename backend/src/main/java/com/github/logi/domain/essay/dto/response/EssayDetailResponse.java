@@ -41,14 +41,18 @@ public record EssayDetailResponse(
             String question,
 
             @Schema(description = "답변 내용", example = "저는 ...")
-            String response
+            String response,
+
+            @Schema(description = "답변 최대 글자수", example = "500")
+            Integer maxLength
     ) {
         public static QuestionResponse from(EssayQuestion question) {
             return new QuestionResponse(
                     question.getId(),
                     question.getQuestionNum(),
                     question.getQuestion(),
-                    question.getResponse()
+                    question.getResponse(),
+                    question.getMaxLength()
             );
         }
     }

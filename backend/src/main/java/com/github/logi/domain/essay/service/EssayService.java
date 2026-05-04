@@ -54,7 +54,7 @@ public class EssayService {
                         .toList();
         List<Experience> experiences = resolveExperiences(experienceIds);
 
-        EssayQuestion question = EssayQuestion.create(essay, request.questionNum(), request.question(), request.response(), experiences);
+        EssayQuestion question = EssayQuestion.create(essay, request.questionNum(), request.question(), request.response(), request.maxLength(), experiences);
         return EssayQuestionCreateResponse.from(essayQuestionRepository.save(question));
     }
 
@@ -106,7 +106,7 @@ public class EssayService {
                         .toList();
         List<Experience> experiences = resolveExperiences(experienceIds);
 
-        question.update(request.question(), request.response(), experiences);
+        question.update(request.question(), request.response(), request.maxLength(), experiences);
     }
 
     private List<Experience> resolveExperiences(List<UUID> ids) {

@@ -28,6 +28,9 @@ public class EssayQuestion extends BaseEntity {
     @Column(name = "response", columnDefinition = "TEXT", nullable = false)
     private String response;
 
+    @Column(name = "max_length", nullable = false)
+    private Integer maxLength;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "essay_question_experiences",
@@ -36,19 +39,21 @@ public class EssayQuestion extends BaseEntity {
     )
     private List<Experience> experiences = new ArrayList<>();
 
-    public static EssayQuestion create(Essay essay, Integer questionNum, String question, String response, List<Experience> experiences) {
+    public static EssayQuestion create(Essay essay, Integer questionNum, String question, String response, Integer maxLength, List<Experience> experiences) {
         EssayQuestion eq = new EssayQuestion();
         eq.essay = essay;
         eq.questionNum = questionNum;
         eq.question = question;
         eq.response = response;
+        eq.maxLength = maxLength;
         eq.experiences = experiences;
         return eq;
     }
 
-    public void update(String question, String response, List<Experience> experiences) {
+    public void update(String question, String response, Integer maxLength, List<Experience> experiences) {
         this.question = question;
         this.response = response;
+        this.maxLength = maxLength;
         this.experiences = experiences;
     }
 }
