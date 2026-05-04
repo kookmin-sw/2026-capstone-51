@@ -7,9 +7,12 @@ import com.github.logi.domain.experience.entity.Experience;
 import com.github.logi.domain.experience.exception.ExperienceExceptions;
 import com.github.logi.domain.experience.repository.ExperienceRepository;
 import com.github.logi.domain.user.entity.User;
+import com.github.logi.global.sqs.SqsMessagePublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.UUID;
 
@@ -19,12 +22,20 @@ import java.util.UUID;
 public class ExperienceService {
 
     private final ExperienceRepository experienceRepository;
+    private final SqsMessagePublisher sqsMessagePublisher;
 
     @Transactional
     public void createExperience(User user, ExperienceRequest request) {
         validateDateRange(request);
-        experienceRepository.save(Experience.create(user, request));
-        // TODO: STAR 텍스트 임베딩 비동기 처리 — SQS에 메시지 발행 → Lambda가 Bedrock 호출 → experience_star_embeddings에 저장
+        Experience experience = experienceRepository.save(Experience.create(user, request));
+        UUID experienceId = experience.getId();
+        String starText = buildStarText(experience);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sqsMessagePublisher.publishStarEmbedding(experienceId, starText);
+            }
+        });
     }
 
     public ExperienceListResponse getExperiences(User user) {
@@ -54,7 +65,13 @@ public class ExperienceService {
         }
 
         experience.update(request);
-        // TODO: STAR 텍스트 변경되었으므로 임베딩 재생성 필요 — SQS에 재임베딩 메시지 발행
+        String starText = buildStarText(experience);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sqsMessagePublisher.publishStarEmbedding(experienceId, starText);
+            }
+        });
     }
 
     @Transactional
@@ -68,6 +85,10 @@ public class ExperienceService {
 
         experienceRepository.delete(experience);
         // TODO: 소프트 삭제이므로 experience_star_embeddings는 유지(자소서 추적성 보존). 별도 정리 불필요.
+    }
+
+    private String buildStarText(Experience experience) {
+        return experience.getStarS() + " " + experience.getStarT() + " " + experience.getStarA() + " " + experience.getStarR();
     }
 
     private void validateDateRange(ExperienceRequest request) {

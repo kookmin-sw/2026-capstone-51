@@ -27,6 +27,11 @@ app:
     allowed-origins:
       - http://localhost:3000
 
+aws:
+  region: us-east-1
+  sqs:
+    star-embedding-queue-url: ${SQS_STAR_EMBEDDING_QUEUE_URL}
+
 google:
   client:
     id: ${GOOGLE_CLIENT_ID}
