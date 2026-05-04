@@ -3,6 +3,7 @@ package com.github.logi.domain.essay.service;
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
+import com.github.logi.domain.essay.dto.request.EssayResultUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
@@ -119,6 +120,18 @@ public class EssayService {
         List<Experience> experiences = resolveExperiences(experienceIds);
 
         question.update(request.question(), request.response(), request.maxLength(), experiences);
+    }
+
+    @Transactional
+    public void updateResult(User user, UUID essayId, EssayResultUpdateRequest request) {
+        Essay essay = essayRepository.findById(essayId)
+                .orElseThrow(EssayExceptions.ESSAY_NOT_FOUND::toException);
+
+        if (!essay.getUser().getId().equals(user.getId())) {
+            throw EssayExceptions.FORBIDDEN_ESSAY.toException();
+        }
+
+        essay.updateProgress(request.progress());
     }
 
     private List<Experience> resolveExperiences(List<UUID> ids) {

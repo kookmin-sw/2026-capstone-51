@@ -51,4 +51,8 @@ public class Essay extends BaseEntity {
         this.globalReq = globalReq;
     }
 
+    public void updateProgress(Progress progress) {
+        this.progress = progress;
+    }
+
 }
