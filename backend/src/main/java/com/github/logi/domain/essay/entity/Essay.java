@@ -32,7 +32,7 @@ public class Essay extends BaseEntity {
     @Column(name = "progress", length = 20, nullable = false)
     private Progress progress;
 
-    @OneToMany(mappedBy = "essay", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "essay", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EssayQuestion> questions = new ArrayList<>();
 
     public static Essay create(User user, String companyName, String wishJob, String globalReq) {

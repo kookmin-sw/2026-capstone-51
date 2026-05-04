@@ -64,6 +64,16 @@ public class EssayController {
         return ApiResponse.ok(essayService.getEssay(user, essayId));
     }
 
+    @Operation(summary = "자소서 삭제", description = "자소서와 하위 문항을 함께 삭제합니다.")
+    @DeleteMapping("/{essayId}")
+    public ApiResponse<Void> deleteEssay(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID essayId
+    ) {
+        essayService.deleteEssay(user, essayId);
+        return ApiResponse.ok();
+    }
+
     @Operation(summary = "자소서 수정", description = "자소서의 회사명, 희망 직무, 공통 요구사항을 수정합니다.")
     @PatchMapping("/{essayId}")
     public ApiResponse<Void> updateEssay(

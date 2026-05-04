@@ -74,6 +74,18 @@ public class EssayService {
     }
 
     @Transactional
+    public void deleteEssay(User user, UUID essayId) {
+        Essay essay = essayRepository.findById(essayId)
+                .orElseThrow(EssayExceptions.ESSAY_NOT_FOUND::toException);
+
+        if (!essay.getUser().getId().equals(user.getId())) {
+            throw EssayExceptions.FORBIDDEN_ESSAY.toException();
+        }
+
+        essayRepository.delete(essay);
+    }
+
+    @Transactional
     public void updateEssay(User user, UUID essayId, EssayUpdateRequest request) {
         Essay essay = essayRepository.findById(essayId)
                 .orElseThrow(EssayExceptions.ESSAY_NOT_FOUND::toException);
