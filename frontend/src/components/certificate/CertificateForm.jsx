@@ -246,3 +246,95 @@ export default function CertificateForm({
 }
 
 /* ---------- 데이터 변환 ---------- */
+
+function toDraft(d) {
+  return {
+    certificateName: d?.certificateName ?? '',
+    issuingOrganization: d?.issuingOrganization ?? '',
+    getDate: d?.getDate ?? '',
+    certificateCode: d?.certificateCode ?? '',
+    expirationDate: d?.expirationDate ?? '',
+    hasExpiration: !!d?.expirationDate,
+  };
+}
+
+function toBody(form) {
+  // swagger 의 모든 필드는 optional. 비어있는 필드는 빈 문자열로 보냄
+  // (백엔드 직렬화 정책 미확정 — 통합 테스트 시 null/empty 허용 여부 확인).
+  return {
+    certificateName: form.certificateName.trim(),
+    issuingOrganization: form.issuingOrganization.trim(),
+    getDate: form.getDate,
+    certificateCode: form.certificateCode.trim(),
+    expirationDate: form.hasExpiration ? form.expirationDate : '',
+  };
+}
+
+/* ---------- 검증 ---------- */
+
+function validate(form) {
+  const e = {};
+  const today = todayIso();
+  if (!form.certificateName.trim())
+    e.certificateName = '자격증명을 입력해주세요.';
+  if (!form.issuingOrganization.trim())
+    e.issuingOrganization = '발급 기관을 입력해주세요.';
+  if (!form.getDate) e.getDate = '취득일을 선택해주세요.';
+  else if (form.getDate > today) e.getDate = '취득일은 오늘 이전이어야 합니다.';
+  if (form.hasExpiration) {
+    if (!form.expirationDate) {
+      e.expirationDate = '만료일을 선택해주세요.';
+    } else if (form.getDate && form.expirationDate < form.getDate) {
+      e.expirationDate = '만료일은 취득일 이후여야 합니다.';
+    }
+  }
+  return e;
+}
+
+/** 오늘 날짜 'YYYY-MM-DD' (로컬 타임존). */
+function todayIso() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+/** 사용자 가독 바이트 단위. */
+function fmtBytes(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/* ---------- 빌딩블록 ---------- */
+
+function Section({ title, sub, children }) {
+  return (
+    <section className="grid gap-2.5">
+      <div>
+        <h2 className="text-[14px] font-bold text-ink-900 tracking-tight">
+          {title}
+        </h2>
+        {sub && <p className="text-[12px] text-ink-500 mt-0.5">{sub}</p>}
+      </div>
+      <div>{children}</div>
+    </section>
+  );
+}
+
+function Field({ label, required, hint, error, children }) {
+  return (
+    <div className="grid gap-1.5">
+      <label className="flex items-center gap-1 text-[12.5px] font-semibold text-ink-700">
+        {label}
+        {required && <span className="text-primary-600 font-bold">*</span>}
+      </label>
+      {children}
+      {error ? (
+        <div className="text-[11.5px] text-red-600 mt-0.5 break-keep">
+          {error}
+        </div>
+      ) : hint ? (
+        <div className="text-[11.5px] text-ink-500 mt-0.5">{hint}</div>
+      ) : null}
+    </div>
+  );
+}
