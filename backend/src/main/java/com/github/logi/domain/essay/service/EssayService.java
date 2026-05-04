@@ -2,6 +2,7 @@ package com.github.logi.domain.essay.service;
 
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
+import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
@@ -47,11 +48,11 @@ public class EssayService {
             throw EssayExceptions.FORBIDDEN_ESSAY.toException();
         }
 
-        List<Experience> experiences = request.relatedExperience() == null ? List.of() :
+        List<UUID> experienceIds = request.relatedExperience() == null ? List.of() :
                 request.relatedExperience().stream()
-                        .map(re -> experienceRepository.findById(re.experienceId())
-                                .orElseThrow(ExperienceExceptions.EXPERIENCE_NOT_FOUND::toException))
+                        .map(EssayQuestionCreateRequest.RelatedExperience::experienceId)
                         .toList();
+        List<Experience> experiences = resolveExperiences(experienceIds);
 
         EssayQuestion question = EssayQuestion.create(essay, request.questionNum(), request.question(), request.response(), experiences);
         return EssayQuestionCreateResponse.from(essayQuestionRepository.save(question));
@@ -82,5 +83,40 @@ public class EssayService {
         }
 
         essay.update(request.companyName(), request.wishJob(), request.globalReq());
+    }
+
+    @Transactional
+    public void updateQuestion(User user, UUID essayId, UUID questionId, EssayQuestionUpdateRequest request) {
+        EssayQuestion question = essayQuestionRepository.findByIdWithEssay(questionId)
+                .orElseThrow(EssayExceptions.QUESTION_NOT_FOUND::toException);
+
+        Essay essay = question.getEssay();
+
+        if (!essay.getId().equals(essayId)) {
+            throw EssayExceptions.QUESTION_ESSAY_MISMATCH.toException();
+        }
+
+        if (!essay.getUser().getId().equals(user.getId())) {
+            throw EssayExceptions.FORBIDDEN_ESSAY.toException();
+        }
+
+        List<UUID> experienceIds = request.relatedExperience() == null ? List.of() :
+                request.relatedExperience().stream()
+                        .map(EssayQuestionUpdateRequest.RelatedExperience::experienceId)
+                        .toList();
+        List<Experience> experiences = resolveExperiences(experienceIds);
+
+        question.update(request.question(), request.response(), experiences);
+    }
+
+    private List<Experience> resolveExperiences(List<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<Experience> experiences = experienceRepository.findAllById(ids);
+        if (experiences.size() != ids.size()) {
+            throw ExperienceExceptions.EXPERIENCE_NOT_FOUND.toException();
+        }
+        return experiences;
     }
 }

@@ -45,4 +45,10 @@ public class EssayQuestion extends BaseEntity {
         eq.experiences = experiences;
         return eq;
     }
+
+    public void update(String question, String response, List<Experience> experiences) {
+        this.question = question;
+        this.response = response;
+        this.experiences = experiences;
+    }
 }
