@@ -58,5 +58,68 @@ export default function EditCertificate() {
     );
   }
 
-  return null;
+  if (list.isError) {
+    return (
+      <>
+        <Crumbs items={['MyPage', '내 자격증', '수정']} />
+        <div className="card text-center py-8">
+          <p className="text-[13px] text-ink-700 mb-3">
+            {list.error?.apiMessage || '자격증을 불러오지 못했습니다.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => list.refetch()}
+            className="btn-default"
+          >
+            다시 시도
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  if (!item) {
+    return (
+      <>
+        <Crumbs items={['MyPage', '내 자격증', '수정']} />
+        <div className="card text-center py-8">
+          <p className="text-[13px] text-ink-700 mb-3 break-keep">
+            해당 자격증을 찾을 수 없어요. 목록에서 다시 선택해주세요.
+          </p>
+          <button
+            type="button"
+            onClick={() => nav('/my-certificates')}
+            className="btn-default"
+          >
+            목록으로
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Crumbs items={['MyPage', '내 자격증', '수정']} />
+
+      <header className="mb-5">
+        <h1 className="text-[22px] font-bold tracking-tight text-ink-900 break-keep">
+          자격증 수정
+        </h1>
+        <p className="text-[12.5px] text-ink-500 mt-1">
+          {item.certificateName}
+        </p>
+      </header>
+
+      <div className="card">
+        <CertificateForm
+          initialValue={item}
+          onSubmit={handleSubmit}
+          onCancel={() => nav('/my-certificates')}
+          isPending={update.isPending}
+          submitLabel="저장"
+        />
+      </div>
+    </>
+  );
 }
