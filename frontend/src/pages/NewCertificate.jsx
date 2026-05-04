@@ -28,6 +28,25 @@ export default function NewCertificate() {
 
   return (
     <>
+      <Crumbs items={['MyPage', '내 자격증', '추가']} />
 
-  return null;
+      <header className="mb-5">
+        <h1 className="text-[22px] font-bold tracking-tight text-ink-900">
+          자격증 추가
+        </h1>
+        <p className="text-[12.5px] text-ink-500 mt-1">
+          저장한 자격증은 자소서 추천·통계에 활용됩니다.
+        </p>
+      </header>
+
+      <div className="card">
+        <CertificateForm
+          onSubmit={handleSubmit}
+          onCancel={() => nav('/my-certificates')}
+          isPending={create.isPending}
+          submitLabel="저장"
+        />
+      </div>
+    </>
+  );
 }
