@@ -163,3 +163,86 @@ export default function CertificateForm({
 
       {/* 증빙 PDF 업로드 — 백엔드 업로드 엔드포인트 미연동 */}
       <Section
+        title="증빙 자료"
+        sub="자격증 사본 PDF 파일을 첨부할 수 있어요. (10MB 이하, .pdf)"
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          className="sr-only"
+          onChange={handlePdfPick}
+        />
+        {pdfFile ? (
+          <div className="rounded-md border border-ink-200 bg-paper p-3 flex items-center gap-3">
+            <FileText
+              size={22}
+              strokeWidth={1.6}
+              className="text-primary-600 shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold text-ink-900 truncate">
+                {pdfFile.name}
+              </div>
+              <div className="text-[11.5px] text-ink-500 tabular-nums mt-0.5">
+                {fmtBytes(pdfFile.size)}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="btn-default btn-sm"
+            >
+              교체
+            </button>
+            <button
+              type="button"
+              onClick={handlePdfRemove}
+              aria-label="첨부 파일 제거"
+              className="grid place-items-center w-7 h-7 rounded-md text-ink-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <XIcon size={14} strokeWidth={2} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full rounded-md border border-dashed border-ink-300 bg-ink-50/40 hover:bg-ink-50 hover:border-ink-400 px-4 py-5 flex flex-col items-center justify-center gap-1.5 text-ink-600 transition-colors"
+          >
+            <Paperclip size={18} strokeWidth={1.8} />
+            <div className="text-[13px] font-semibold">
+              PDF 파일 선택 또는 드래그
+            </div>
+            <div className="text-[11.5px] text-ink-500">.pdf · 최대 10MB</div>
+          </button>
+        )}
+        {pdfError && (
+          <div className="text-[11.5px] text-red-600 mt-1.5 break-keep">
+            {pdfError}
+          </div>
+        )}
+        <div className="text-[11px] text-ink-400 mt-1.5 break-keep">
+          ※ 백엔드 업로드 엔드포인트 준비 후 자동 첨부됩니다. 현재는 미리보기
+          전용.
+        </div>
+      </Section>
+
+      <div className="flex justify-end gap-2 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isPending}
+          className="btn-default"
+        >
+          취소
+        </button>
+        <button type="submit" disabled={isPending} className="btn-primary">
+          {isPending ? '저장 중…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ---------- 데이터 변환 ---------- */
