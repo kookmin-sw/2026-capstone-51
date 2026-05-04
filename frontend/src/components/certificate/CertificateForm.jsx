@@ -80,5 +80,86 @@ export default function CertificateForm({
     onSubmit(toBody(form));
   };
 
-  return null;
-}
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-5">
+      {/* 기본 정보 */}
+      <Section title="기본 정보">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="자격증명" required error={errors.certificateName}>
+            <input
+              className={cn(
+                'field text-[14px] py-2.5',
+                errors.certificateName && 'border-red-500 focus:border-red-500'
+              )}
+              placeholder="예: 정보처리기사"
+              value={form.certificateName}
+              onChange={(e) => update('certificateName', e.target.value)}
+            />
+          </Field>
+          <Field label="발급 기관" required error={errors.issuingOrganization}>
+            <input
+              className={cn(
+                'field text-[14px] py-2.5',
+                errors.issuingOrganization &&
+                  'border-red-500 focus:border-red-500'
+              )}
+              placeholder="예: 한국산업인력공단"
+              value={form.issuingOrganization}
+              onChange={(e) => update('issuingOrganization', e.target.value)}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {/* 일자 */}
+      <Section title="일자">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="취득일" required error={errors.getDate}>
+            <input
+              type="date"
+              max={todayIso()}
+              className={cn(
+                'field text-[14px] py-2.5',
+                errors.getDate && 'border-red-500 focus:border-red-500'
+              )}
+              value={form.getDate}
+              onChange={(e) => update('getDate', e.target.value)}
+            />
+          </Field>
+          <Field label="자격증 번호" error={errors.certificateCode}>
+            <input
+              className="field text-[14px] py-2.5"
+              placeholder="예: 24-1234-5678 (선택)"
+              value={form.certificateCode}
+              onChange={(e) => update('certificateCode', e.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="mt-3 grid gap-3">
+          <label className="inline-flex items-center gap-2 text-[12.5px] text-ink-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.hasExpiration}
+              onChange={(e) => onToggleExpiration(e.target.checked)}
+              className="w-4 h-4 accent-primary-600"
+            />
+            유효기간 있음
+          </label>
+          {form.hasExpiration && (
+            <Field label="만료일" required error={errors.expirationDate}>
+              <input
+                type="date"
+                className={cn(
+                  'field text-[14px] py-2.5 max-w-[280px]',
+                  errors.expirationDate && 'border-red-500 focus:border-red-500'
+                )}
+                value={form.expirationDate}
+                onChange={(e) => update('expirationDate', e.target.value)}
+              />
+            </Field>
+          )}
+        </div>
+      </Section>
+
+      {/* 증빙 PDF 업로드 — 백엔드 업로드 엔드포인트 미연동 */}
+      <Section
