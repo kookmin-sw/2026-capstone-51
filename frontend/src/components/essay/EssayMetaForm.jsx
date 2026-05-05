@@ -110,3 +110,32 @@ export default function EssayMetaForm({
 }
 
 /* ---------- 검증 ---------- */
+
+function validate(form) {
+  const e = {};
+  if (!form.companyName.trim()) e.companyName = '회사명을 입력해주세요.';
+  if (!form.wishJob.trim()) e.wishJob = '희망 직무를 입력해주세요.';
+  if (!form.globalReq.trim()) e.globalReq = '글로벌 요구사항을 입력해주세요.';
+  return e;
+}
+
+/* ---------- 빌딩블록 ---------- */
+
+function Field({ label, required, hint, error, children }) {
+  return (
+    <div className="grid gap-1.5">
+      <label className="flex items-center gap-1 text-[12.5px] font-semibold text-ink-700">
+        {label}
+        {required && <span className="text-primary-600 font-bold">*</span>}
+      </label>
+      {children}
+      {error ? (
+        <div className="text-[11.5px] text-red-600 mt-0.5 break-keep">
+          {error}
+        </div>
+      ) : hint ? (
+        <div className="text-[11.5px] text-ink-500 mt-0.5">{hint}</div>
+      ) : null}
+    </div>
+  );
+}
