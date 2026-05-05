@@ -183,5 +183,35 @@ export default function QuestionEditor({
     );
   };
 
+  const handleRegenerate = () => {
+    if (!form.questionId) {
+      toast.error('먼저 초안을 생성해주세요.');
+      return;
+    }
+    if (!regenReq.trim()) {
+      toast.error('어떻게 수정할지 입력해주세요.');
+      return;
+    }
+    regenerate.mutate(
+      {
+        essayId,
+        questionId: form.questionId,
+        currentResponse: form.response || '',
+        questionReq: regenReq.trim(),
+      },
+      {
+        onSuccess: (data) => {
+          if (data?.response) update('response', data.response);
+          // 재생성 후 요구사항 칸은 비우지 않음 — 사용자가 추가 미세조정 가능 (4/27 디자인의 "요구사항 비우기" 별도 버튼)
+        },
+        onError: (e) => {
+          toast.error(
+            e?.apiMessage || '재생성에 실패했습니다. 다시 시도해주세요.'
+          );
+        },
+      }
+    );
+  };
+
   return null;
 }
