@@ -45,5 +45,68 @@ export default function EssayMetaForm({
     });
   };
 
-  return null;
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-5">
+      {/* 회사명 + 희망 직무 — sm 이상에서 1행 2열, 그 미만은 단일 컬럼 */}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="회사명" required error={errors.companyName}>
+          <input
+            className={cn(
+              'field text-[14px] py-2.5',
+              errors.companyName && 'border-red-500 focus:border-red-500'
+            )}
+            placeholder="예: 토스"
+            value={form.companyName}
+            onChange={(e) => update('companyName', e.target.value)}
+          />
+        </Field>
+        <Field label="희망 직무" required error={errors.wishJob}>
+          <input
+            className={cn(
+              'field text-[14px] py-2.5',
+              errors.wishJob && 'border-red-500 focus:border-red-500'
+            )}
+            placeholder="예: 백엔드 엔지니어"
+            value={form.wishJob}
+            onChange={(e) => update('wishJob', e.target.value)}
+          />
+        </Field>
+      </div>
+      <Field
+        label="글로벌 요구사항 (인재상)"
+        required
+        error={errors.globalReq}
+        hint="모든 문항에 공통으로 반영되는 인재상이나 톤. 자소서 답변 생성 시 참고됩니다."
+      >
+        <textarea
+          rows={4}
+          className={cn(
+            'field text-[14px] py-2.5',
+            errors.globalReq && 'border-red-500 focus:border-red-500'
+          )}
+          placeholder="예: 도전을 두려워하지 않는 인재"
+          value={form.globalReq}
+          onChange={(e) => update('globalReq', e.target.value)}
+        />
+      </Field>
+
+      <div className="flex justify-end gap-2 pt-2">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isPending}
+            className="btn-default"
+          >
+            취소
+          </button>
+        )}
+        <button type="submit" disabled={isPending} className="btn-primary">
+          {isPending ? '처리 중…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
 }
+
+/* ---------- 검증 ---------- */
