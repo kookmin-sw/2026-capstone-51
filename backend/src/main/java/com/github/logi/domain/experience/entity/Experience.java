@@ -3,6 +3,7 @@ package com.github.logi.domain.experience.entity;
 import com.github.logi.domain.experience.dto.request.ExperienceRequest;
 import com.github.logi.domain.user.entity.User;
 import com.github.logi.global.entity.BaseEntity;
+import com.github.logi.global.type.VectorType;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Type;
 
 @Getter
 @Entity
@@ -52,6 +54,10 @@ public class Experience extends BaseEntity {
     @Column(name = "star_r", columnDefinition = "TEXT")
     private String starR;
 
+    @Type(VectorType.class)
+    @Column(name = "experience_embeddings", columnDefinition = "vector(1024)")
+    private float[] embedding;
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -68,6 +74,10 @@ public class Experience extends BaseEntity {
         experience.starA = request.starStructure().a();
         experience.starR = request.starStructure().r();
         return experience;
+    }
+
+    public void updateEmbedding(float[] embedding) {
+        this.embedding = embedding;
     }
 
     public void update(ExperienceRequest request) {
