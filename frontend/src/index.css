@@ -1,0 +1,88 @@
+/* Tailwind directives — Vite 프로젝트에서는 그대로 사용하면 됩니다.
+   preview.html(CDN Tailwind)에서는 무시되고, CDN 자체가 같은 클래스를 처리합니다. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === 글로벌 base === */
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    @apply font-sans bg-page text-ink-900 antialiased;
+    font-feature-settings: 'cv11';
+  }
+  /* Pretendard — preview/Vite 모두에서 사용 */
+  @font-face {
+    font-family: 'Pretendard';
+    font-weight: 45 920;
+    font-style: normal;
+    font-display: swap;
+    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/PretendardVariable.woff2') format('woff2-variations');
+  }
+}
+
+/* === 공통 컴포넌트 클래스 === */
+@layer components {
+  /* 카드 */
+  .card {
+    @apply bg-paper border border-border rounded-md shadow-sm p-4;
+  }
+
+  /* 페이지 헤더 (h1 + sub) */
+  .page-h h1 {
+    @apply text-[22px] font-bold tracking-tight text-ink-900;
+  }
+  .page-h .sub {
+    @apply text-[13px] text-ink-500 mt-1.5;
+  }
+
+  /* 일반 버튼 — variants는 lib에서 헬퍼로 관리 */
+  .btn-base {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-semibold whitespace-nowrap cursor-pointer transition-colors;
+  }
+  .btn-default {
+    @apply btn-base bg-paper border border-ink-200 text-ink-700 hover:bg-ink-50;
+  }
+  .btn-primary {
+    @apply btn-base bg-primary-900 border border-primary-900 text-white hover:bg-primary-800;
+  }
+  .btn-ghost {
+    @apply btn-base bg-transparent border border-transparent text-ink-700 hover:bg-ink-100;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1 text-[11.5px];
+  }
+
+  /* 인풋 */
+  .field {
+    @apply w-full px-3 py-2 rounded-md border border-ink-200 bg-paper text-[13px] text-ink-900 outline-none transition-colors;
+  }
+  .field:focus {
+    @apply border-primary-600 ring-2 ring-primary-50;
+  }
+  textarea.field {
+    @apply leading-relaxed;
+  }
+
+  /* 뱃지 */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold;
+  }
+  .badge-gray {
+    @apply badge bg-ink-100 text-ink-600;
+  }
+  .badge-navy {
+    @apply badge bg-primary-50 text-primary-800;
+  }
+  .badge-green {
+    @apply badge bg-[#E8F4EE] text-[#1F7A4E];
+  }
+  .badge-red {
+    @apply badge bg-red-50 text-red-600;
+  }
+  .badge-amber {
+    @apply badge bg-amber-50 text-amber-700;
+  }
+}
