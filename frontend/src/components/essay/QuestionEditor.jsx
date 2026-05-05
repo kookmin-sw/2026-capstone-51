@@ -119,5 +119,28 @@ export default function QuestionEditor({
     );
   };
 
+  const toggleRelated = (experienceId) => {
+    const cur = form.relatedExperience;
+    const exists = cur.some((r) => r.experienceId === experienceId);
+    if (exists) {
+      update(
+        'relatedExperience',
+        cur.filter((r) => r.experienceId !== experienceId)
+      );
+    } else {
+      // 4/27 디자인: 활용 경험 최대 2개
+      if (cur.length >= 2) {
+        toast.info('활용 경험은 최대 2개까지 선택할 수 있어요.');
+        return;
+      }
+      update('relatedExperience', [...cur, { experienceId }]);
+    }
+  };
+
+  /**
+   * 초안 생성. 백엔드 generate 가 questionId 를 요구하므로 저장 안 된 카드는 먼저 placeholder 저장 후 호출.
+   * 저장 안 된 카드(없는 questionId)에서 호출 시 자동으로 부분 저장 → questionId 받기 → generate.
+   */
+
   return null;
 }
