@@ -268,6 +268,113 @@ export default function QuestionEditor({
             );
           },
         }
+      );
+    }
+  };
 
-  return null;
-}
+  const isAnyPending =
+    recommend.isPending ||
+    generate.isPending ||
+    regenerate.isPending ||
+    createQuestion.isPending ||
+    updateQuestion.isPending;
+
+  return (
+    <section className="card">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[12px] font-bold text-primary-700 tracking-wide">
+          문항 {questionNum}
+          {isExisting && <span className="ml-1.5 badge-green">저장됨</span>}
+        </div>
+        {onRemove && !isExisting && (
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={isAnyPending}
+            className="btn-ghost btn-sm !text-red-600 hover:!bg-red-50"
+            aria-label="이 문항 카드 제거"
+          >
+            <Trash2 size={12} strokeWidth={2} />
+            제거
+          </button>
+        )}
+      </div>
+
+      {/* 1. 질문 + 글자수 */}
+      <div className="grid gap-3">
+        <Field label="문항">
+          <textarea
+            rows={3}
+            className="field text-[14px] py-2.5"
+            placeholder="예: 지원 동기를 작성해주세요."
+            value={form.question}
+            onChange={(e) => update('question', e.target.value)}
+          />
+        </Field>
+        <Field label="답변 글자수 제한">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="1"
+              step="50"
+              className="field text-[14px] py-2 max-w-[140px]"
+              value={form.maxLength}
+              onChange={(e) => update('maxLength', Number(e.target.value) || 0)}
+            />
+            <span className="text-[12px] text-ink-500">자</span>
+          </div>
+        </Field>
+
+        {/* 2. 추천 경험 */}
+        <div className="grid gap-2">
+          <div className="flex items-center justify-between">
+            <label className="text-[12.5px] font-semibold text-ink-700">
+              관련 경험
+            </label>
+            <button
+              type="button"
+              onClick={handleRecommend}
+              disabled={!form.question.trim() || isAnyPending}
+              className="btn-default btn-sm"
+            >
+              <Sparkles size={12} strokeWidth={2} />
+              {recommend.isPending ? '추천 받는 중…' : '추천 받기'}
+            </button>
+          </div>
+          {recommendedAll == null ? (
+            <div className="rounded-md border border-dashed border-ink-200 bg-ink-50 px-3 py-3 text-[12px] text-ink-400 text-center">
+              질문 입력 후 추천 받기를 누르면 관련 경험이 표시됩니다.
+            </div>
+          ) : recommendedAll.length === 0 ? (
+            <div className="rounded-md border border-dashed border-ink-200 bg-ink-50 px-3 py-3 text-[12px] text-ink-500 text-center">
+              관련 경험이 없습니다. 경험을 더 추가하면 추천이 다양해져요.
+            </div>
+          ) : (
+            <div className="grid gap-1.5">
+              {recommendedAll.map((r, i) => {
+                const selected = form.relatedExperience.some(
+                  (s) => s.experienceId === r.experienceId
+                );
+                const isTop2 = i < 2;
+                return (
+                  <button
+                    key={r.experienceId}
+                    type="button"
+                    onClick={() => toggleRelated(r.experienceId)}
+                    className={cn(
+                      'w-full text-left rounded-md border px-3 py-2 transition-colors',
+                      selected
+                        ? 'bg-primary-50 border-primary-600 text-primary-900'
+                        : 'bg-paper border-ink-200 hover:bg-ink-50'
+                    )}
+                  >
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[11px] text-ink-500">
+                        #{i + 1}
+                        {isTop2 && (
+                          <span className="ml-1.5 text-primary-700 font-semibold">
+                            추천
+                          </span>
+                        )}
+                      </span>
