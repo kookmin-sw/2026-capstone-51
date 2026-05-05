@@ -26,7 +26,6 @@ public class ExperienceService {
 
     @Transactional
     public void createExperience(User user, ExperienceRequest request) {
-        validateDateRange(request);
         Experience experience = experienceRepository.save(Experience.create(user, request));
         UUID experienceId = experience.getId();
         String starText = buildStarText(experience);
@@ -55,8 +54,6 @@ public class ExperienceService {
 
     @Transactional
     public void updateExperience(User user, UUID experienceId, ExperienceRequest request) {
-        validateDateRange(request);
-
         Experience experience = experienceRepository.findById(experienceId)
                 .orElseThrow(ExperienceExceptions.EXPERIENCE_NOT_FOUND::toException);
 
@@ -89,11 +86,5 @@ public class ExperienceService {
 
     private String buildStarText(Experience experience) {
         return experience.getStarS() + " " + experience.getStarT() + " " + experience.getStarA() + " " + experience.getStarR();
-    }
-
-    private void validateDateRange(ExperienceRequest request) {
-        if (request.startDate().isAfter(request.endDate())) {
-            throw ExperienceExceptions.INVALID_DATE_RANGE.toException();
-        }
     }
 }
