@@ -52,6 +52,32 @@ export default function QuestionEditor({
   onSaved,
   onRemove,
 }) {
+  const isExisting = !!initialValue?.questionId;
+
+  const [form, setForm] = useState(() => ({
+    questionId: initialValue?.questionId ?? null,
+    question: initialValue?.question ?? '',
+    response: initialValue?.response ?? '',
+    maxLength: initialValue?.maxLength ?? 500,
+    relatedExperience: initialValue?.relatedExperience ?? [],
+  }));
+  const [regenReq, setRegenReq] = useState('');
+
+  const recommend = useRecommendExperiences();
+  const generate = useGenerateAnswer();
+  const regenerate = useRegenerateAnswer();
+  const createQuestion = useCreateEssayQuestion();
+  const updateQuestion = useUpdateEssayQuestion();
+
+  const expList = useExperiences();
+  const expById = useMemo(() => {
+    const m = new Map();
+    (expList.data || []).forEach((e) => m.set(e.experienceId, e));
+    return m;
+  }, [expList.data]);
+
+  // 추천 결과 캐시 — relatedExperience 외 더 많은 후보를 노출하기 위해 따로 보관
+  const [recommendedAll, setRecommendedAll] = useState(null);
 
   return null;
 }
