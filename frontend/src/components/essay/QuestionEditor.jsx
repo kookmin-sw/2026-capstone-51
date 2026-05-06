@@ -378,3 +378,63 @@ export default function QuestionEditor({
                           </span>
                         )}
                       </span>
+                      {r.similarity != null && (
+                        <span className="text-[11px] text-ink-400 tabular-nums ml-auto">
+                          유사도 {(r.similarity * 100).toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[13px] font-semibold break-keep">
+                      {r.title}
+                    </div>
+                    {r.reason && (
+                      <div
+                        className={cn(
+                          'text-[11.5px] mt-1 break-keep leading-relaxed',
+                          selected ? 'text-primary-800' : 'text-ink-600'
+                        )}
+                      >
+                        <span className="font-semibold">추천 이유:</span>{' '}
+                        {r.reason}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="text-[11.5px] text-ink-500">
+            클릭으로 활용 경험을 토글합니다. 최대 2개까지 선택 가능.
+          </div>
+        </div>
+
+        {/* 3. 초안 / 답변 */}
+        <div className="grid gap-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[12.5px] font-semibold text-ink-700">
+              답변 초안
+            </label>
+            {form.maxLength > 0 && (
+              <span
+                className={cn(
+                  'text-[11.5px] tabular-nums',
+                  form.response.length > form.maxLength
+                    ? 'text-red-600 font-semibold'
+                    : 'text-ink-500'
+                )}
+              >
+                {form.response.length} / {form.maxLength} 자
+              </span>
+            )}
+          </div>
+          <textarea
+            rows={6}
+            className="field text-[14px] py-2.5"
+            placeholder="아직 작성된 답변이 없습니다. '초안 생성' 으로 AI 응답을 받거나 직접 입력하세요."
+            value={form.response}
+            onChange={(e) => update('response', e.target.value)}
+          />
+          {form.response.length > form.maxLength && form.maxLength > 0 && (
+            <div className="text-[11.5px] text-red-600 break-keep">
+              제한 글자수를 {form.response.length - form.maxLength}자
+              초과했어요.
