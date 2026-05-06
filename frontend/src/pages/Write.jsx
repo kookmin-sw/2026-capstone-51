@@ -31,6 +31,33 @@ import { toast } from '../store/useToast';
  *  - 자소서 메타·문항 생성·AI 호출·저장 모두 준비됨.
  *  - 이어쓰기 모드는 essayId 라우팅이 막혀있어 본 PR 에선 미지원.
  */
+export default function Write() {
+  const nav = useNavigate();
+  const [stage, setStage] = useState('meta'); // 'meta' | 'questions'
+  const [meta, setMeta] = useState(null); // {companyName, wishJob, globalReq, essayId}
+  const [editingMeta, setEditingMeta] = useState(false);
+  const [metaCollapsed, setMetaCollapsed] = useState(false);
+  // 문항 카드 — 신규는 questionId=null, 저장 후 questionId 채워짐
+  const [questions, setQuestions] = useState([
+    { tmpId: tmpId(), questionId: null },
+  ]);
+
+  const createEssay = useCreateEssay();
+  const updateMeta = useUpdateEssayMeta();
+
+  const handleMetaSubmit = (body) => {
+    createEssay.mutate(body, {
+      onSuccess: (data) => {
+        const id = data?.essayId;
+        if (!id) {
+          toast.error('자소서 ID 응답이 누락되었습니다. 백엔드 확인 필요.');
+          return;
+        }
+        setMeta({ ...body, essayId: id });
+        setStage('questions');
+      },
+      onError: (e) => {
+        toast.error(
 
   return null;
 }
