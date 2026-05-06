@@ -128,6 +128,73 @@ export default function EssayDetail() {
         ) : (
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span className="badge-navy">
+                  {essay.companyName || '회사명 없음'}
+                </span>
+                <span className={`badge-${tone}`}>{label}</span>
+              </div>
+              <h1 className="text-[20px] font-bold tracking-tight text-ink-900 break-keep mb-1">
+                {essay.wishJob || '직무 미입력'}
+              </h1>
+              {essay.updatedAt && (
+                <div className="text-[12px] text-ink-500 tabular-nums mb-2">
+                  최종 수정 {fmtDate(essay.updatedAt)}
+                </div>
+              )}
+              <p className="text-[12.5px] text-ink-700 break-keep whitespace-pre-line">
+                <span className="text-ink-500">글로벌 요구사항: </span>
+                {essay.globalReq || '—'}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <Link to="/essays" className="btn-default btn-sm">
+                <ArrowLeft size={11} strokeWidth={2} />
+                목록
+              </Link>
+              <button
+                type="button"
+                onClick={() => setEditingMeta(true)}
+                className="btn-default btn-sm"
+              >
+                <Pencil size={11} strokeWidth={2} />
+                메타 수정
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
-  return null;
-}
+      {/* 결과 입력 */}
+      {!editingMeta && (
+        <section className="card mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-[14px] font-bold text-ink-900">결과 입력</h2>
+              <p className="text-[11.5px] text-ink-500 mt-0.5 break-keep">
+                지원 결과를 기록하면 통계에 반영됩니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {['IN_PROGRESS', 'PASS', 'FAIL'].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  disabled={essay.progress === p || updateResult.isPending}
+                  onClick={() => handleResult(p)}
+                  className={
+                    'btn-default btn-sm ' +
+                    (essay.progress === p
+                      ? 'opacity-50 cursor-not-allowed'
+                      : '')
+                  }
+                >
+                  {essay.progress === p && (
+                    <Check size={11} strokeWidth={2.2} />
+                  )}
+                  {PROGRESS_LABEL[p]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
