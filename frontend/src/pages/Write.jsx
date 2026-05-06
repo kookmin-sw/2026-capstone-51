@@ -58,6 +58,56 @@ export default function Write() {
       },
       onError: (e) => {
         toast.error(
+          e?.apiMessage || '자소서 생성에 실패했습니다. 다시 시도해주세요.'
+        );
+      },
+    });
+  };
+
+  const handleMetaUpdate = (body) => {
+    if (!meta?.essayId) return;
+    updateMeta.mutate(
+      { id: meta.essayId, body },
+      {
+        onSuccess: () => {
+          setMeta((m) => ({ ...m, ...body }));
+          setEditingMeta(false);
+          toast.success('자소서 정보가 수정되었습니다.');
+        },
+        onError: (e) => {
+          toast.error(
+            e?.apiMessage || '수정에 실패했습니다. 다시 시도해주세요.'
+          );
+        },
+      }
+    );
+  };
+
+  const onQuestionSaved = (idx, saved) => {
+    setQuestions((arr) => {
+      const next = [...arr];
+      next[idx] = {
+        ...next[idx],
+        questionId: saved.questionId,
+        question: saved.question,
+        response: saved.response,
+        maxLength: saved.maxLength,
+        relatedExperience: saved.relatedExperience,
+      };
+      return next;
+    });
+  };
+
+  const addQuestion = () => {
+    setQuestions((arr) => [...arr, { tmpId: tmpId(), questionId: null }]);
+  };
+
+  const removeUnsavedQuestion = (idx) => {
+    setQuestions((arr) => arr.filter((_, i) => i !== idx));
+  };
+
+  const handleFinish = () => {
+    nav('/essays');
 
   return null;
 }
