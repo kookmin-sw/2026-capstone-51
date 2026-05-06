@@ -278,3 +278,51 @@ export default function EssayDetail() {
           </button>
         </section>
       )}
+    </>
+  );
+}
+
+/* ---------- 상태 ---------- */
+
+function DetailSkeleton() {
+  return (
+    <div className="grid gap-4">
+      <div className="card animate-pulse">
+        <div className="h-3 w-1/4 bg-ink-100 rounded mb-2" />
+        <div className="h-5 w-1/2 bg-ink-100 rounded mb-3" />
+        <div className="h-3 w-3/4 bg-ink-100 rounded" />
+      </div>
+      <div className="card animate-pulse">
+        <div className="h-3 w-1/3 bg-ink-100 rounded mb-3" />
+        <div className="grid gap-2">
+          <div className="h-3 bg-ink-100 rounded" />
+          <div className="h-3 w-3/4 bg-ink-100 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailError({ message, onRetry }) {
+  return (
+    <section className="card text-center py-10">
+      <p className="text-[13px] text-ink-700 mb-3 break-keep">{message}</p>
+      <div className="flex justify-center gap-2">
+        <Link to="/essays" className="btn-default">
+          <ArrowLeft size={12} strokeWidth={2} />
+          목록으로
+        </Link>
+        {onRetry && (
+          <button type="button" onClick={onRetry} className="btn-default">
+            다시 시도
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  return d.slice(0, 10).replaceAll('-', '.');
+}
