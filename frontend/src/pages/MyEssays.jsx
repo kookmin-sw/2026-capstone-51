@@ -21,6 +21,21 @@ import { cn } from '../lib/cn';
  *  - "결과 입력" / "이어쓰기" 는 상세 페이지로 이전.
  */
 export default function MyEssays() {
+  const [query, setQuery] = useState('');
+  const list = useEssays();
+
+  const items = useMemo(() => list.data || [], [list.data]);
+  // 백엔드가 essayId 를 응답에 실어주는지 — 한 건이라도 있으면 클릭 활성.
+  const hasEssayId = items.some((e) => !!e.essayId);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((e) =>
+      [e.companyName, e.wishJob]
+        .filter(Boolean)
+        .some((s) => String(s).toLowerCase().includes(q))
+    );
+  }, [items, query]);
 
   return null;
 }
