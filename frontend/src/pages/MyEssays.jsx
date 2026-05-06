@@ -37,5 +37,43 @@ export default function MyEssays() {
     );
   }, [items, query]);
 
-  return null;
-}
+  return (
+    <>
+      <Crumbs items={['자소서', '관리']} />
+
+      <header className="flex items-end justify-between gap-3 mb-4 flex-wrap">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight text-ink-900">
+            내 자소서
+          </h1>
+          <p className="text-[12.5px] text-ink-500 mt-1">
+            작성한 자소서를 모아보고, 새로 작성하거나 결과를 기록하세요.
+          </p>
+        </div>
+        <Link to="/write" className="btn-primary">
+          <Plus size={14} strokeWidth={2.2} />새 자소서 쓰기
+        </Link>
+      </header>
+
+      {/* 백엔드 차단 안내 — essayId 가 응답에 실리지 않을 때만 노출 */}
+      {!list.isLoading && items.length > 0 && !hasEssayId && (
+        <BackendBlockNotice />
+      )}
+
+      <section className="card !p-0 overflow-hidden">
+        {/* 검색창 */}
+        <div className="px-4 sm:px-5 pt-4 pb-3">
+          <div className="relative">
+            <Search
+              size={14}
+              strokeWidth={2}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none"
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="회사명 / 직무 검색"
+              className="field text-[14px] py-2.5 pl-9"
+            />
+          </div>
+        </div>
