@@ -108,6 +108,56 @@ export default function Write() {
 
   const handleFinish = () => {
     nav('/essays');
+  };
+
+  if (stage === 'meta') {
+    return (
+      <>
+        <Crumbs items={['자소서', '작성하기']} />
+        <header className="mb-5">
+          <h1 className="text-[22px] font-bold tracking-tight text-ink-900">
+            자소서 작성
+          </h1>
+          <p className="text-[12.5px] text-ink-500 mt-1 break-keep">
+            먼저 지원 회사와 희망 직무, 그리고 모든 문항에 공통으로 반영할
+            글로벌 요구사항을 입력해주세요.
+          </p>
+        </header>
+        <div className="card">
+          <EssayMetaForm
+            onSubmit={handleMetaSubmit}
+            onCancel={() => nav('/essays')}
+            isPending={createEssay.isPending}
+            submitLabel="다음 단계"
+          />
+        </div>
+      </>
+    );
+  }
+
+  // stage === 'questions'
+  const savedCount = questions.filter((q) => q.questionId).length;
+
+  return (
+    <>
+      <Crumbs items={['자소서', '작성하기']} />
+
+      {/* 헤더: 메타 정보 + 편집 + collapse 토글 */}
+      <header className="card mb-4 relative">
+        {/* 우측 위 collapse 토글 — 편집 모드일 때는 숨김 */}
+        {!editingMeta && (
+          <button
+            type="button"
+            onClick={() => setMetaCollapsed((v) => !v)}
+            aria-expanded={!metaCollapsed}
+            aria-label={metaCollapsed ? '메타 정보 펼치기' : '메타 정보 접기'}
+            className="absolute top-3 right-3 p-1 rounded hover:bg-ink-100 text-ink-500 hover:text-ink-800 transition-colors"
+          >
+            {metaCollapsed ? (
+              <ChevronDown size={16} strokeWidth={2} />
+            ) : (
+              <ChevronUp size={16} strokeWidth={2} />
+            )}
 
   return null;
 }
