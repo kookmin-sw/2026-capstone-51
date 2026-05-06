@@ -77,3 +77,35 @@ export default function MyEssays() {
             />
           </div>
         </div>
+
+        <div className="border-t border-ink-150" />
+
+        {/* 본문 */}
+        {list.isLoading ? (
+          <Loading />
+        ) : list.isError ? (
+          <ErrorState
+            message={
+              list.error?.apiMessage || '자소서 목록을 불러오지 못했습니다.'
+            }
+            onRetry={() => list.refetch()}
+          />
+        ) : filtered.length === 0 ? (
+          items.length === 0 ? (
+            <Empty />
+          ) : (
+            <NoResult onClear={() => setQuery('')} />
+          )
+        ) : (
+          <ol className="divide-y divide-ink-150">
+            {filtered.map((e, i) => (
+              <EssayRow key={e.essayId ?? i} index={i + 1} item={e} />
+            ))}
+          </ol>
+        )}
+      </section>
+    </>
+  );
+}
+
+/* ---------- 행 ---------- */
