@@ -198,3 +198,83 @@ export default function EssayDetail() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* 문항 목록 */}
+      {!editingMeta && (
+        <section className="card mb-4">
+          <header className="flex items-end justify-between gap-3 mb-3 flex-wrap">
+            <div>
+              <h2 className="text-[14px] font-bold text-ink-900">문항</h2>
+              <p className="text-[11.5px] text-ink-500 mt-0.5 break-keep">
+                문항별 질문과 작성한 답변. 편집은 자소서 작성 화면에서.
+              </p>
+            </div>
+            <Link to="/write" className="btn-default btn-sm">
+              <PencilLine size={11} strokeWidth={2.2} />새 문항 작성
+            </Link>
+          </header>
+          {(essay.questions || []).length === 0 ? (
+            <div className="text-center py-6 text-[12.5px] text-ink-500 break-keep">
+              아직 작성된 문항이 없어요.
+            </div>
+          ) : (
+            <ol className="grid gap-3">
+              {essay.questions.map((qst) => (
+                <li
+                  key={qst.questionId}
+                  className="rounded-md border border-ink-150 bg-paper p-3"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="badge-gray">{qst.questionNum}번</span>
+                    {qst.maxLength != null && (
+                      <span className="text-[11px] text-ink-500 tabular-nums">
+                        최대 {qst.maxLength}자
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[13px] font-semibold text-ink-900 mb-1.5 break-keep">
+                    {qst.question}
+                  </div>
+                  <div className="text-[12.5px] text-ink-700 break-keep whitespace-pre-line">
+                    {qst.response || '(작성 전)'}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
+
+      {/* 위험 영역 */}
+      {!editingMeta && (
+        <section className="card border-red-200 bg-red-50/30">
+          <h2 className="text-[14px] font-bold text-red-700 mb-1">위험 영역</h2>
+          <p className="text-[12px] text-ink-600 mb-3 break-keep">
+            삭제하면 자소서와 모든 문항이 함께 사라지고 복구할 수 없어요.
+          </p>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleteEssay.isPending}
+            className={
+              'btn-default btn-sm ' +
+              (confirmDelete
+                ? 'border-red-300 text-red-700 bg-red-50'
+                : 'text-red-700')
+            }
+          >
+            {confirmDelete ? (
+              <>
+                <Trash2 size={11} strokeWidth={2} />
+                정말 삭제 (다시 클릭)
+              </>
+            ) : (
+              <>
+                <XIcon size={11} strokeWidth={2} />
+                자소서 삭제
+              </>
+            )}
+          </button>
+        </section>
+      )}
