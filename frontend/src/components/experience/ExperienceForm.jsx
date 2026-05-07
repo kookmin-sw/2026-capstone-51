@@ -238,3 +238,80 @@ function validate(form) {
     e.startDate = '시작일은 오늘 이전이어야 합니다.';
   if (!form.endDate) e.endDate = '종료일을 선택해주세요.';
   else if (form.endDate > today) e.endDate = '종료일은 오늘 이전이어야 합니다.';
+  else if (form.startDate && form.startDate > form.endDate)
+    e.endDate = '종료일은 시작일 이후여야 합니다.';
+  if (!form.star.s.trim()) e.starS = 'Situation 을 입력해주세요.';
+  if (!form.star.t.trim()) e.starT = 'Task 를 입력해주세요.';
+  if (!form.star.a.trim()) e.starA = 'Action 을 입력해주세요.';
+  if (!form.star.r.trim()) e.starR = 'Result 를 입력해주세요.';
+  return e;
+}
+
+/** 오늘 날짜를 'YYYY-MM-DD' 로 (로컬 타임존 기준). 백엔드 @PastOrPresent 차단용. */
+function todayIso() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+/* ---------- 빌딩블록 ---------- */
+
+function Section({ title, sub, required, error, children }) {
+  return (
+    <section className="grid gap-2.5">
+      <div>
+        <h2 className="text-[14px] font-bold text-ink-900 tracking-tight inline-flex items-center gap-1">
+          {title}
+          {required && <span className="text-primary-600 font-bold">*</span>}
+        </h2>
+        {sub && <p className="text-[12px] text-ink-500 mt-0.5">{sub}</p>}
+        {error && (
+          <p className="text-[11.5px] text-red-600 mt-0.5 break-keep">
+            {error}
+          </p>
+        )}
+      </div>
+      <div>{children}</div>
+    </section>
+  );
+}
+
+function Field({ label, required, hint, error, children }) {
+  return (
+    <div className="grid gap-1.5">
+      <label className="flex items-center gap-1 text-[12.5px] font-semibold text-ink-700">
+        {label}
+        {required && <span className="text-primary-600 font-bold">*</span>}
+      </label>
+      {children}
+      {error ? (
+        <div className="text-[11.5px] text-red-600 mt-0.5 break-keep">
+          {error}
+        </div>
+      ) : hint ? (
+        <div className="text-[11.5px] text-ink-500 mt-0.5">{hint}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function StarField({ label, sub, value, onChange, error }) {
+  return (
+    <div className="grid gap-1.5">
+      <label className="text-[12.5px] font-semibold text-ink-700">
+        {label} <span className="text-ink-400 font-normal">— {sub}</span>
+      </label>
+      <textarea
+        rows={3}
+        className={cn(
+          'field text-[14px] py-2.5',
+          error && 'border-red-500 focus:border-red-500'
+        )}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {error && (
+        <div className="text-[11.5px] text-red-600 mt-0.5">{error}</div>
+      )}
+    </div>
+  );
+}
