@@ -113,6 +113,46 @@ export default function ExperienceForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="시작일" required error={errors.startDate}>
               <DatePicker
+                value={form.startDate}
+                onChange={(v) => update('startDate', v)}
+                placeholder="시작일 선택"
+                hasError={!!errors.startDate}
+                max={todayIso()}
+              />
+            </Field>
+            <Field label="종료일" required error={errors.endDate}>
+              <DatePicker
+                value={form.endDate}
+                onChange={(v) => update('endDate', v)}
+                placeholder="종료일 선택"
+                hasError={!!errors.endDate}
+                min={form.startDate || undefined}
+                max={todayIso()}
+              />
+            </Field>
+          </div>
+        </div>
+      </Section>
+
+      {/* 활동 내용 (STAR) */}
+      <Section
+        title="활동 내용 (STAR)"
+        sub="자소서 추천에 활용됩니다. 가능한 구체적으로 작성해주세요."
+      >
+        <div className="grid gap-4">
+          <StarField
+            label="Situation"
+            sub="어떤 상황·배경이었는지"
+            value={form.star.s}
+            onChange={(v) => updateStar('s', v)}
+            error={errors.starS}
+          />
+          <StarField
+            label="Task"
+            sub="어떤 과제·목표가 주어졌는지"
+            value={form.star.t}
+            onChange={(v) => updateStar('t', v)}
+            error={errors.starT}
 
   return null;
 }
