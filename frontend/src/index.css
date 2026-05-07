@@ -6,7 +6,9 @@
 
 /* === 글로벌 base === */
 @layer base {
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
   }
   body {
@@ -19,7 +21,8 @@
     font-weight: 45 920;
     font-style: normal;
     font-display: swap;
-    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/PretendardVariable.woff2') format('woff2-variations');
+    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/PretendardVariable.woff2')
+      format('woff2-variations');
   }
 }
 

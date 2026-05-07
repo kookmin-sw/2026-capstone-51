@@ -1,5 +1,4 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
   PencilLine,
@@ -19,6 +18,15 @@ const ICONS = { Home, PencilLine, BarChart3, User };
  * - group: true → 라벨 + 자식 링크 리스트
  */
 export default function Sidebar() {
+  const navigate = useNavigate();
+
+  // TODO(PR#3): useAuth store + 백엔드 /auth/logout 호출로 교체.
+  // 지금은 토큰만 비우고 랜딩으로 보내는 임시 처리.
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/landing');
+  };
+
   return (
     <aside className="flex flex-col w-[232px] shrink-0 bg-sidebar-bg text-white/80 min-h-screen">
       {/* Brand */}
@@ -114,20 +122,25 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Dev preview links — 라우트 밖 페이지 미리보기 */}
-      <div className="px-3.5 py-2 border-t border-white/10 text-[10.5px]">
-        <div className="text-white/40 mb-1 uppercase tracking-wider">
-          미리보기
+      {/* Dev preview links — 라우트 밖 페이지 미리보기 (DEV 빌드에서만 노출) */}
+      {import.meta.env.DEV && (
+        <div className="px-3.5 py-2 border-t border-white/10 text-[10.5px]">
+          <div className="text-white/40 mb-1 uppercase tracking-wider">
+            미리보기
+          </div>
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+            <NavLink to="/landing" className="text-white/60 hover:text-white">
+              랜딩
+            </NavLink>
+            <NavLink
+              to="/onboarding"
+              className="text-white/60 hover:text-white"
+            >
+              온보딩
+            </NavLink>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          <NavLink to="/landing" className="text-white/60 hover:text-white">
-            랜딩
-          </NavLink>
-          <NavLink to="/onboarding" className="text-white/60 hover:text-white">
-            온보딩
-          </NavLink>
-        </div>
-      </div>
+      )}
 
       {/* User footer */}
       <div className="flex items-center gap-2.5 px-3.5 py-3 border-t border-white/10">
@@ -143,7 +156,10 @@ export default function Sidebar() {
           </div>
         </div>
         <button
+          type="button"
+          onClick={handleLogout}
           title="로그아웃"
+          aria-label="로그아웃"
           className="grid place-items-center w-7 h-7 rounded-md text-white/65 hover:text-white hover:bg-white/10 transition-colors"
         >
           <LogOut size={14} strokeWidth={1.8} />
