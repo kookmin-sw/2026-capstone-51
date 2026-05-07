@@ -3,19 +3,36 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { MAJORS, JOB_TREE } from '../data/onboarding';
+import { useUpdateMe } from '../api/queries/useMe';
+import { toast } from '../store/useToast';
 
 /**
  * 첫 로그인 후 1회만 거치는 온보딩.
- * 한 페이지에 모든 항목을 모아 보여주고, 하단의 "시작하기"로 /dashboard 로 이동.
+ * 한 페이지에 모든 항목을 모아 보여주고, 하단의 "시작하기"로 PUT /users/me 후 /dashboard 이동.
  *
  * 항목:
- *   - 이름, 학번, 국민대 이메일(읽기 전용)
- *   - 전공 (단일 드롭다운)
- *   - 학년
+ *   - 이름, 학번 (필수)
+ *   - 전공 / 부전공 / 학년 / 학점
  *   - 관심 직무 — 대분류 / 중분류 / 소분류 3단 드롭다운
+ *
+ * 백엔드 매핑 정책:
+ *  - userName ← name (trim)
+ *  - schoolNumber ← studentId (trim)
+ *  - score ← parseFloat(gpa) || null
+ *  - state ← year(1..5) 를 FRESH_MAN/SOPHOMORE/JUNIOR/SENIOR/SENIOR 로 단순 매핑
+ *    (5 = 초과학기는 SENIOR 로. JOBSEEKER/WORKER 는 온보딩 폼에 옵션 없음)
+ *  - major / minor / jobFirst / jobSecond / jobThird = null
+ *    백엔드 enum 정합성 정책 미정 — 단계 3 에서 enum 어댑터 완성 후 매핑.
+ *    (KookminDepartment 한국어 풀네임, JobFirst/Second/Third 한국 표준직업분류 enum.)
+ *  - 위 매핑 정책은 frontend/CLAUDE.md 에 별도 명시.
+ *
+ * 검증: name / studentId 두 필드만 trim 후 빈 값이면 토스트 + 제출 차단.
+ *       나머지는 정책 미정이라 입력 검증 보류 (백엔드 422 메시지에 의존).
  */
 export default function Onboarding() {
   const nav = useNavigate();
+  const updateMe = useUpdateMe();
+
   const [form, setForm] = useState({
     name: '',
     studentId: '',
@@ -52,7 +69,60 @@ export default function Onboarding() {
     [form.jobL1, form.jobL2]
   );
 
-  const start = () => nav('/dashboard');
+  const yearToState = (year) => {
+    const map = {
+      1: 'FRESH_MAN',
+      2: 'SOPHOMORE',
+      3: 'JUNIOR',
+      4: 'SENIOR',
+      5: 'SENIOR', // 초과학기 — JOBSEEKER/WORKER 옵션 추가 시 재매핑
+    };
+    return map[year] || null;
+  };
+
+  const start = () => {
+    const name = form.name.trim();
+    const studentId = form.studentId.trim();
+    if (!name) {
+      toast.error('이름을 입력해주세요.');
+      return;
+    }
+    if (!studentId) {
+      toast.error('학번을 입력해주세요.');
+      return;
+    }
+    if (updateMe.isPending) return;
+
+    const score = form.gpa === '' ? null : Number.parseFloat(form.gpa);
+    const body = {
+      userName: name,
+      schoolNumber: studentId,
+      state: yearToState(form.year),
+      score: Number.isFinite(score) ? score : null,
+      // TODO(단계 3 — enum 어댑터 완성 후 매핑):
+      // major / minor 는 KookminDepartment 한국어 풀네임,
+      // jobFirst/Second/Third 는 한국 표준직업분류 enum 으로 매핑 필요.
+      major: null,
+      minor: null,
+      jobFirst: null,
+      jobSecond: null,
+      jobThird: null,
+    };
+
+    updateMe.mutate(body, {
+      onSuccess: () => {
+        toast.success('회원가입이 완료되었습니다.');
+        nav('/dashboard', { replace: true });
+      },
+      onError: (e) => {
+        toast.error(
+          e?.apiMessage ||
+            '정보 저장 중 오류가 발생했습니다. 다시 시도해주세요.'
+        );
+      },
+    });
+  };
+
   // 취소 = 회원가입 중단. 인덱스('/')는 /dashboard 로 redirect 되므로 명시적으로 /landing 으로.
   const cancel = () => nav('/landing');
 
@@ -117,7 +187,7 @@ export default function Onboarding() {
             sub="같은 전공·학번 친구들과의 비교 통계에 활용됩니다."
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-              <Field label="전공" required>
+              <Field label="전공">
                 <Select
                   value={form.major}
                   onChange={(v) => update('major', v)}
@@ -136,7 +206,7 @@ export default function Onboarding() {
               </Field>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-              <Field label="학년" required>
+              <Field label="학년">
                 <Select
                   value={form.year}
                   onChange={(v) => update('year', +v)}
@@ -149,7 +219,7 @@ export default function Onboarding() {
                   ]}
                 />
               </Field>
-              <Field label="학점 (4.5 만점)" required>
+              <Field label="학점 (4.5 만점)">
                 <input
                   type="number"
                   className="field text-[14px] py-2.5"
@@ -170,21 +240,21 @@ export default function Onboarding() {
             sub="자소서 추천과 경험 분석에 활용됩니다. 추후 [내 정보]에서 수정할 수 있어요."
           >
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-              <Field label="대분류" required>
+              <Field label="대분류">
                 <Select
                   value={form.jobL1}
                   onChange={onChangeL1}
                   options={l1Options}
                 />
               </Field>
-              <Field label="중분류" required>
+              <Field label="중분류">
                 <Select
                   value={form.jobL2}
                   onChange={onChangeL2}
                   options={l2Options}
                 />
               </Field>
-              <Field label="소분류" required>
+              <Field label="소분류">
                 <Select
                   value={form.jobL3}
                   onChange={(v) => update('jobL3', v)}
@@ -202,16 +272,20 @@ export default function Onboarding() {
           </div>
           <div className="flex gap-2 sm:shrink-0">
             <button
+              type="button"
               onClick={cancel}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-md text-[13px] font-semibold bg-paper border border-ink-200 text-ink-700 hover:bg-ink-50 transition-colors"
+              disabled={updateMe.isPending}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-md text-[13px] font-semibold bg-paper border border-ink-200 text-ink-700 hover:bg-ink-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               취소
             </button>
             <button
+              type="button"
               onClick={start}
-              className="flex-1 sm:flex-none px-5 py-2 rounded-md text-[13px] font-semibold bg-primary-900 border border-primary-900 text-white hover:bg-primary-800 transition-colors"
+              disabled={updateMe.isPending}
+              className="flex-1 sm:flex-none px-5 py-2 rounded-md text-[13px] font-semibold bg-primary-900 border border-primary-900 text-white hover:bg-primary-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              시작하기
+              {updateMe.isPending ? '저장 중…' : '시작하기'}
             </button>
           </div>
         </div>

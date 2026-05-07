@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { toast } from '../store/useToast';
 
 /**
  * 랜딩 / 로그인 페이지 — 풀-블리드 split-screen.
  *  - lg(1024px) 이상: 좌(브랜드) 1.1fr / 우(로그인) 1fr 가로 분할.
  *  - lg 미만: 단일 컬럼. 브랜드 패널은 위, 로그인 패널은 아래.
  *  - 좌측 패널 hover (포인터 디바이스): 마우스 따라가는 스포트라이트 + glow blob + feature stagger.
+ *  - "Google 계정으로 로그인" → 구글 OAuth 페이지로 풀페이지 리다이렉트.
+ *    구글이 처리 후 redirect_uri (/auth/callback) 로 돌아오고, 그곳에서 grant code 교환.
  */
 function GoogleIcon() {
   return (
@@ -36,13 +38,28 @@ function GoogleIcon() {
 }
 
 export default function Landing() {
-  const navigate = useNavigate();
   const leftRef = useRef(null);
   const [hover, setHover] = useState(false);
   const [pos, setPos] = useState({ x: 50, y: 40 });
 
-  const handleSignIn = (firstLogin) => {
-    navigate(firstLogin ? '/onboarding' : '/dashboard');
+  const handleSignIn = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
+    if (!clientId || !redirectUri) {
+      toast.error(
+        'Google OAuth 설정이 누락되었습니다. .env 의 VITE_GOOGLE_CLIENT_ID 를 확인해주세요.'
+      );
+      return;
+    }
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      // 매번 계정 선택 화면을 띄움 — 시연 환경에서 다른 계정 전환 편의.
+      prompt: 'select_account',
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
   const handleMouseMove = (e) => {
@@ -199,7 +216,8 @@ export default function Landing() {
           </p>
 
           <button
-            onClick={() => handleSignIn(true)}
+            type="button"
+            onClick={handleSignIn}
             className="flex items-center justify-center gap-3 w-full px-6 py-[16px] sm:py-[18px] bg-white border border-[#DADCE0] rounded-[14px] text-[15px] sm:text-[16px] font-semibold text-[#3C4043] hover:bg-[#F8FAFE] hover:border-[#C8CDD3] hover:shadow-lg transition-all"
           >
             <GoogleIcon />

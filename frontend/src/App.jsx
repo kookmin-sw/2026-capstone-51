@@ -6,6 +6,7 @@ import Toaster from './components/Toaster';
 import Placeholder from './pages/Placeholder';
 import Onboarding from './pages/Onboarding';
 import Landing from './pages/Landing';
+import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 
 /**
@@ -20,6 +21,7 @@ export default function App() {
       <HashRouter>
         <Routes>
           <Route path="/landing" element={<Landing />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />

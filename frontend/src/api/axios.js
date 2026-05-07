@@ -41,6 +41,22 @@ const api = axios.create({
   withCredentials: true,
 });
 
+/**
+ * /auth/logout 전용 호출. 인터셉터(자동 reissue) 우회 — 인자로 받은 토큰을
+ * 명시적으로 헤더에 박아서 전송. 토큰 클리어 직전에 호출되므로 인터셉터를
+ * 거치면 microtask 타이밍 차로 헤더가 비어 보낼 위험이 있어 raw axios 사용.
+ * 실패해도 호출부에서 무시하는 best-effort 호출.
+ */
+export const callLogout = (accessToken, refreshToken) =>
+  axios.post(
+    `${baseURL}/auth/logout`,
+    { refreshToken },
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      withCredentials: true,
+    }
+  );
+
 // 요청 — Authorization 헤더 자동 부착.
 api.interceptors.request.use((config) => {
   const t = tokenStore.getAccess();

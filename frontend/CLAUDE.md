@@ -21,10 +21,12 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 
 ## Environment
 
-- `VITE_API_URL` — axios client(`src/api/axios.js`)에 주입. 백엔드 `context-path: /api` 이므로 값에 `/api`까지 포함.
-- 기본 (`.env`, **git tracked**): `https://3.238.29.250/api` (실서버 IP). 자체서명 인증서라 브라우저 처음 방문 시 "고급 → 진행" 한 번 필요.
+`.env` / `.env.local` 둘 다 gitignored. 추적되는 건 `.env.local.example` 뿐 — 그게 canonical 가이드.
+
+- `VITE_API_URL` — axios client(`src/api/axios.js`)에 주입. 백엔드 `context-path: /api` 이므로 값에 `/api`까지 포함. 기본 `https://3.238.29.250/api` (실서버 IP — 자체서명 인증서라 브라우저 첫 방문 시 "고급 → 진행" 한 번 필요).
+- `VITE_GOOGLE_CLIENT_ID` — Google OAuth client_id. 백엔드 팀이 Google Console 에 등록한 값과 동일해야 함. `client_secret` 은 백엔드만 보유.
+- `VITE_GOOGLE_REDIRECT_URI` — Google Console 에 등록된 redirect_uri. 기본 `http://localhost:3000/auth/callback`. 다른 값으로 바꾸려면 Google Console 등록도 같이.
 - 도메인 `https://logi.p-e.kr/api` 는 옛 IP를 가리켜 죽어있음 (DNS 갱신 전). 살아나면 default 를 그쪽으로 바꿀 것.
-- 로컬 백엔드로 override 하려면 `.env.local` 에 `VITE_API_URL=http://localhost:8080/api` (`.env.local.example` 참고). `.env.local` 은 gitignored.
 
 ## Architecture
 
@@ -34,9 +36,44 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 
 - **`HashRouter`** (BrowserRouter 아님) — URL이 `#/...`. 정적 호스팅(GitHub Pages 등)에서도 라우팅 깨지지 않게.
 - 라우트 두 종류:
-  - **Chromeless**: `/landing`, `/onboarding` — 사이드바 없이 전체 화면.
+  - **Chromeless**: `/landing`, `/auth/callback`, `/onboarding` — 사이드바 없이 전체 화면.
   - **Layout-wrapped**: 그 외 전부 `<Layout/>`(사이드바 + `<Outlet/>`)에 감싸짐. 인덱스(`/`)와 unknown path는 `/dashboard`로 redirect.
 - 미구현 페이지(`/write`, `/essays`, `/essays/:id`, `/stats`, `/info`, `/my-experience`, `/my-experience/new`, `/my-experience/:id`, `/my-certificates`, `/my-certificates/new`, `/my-certificates/:id/edit`)는 전부 `<Placeholder/>`.
+
+#### 로그인 플로우
+
+```
+/landing
+  └─ Google 계정으로 로그인 (window.location 으로 accounts.google.com 으로 풀페이지 리다이렉트)
+                                                       ↓
+                              accounts.google.com (Google 인증)
+                                                       ↓
+                              redirect_uri = /auth/callback?code=XXX
+                                                       ↓
+   main.jsx 의 어댑터: pathname /auth/callback → hash /#/auth/callback (HashRouter 가 hash 만 보므로)
+                                                       ↓
+   /auth/callback (AuthCallback.jsx)
+     └─ POST /api/auth/login { grantCode } → { accessToken, refreshToken, firstLogin }
+        ├─ useAuth.setTokens (localStorage 저장)
+        └─ firstLogin === true ? /onboarding : /dashboard
+
+/onboarding (첫 로그인 후)
+  └─ 시작하기 → useUpdateMe (PUT /users/me) → /dashboard
+
+Sidebar 로그아웃
+  └─ useAuth.logout()
+       ├─ tokenStore.clear() + state 비움 (즉시)
+       └─ callLogout (POST /auth/logout) — best-effort, fire-and-forget
+     → navigate /landing (replace)
+```
+
+Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/auth/callback` 으로 들어옴. HashRouter 는 pathname 을 라우팅에 쓰지 않으므로 `main.jsx` 가 React 마운트 전에 `history.replaceState` 로 `/#/auth/callback?...` 으로 옮겨 라우터가 잡게 함.
+
+**Onboarding → /users/me 매핑 정책 (현재):**
+
+- `userName ← name (trim)`, `schoolNumber ← studentId (trim)`, `score ← parseFloat(gpa) || null`.
+- `state ← year(1..5)` 단순 매핑 (`FRESH_MAN/SOPHOMORE/JUNIOR/SENIOR/SENIOR`).
+- `major / minor / jobFirst / jobSecond / jobThird` 는 **null** — 백엔드 enum (KookminDepartment 한국어 풀네임, JobFirst·Second·Third 한국 표준직업분류) 정합성 정책 미정. 단계 3 (페이지 빌드) 에서 enum 어댑터 완성 후 매핑 추가.
 
 ### CSS / Tailwind
 
@@ -75,6 +112,7 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 - reissue 자체 실패 → `tokenStore.clear()` 후 에러 throw. 라우팅(/landing) 은 호출부 / Guard 책임.
 - 자동 토스트: 네트워크 단절 + 5xx 만. 4xx 는 페이지가 처리.
 - 토큰 저장: `localStorage.accessToken` / `localStorage.refreshToken`. `tokenStore` 헬퍼로 캡슐화 (옛 `localStorage.token` 키는 폐기).
+- `callLogout(accessToken, refreshToken)` named export — 인터셉터 우회한 raw axios. `useAuth.logout` 이 토큰 비우기 직전에 호출하기 위함 (microtask 타이밍 차로 헤더가 비어 보내는 사고 방지).
 
 **react-query** — [`src/api/queryClient.js`](2026-capstone-51/frontend/src/api/queryClient.js)
 
@@ -89,7 +127,7 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 
 **zustand 스토어** — [`src/store/`](2026-capstone-51/frontend/src/store/)
 
-- `useAuth` — `isAuthenticated`, `user`, `setTokens`, `setUser`, `logout`. logout 은 토큰만 비움 (백엔드 `/auth/logout` 호출은 PR#3).
+- `useAuth` — `isAuthenticated`, `user`, `setTokens`, `setUser`, `logout`. `logout` 은 클라이언트 상태 즉시 비우고 백엔드 `/auth/logout` 을 best-effort 호출 (실패 무시).
 - `useToast` — `toasts`, `push`, `dismiss` + 컴포넌트 외부 헬퍼 `toast.info/success/error`.
 
 **enum 어댑터** — [`src/lib/enums.js`](2026-capstone-51/frontend/src/lib/enums.js)
@@ -114,7 +152,7 @@ src/
 │   ├── queryClient.js    # react-query 글로벌 QueryClient (staleTime/retry 정책)
 │   └── queries/          # 도메인 훅 (useMe, useExperiences, useCertificates, useEssays) + keys.js
 ├── store/                # zustand
-│   ├── useAuth.js        # 토큰/유저 상태. logout 은 토큰 비움 (PR#3 에서 백엔드 호출 추가)
+│   ├── useAuth.js        # 토큰/유저 상태. logout: 클라 즉시 비움 + 백엔드 /auth/logout best-effort
 │   └── useToast.js       # 토스트 큐 + toast.info/success/error 헬퍼
 ├── lib/
 │   ├── cn.js             # clsx 대체
@@ -129,7 +167,7 @@ src/
 │   └── essays.js
 ├── components/
 │   ├── Layout.jsx        # Sidebar + Outlet 셸 (max-width 1100)
-│   ├── Sidebar.jsx       # NAV/RELATED_SITES 렌더, lucide ICONS lookup, DEV 빌드에서만 미리보기 링크 + 사용자 footer. 로그아웃 = useAuth.logout() (PR#3 에서 백엔드 /auth/logout 호출 추가 예정)
+│   ├── Sidebar.jsx       # NAV/RELATED_SITES 렌더, lucide ICONS lookup, DEV 빌드에서만 미리보기 링크 + 사용자 footer. 로그아웃 = useAuth.logout() (클라 즉시 비움 + 백엔드 /auth/logout best-effort)
 │   ├── Toaster.jsx       # 우상단 토스트 스택. App 루트에 한 번 마운트
 │   ├── Crumbs.jsx        # 빵부스러기. items: string[] | {label, to?}[]
 │   ├── Card.jsx          # Card + CardHeader 두 export
@@ -139,9 +177,10 @@ src/
 │   ├── PeersOrb.jsx      # Three.js 5축 입체 레이더 — 데이터 contract 고정 (아래 참조)
 │   └── dashboard/        # HeroBanner, MyRoadmapCard, SeniorRoadmapCard
 ├── pages/
-│   ├── Landing.jsx       # 풀-블리드 split-screen 로그인 (mock — Google 버튼 클릭 시 navigate(/onboarding|/dashboard))
-│   ├── Onboarding.jsx    # 단일 페이지 폼: 이름/학번/전공/학년/직무 트리
-│   ├── Dashboard.jsx     # Crumbs + HeroBanner + (PeersOrb + MyRoadmapCard + SeniorRoadmapCard) 스택
+│   ├── Landing.jsx       # 풀-블리드 split-screen. Google 버튼 클릭 시 accounts.google.com 로 풀페이지 리다이렉트
+│   ├── AuthCallback.jsx  # OAuth 콜백 — grant code → POST /auth/login → firstLogin 분기
+│   ├── Onboarding.jsx    # 단일 페이지 폼. 시작하기 = PUT /users/me → /dashboard
+│   ├── Dashboard.jsx     # Crumbs + HeroBanner + (PeersOrb + MyRoadmapCard + SeniorRoadmapCard) 스택 (mock)
 │   └── Placeholder.jsx   # 미구현 라우트 공통 stub
 └── assets/               # hero.png, react.svg, vite.svg
 ```

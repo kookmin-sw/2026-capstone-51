@@ -27,12 +27,11 @@ export default function Sidebar({ open = false, onClose }) {
   const navigate = useNavigate();
   const logout = useAuth((s) => s.logout);
 
-  // TODO(PR#3): useAuth.logout 안에서 POST /auth/logout 호출까지 추가.
-  // 지금은 클라이언트 토큰만 비우고 랜딩으로 이동.
   const handleLogout = () => {
+    // useAuth.logout 이 토큰/유저 비우고 백엔드 /auth/logout 을 best-effort 호출.
     logout();
     onClose?.();
-    navigate('/landing');
+    navigate('/landing', { replace: true });
   };
 
   // 네비게이션 링크 공통 className. isActive 시 좌측 4px 인디케이터 + 더 진한 배경 + 굵은 글씨.
