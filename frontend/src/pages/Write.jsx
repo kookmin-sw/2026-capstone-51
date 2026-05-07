@@ -158,6 +158,105 @@ export default function Write() {
             ) : (
               <ChevronUp size={16} strokeWidth={2} />
             )}
+          </button>
+        )}
+        {editingMeta ? (
+          <EssayMetaForm
+            initialValue={meta}
+            onSubmit={handleMetaUpdate}
+            onCancel={() => setEditingMeta(false)}
+            isPending={updateMeta.isPending}
+            submitLabel="수정 저장"
+          />
+        ) : metaCollapsed ? (
+          // 접힌 상태: 한 줄 요약 (회사명 · 직무)
+          <div className="flex items-center gap-2 text-[13px] pr-9">
+            <span className="badge-navy">{meta.companyName}</span>
+            <span className="text-ink-400">·</span>
+            <span className="text-ink-700 font-semibold">{meta.wishJob}</span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-start justify-between gap-3 pr-9">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[12px] mb-1.5">
+                <span className="badge-navy">{meta.companyName}</span>
+                <span className="text-ink-400">·</span>
+                <span className="text-ink-700 font-semibold">
+                  {meta.wishJob}
+                </span>
+              </div>
+              <h1 className="text-[18px] font-bold text-ink-900 mb-1">
+                자소서 작성 중
+              </h1>
+              <p className="text-[12.5px] text-ink-600 break-keep whitespace-pre-line">
+                <span className="text-ink-500">글로벌 요구사항: </span>
+                {meta.globalReq}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingMeta(true)}
+              className="btn-default btn-sm"
+            >
+              <Pencil size={11} strokeWidth={2} />
+              메타 수정
+            </button>
+          </div>
+        )}
+      </header>
 
-  return null;
+      {/* 문항 목록 */}
+      <div className="grid gap-3">
+        {questions.map((q, i) => (
+          <QuestionEditor
+            key={q.tmpId || q.questionId}
+            essayId={meta.essayId}
+            questionNum={i + 1}
+            initialValue={q.questionId ? q : undefined}
+            onSaved={(saved) => onQuestionSaved(i, saved)}
+            onRemove={
+              !q.questionId && questions.length > 1
+                ? () => removeUnsavedQuestion(i)
+                : undefined
+            }
+          />
+        ))}
+        <AddQuestionButton onClick={addQuestion} />
+      </div>
+
+      {/* 푸터: 작성 완료 */}
+      <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-[12px] text-ink-500">
+          저장된 문항 {savedCount}개 / 총 {questions.length}개
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => nav('/essays')}
+            className="btn-default"
+          >
+            <XIcon size={13} strokeWidth={2} />
+            나가기
+          </button>
+          <button
+            type="button"
+            onClick={handleFinish}
+            disabled={savedCount === 0}
+            className="btn-primary"
+          >
+            <Check size={13} strokeWidth={2} />
+            작성 완료
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** crypto.randomUUID 가 모든 환경에서 보장되지 않을 수 있어 폴백 포함. */
+function tmpId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
