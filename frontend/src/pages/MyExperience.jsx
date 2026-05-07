@@ -218,3 +218,58 @@ function Loading() {
           </div>
         </li>
       ))}
+    </ul>
+  );
+}
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div className="text-center py-8 px-4">
+      <p className="text-[13px] text-ink-700 mb-3 break-keep">{message}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="btn-default">
+          다시 시도
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Empty({ isFiltered, isEmpty, onClear }) {
+  if (isEmpty) {
+    return (
+      <div className="text-center py-10 px-4">
+        <p className="text-[13.5px] font-semibold text-ink-800 mb-1">
+          아직 등록된 경험이 없어요.
+        </p>
+        <p className="text-[12.5px] text-ink-500 mb-4 break-keep">
+          STAR 구조로 경험을 정리해두면 자소서 추천에 활용됩니다.
+        </p>
+        <Link to="/my-experience/new" className="btn-primary">
+          <Plus size={13} strokeWidth={2.2} />첫 경험 추가하기
+        </Link>
+      </div>
+    );
+  }
+  if (isFiltered) {
+    return (
+      <div className="text-center py-10 px-4">
+        <p className="text-[13px] text-ink-500 mb-3">
+          조건에 해당하는 경험이 없어요.
+        </p>
+        <button type="button" onClick={onClear} className="btn-default">
+          필터·검색 초기화
+        </button>
+      </div>
+    );
+  }
+  return null;
+}
+
+/* ---------- 유틸 ---------- */
+
+function fmtYM(d) {
+  if (!d) return '—';
+  const [y, m] = d.split('-');
+  return `${y?.slice(2)}.${m}`;
+}
