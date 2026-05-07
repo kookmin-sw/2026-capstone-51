@@ -64,10 +64,44 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 
 ### Data flow (현재 상태)
 
-- 모든 페이지 데이터가 `src/data/*.js` 의 정적 객체에서 옴 (sidebar, dashboard, onboarding, profile, experiences, certificates, essays).
-- `src/api/axios.js` — 단일 axios 인스턴스. `baseURL = VITE_API_URL`, `withCredentials: true`, request interceptor가 `localStorage.token`을 읽어 `Authorization: Bearer ...` 세팅. **현재 어디서도 호출되지 않음** — 백엔드 연동 미시작.
-- `@tanstack/react-query` `QueryClientProvider`가 `main.jsx`에 마운트되어 있지만 실제 query/mutation 사용처 없음.
-- `zustand` 설치만 되어 있고 store 없음.
+페이지는 아직 `src/data/*.js` 정적 mock 만 사용 — 실 API 연동은 PR#3 부터.
+하지만 인프라는 모두 준비됨:
+
+**axios 인터셉터** — [`src/api/axios.js`](2026-capstone-51/frontend/src/api/axios.js)
+
+- 응답 자동 unwrap: `ApiResponse<T> = { statusCode, message, data }` → `response.data = data`. 호출부는 `r.data` 만 보면 됨.
+- 에러 메시지 노출: `error.apiMessage` 에 백엔드 한국어 message.
+- 401/403 자동 reissue 큐 — 동시에 여러 요청이 401 받아도 `/auth/reissue` 한 번만 호출, 나머지 큐잉 후 새 토큰으로 일괄 재실행.
+- reissue 자체 실패 → `tokenStore.clear()` 후 에러 throw. 라우팅(/landing) 은 호출부 / Guard 책임.
+- 자동 토스트: 네트워크 단절 + 5xx 만. 4xx 는 페이지가 처리.
+- 토큰 저장: `localStorage.accessToken` / `localStorage.refreshToken`. `tokenStore` 헬퍼로 캡슐화 (옛 `localStorage.token` 키는 폐기).
+
+**react-query** — [`src/api/queryClient.js`](2026-capstone-51/frontend/src/api/queryClient.js)
+
+- `staleTime: 30s`, `refetchOnWindowFocus: false`, 4xx 재시도 끄고 5xx 만 2회.
+- mutation 재시도 0.
+
+**도메인 훅** — [`src/api/queries/`](2026-capstone-51/frontend/src/api/queries/)
+
+- `keys.js` — queryKey 팩토리 (`qk.me()`, `qk.experiences.one(id)` ...).
+- `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. 실서버 OpenAPI 의 모든 구현된 엔드포인트 커버.
+- 미구현 백엔드 (`/essays/recommand`, `/generate`, `/regenerate`, `/users/me/dashboard`, `/users/me/stats`) 는 훅 없음 — 백엔드 일정 후 추가.
+
+**zustand 스토어** — [`src/store/`](2026-capstone-51/frontend/src/store/)
+
+- `useAuth` — `isAuthenticated`, `user`, `setTokens`, `setUser`, `logout`. logout 은 토큰만 비움 (백엔드 `/auth/logout` 호출은 PR#3).
+- `useToast` — `toasts`, `push`, `dismiss` + 컴포넌트 외부 헬퍼 `toast.info/success/error`.
+
+**enum 어댑터** — [`src/lib/enums.js`](2026-capstone-51/frontend/src/lib/enums.js)
+
+- `ExperienceCategory` 백엔드↔프론트 매핑, `Progress`/`State` 한글 라벨, 통계 groupBy.
+- `KookminDepartment` / `JobFirst·Second·Third` 는 백엔드 정책 결정 후 추가 (한국어 풀네임 ↔ 프론트 옵션 차이).
+
+**Toaster 컴포넌트** — [`src/components/Toaster.jsx`](2026-capstone-51/frontend/src/components/Toaster.jsx)
+
+- App 루트에 한 번 마운트. 우상단 스택. 모바일은 좌우 16px margin.
+
+**디버깅 메모**: zustand/axios 처음 의존성 발견될 때 Vite 가 mid-render reload 를 일으켜 "Invalid hook call" 같은 한 회성 에러가 뜰 수 있음. `rm -rf node_modules/.vite && npm run dev` 로 캐시 청소 후 재시작.
 
 ### 디렉토리 / 컴포넌트 맵
 
@@ -75,8 +109,16 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 src/
 ├── main.jsx              # entry — QueryClientProvider + HashRouter + index.css import
 ├── index.css             # Tailwind directives + base + @layer components 토큰
-├── api/axios.js          # 인터셉터 달린 axios (미사용 상태)
-├── lib/cn.js             # clsx 대체
+├── api/
+│   ├── axios.js          # response unwrap + 401/403 reissue 큐 + 토큰 store
+│   ├── queryClient.js    # react-query 글로벌 QueryClient (staleTime/retry 정책)
+│   └── queries/          # 도메인 훅 (useMe, useExperiences, useCertificates, useEssays) + keys.js
+├── store/                # zustand
+│   ├── useAuth.js        # 토큰/유저 상태. logout 은 토큰 비움 (PR#3 에서 백엔드 호출 추가)
+│   └── useToast.js       # 토스트 큐 + toast.info/success/error 헬퍼
+├── lib/
+│   ├── cn.js             # clsx 대체
+│   └── enums.js          # 백엔드 ↔ 프론트 enum 매핑 (ExperienceCategory, State, Progress 등)
 ├── data/                 # 정적 mock
 │   ├── sidebar.js        # NAV, RELATED_SITES, CURRENT_USER
 │   ├── dashboard.js      # PEER_AXES, CAT_LABELS, CAT_COLORS, SEMESTERS, MY_ROADMAP, SENIOR_ROADMAPS, ymToSemIndex
@@ -87,7 +129,8 @@ src/
 │   └── essays.js
 ├── components/
 │   ├── Layout.jsx        # Sidebar + Outlet 셸 (max-width 1100)
-│   ├── Sidebar.jsx       # NAV/RELATED_SITES 렌더, lucide ICONS lookup, DEV 빌드에서만 미리보기 링크 + 사용자 footer (로그아웃 stub: localStorage.token 비우고 /landing — PR#3 에서 useAuth 로 교체)
+│   ├── Sidebar.jsx       # NAV/RELATED_SITES 렌더, lucide ICONS lookup, DEV 빌드에서만 미리보기 링크 + 사용자 footer. 로그아웃 = useAuth.logout() (PR#3 에서 백엔드 /auth/logout 호출 추가 예정)
+│   ├── Toaster.jsx       # 우상단 토스트 스택. App 루트에 한 번 마운트
 │   ├── Crumbs.jsx        # 빵부스러기. items: string[] | {label, to?}[]
 │   ├── Card.jsx          # Card + CardHeader 두 export
 │   ├── Button.jsx        # variant: default|primary|ghost|danger, size: md|sm

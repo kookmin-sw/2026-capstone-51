@@ -1,17 +1,18 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './api/queryClient';
 import Layout from './components/Layout';
+import Toaster from './components/Toaster';
 import Placeholder from './pages/Placeholder';
 import Onboarding from './pages/Onboarding';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 
-// react-query 클라이언트는 모듈 스코프에서 한 번만 만들어 HMR 시 캐시 유지.
-const queryClient = new QueryClient();
-
 /**
  * 라우팅 + 글로벌 프로바이더.
- * main.jsx 와 분리되어 react-refresh 가 정상 동작.
+ *  - QueryClientProvider 로 react-query 활성화.
+ *  - Toaster 는 라우터 밖에 마운트해 어떤 페이지에서 호출해도 보이게.
+ *  - main.jsx 와 분리되어 있어 react-refresh 정상 동작.
  */
 export default function App() {
   return (
@@ -112,6 +113,7 @@ export default function App() {
           </Route>
         </Routes>
       </HashRouter>
+      <Toaster />
     </QueryClientProvider>
   );
 }

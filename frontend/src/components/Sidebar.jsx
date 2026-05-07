@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { NAV, RELATED_SITES, CURRENT_USER } from '../data/sidebar';
+import { useAuth } from '../store/useAuth';
 
 const ICONS = { Home, PencilLine, BarChart3, User };
 
@@ -24,11 +25,12 @@ const ICONS = { Home, PencilLine, BarChart3, User };
  */
 export default function Sidebar({ open = false, onClose }) {
   const navigate = useNavigate();
+  const logout = useAuth((s) => s.logout);
 
-  // TODO(PR#3): useAuth store + 백엔드 /auth/logout 호출로 교체.
-  // 지금은 토큰만 비우고 랜딩으로 보내는 임시 처리.
+  // TODO(PR#3): useAuth.logout 안에서 POST /auth/logout 호출까지 추가.
+  // 지금은 클라이언트 토큰만 비우고 랜딩으로 이동.
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     onClose?.();
     navigate('/landing');
   };
