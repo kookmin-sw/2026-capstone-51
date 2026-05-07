@@ -1,6 +1,6 @@
 /**
  * 동기 비교 — 5축 입체 레이더 (유리 구체 안에 입체 차트).
- * Three.js (window.THREE) 사용. 마우스 드래그로 회전, 자동 회전.
+ * Three.js 사용. 기본 정지, 마우스 드래그로만 회전 (놓으면 모멘텀 감쇠 후 정지).
  *
  * props:
  *   axes  — [{ label, me, peers }] (값 0~100)
@@ -290,9 +290,10 @@ export default function PeersOrb({
     }
 
     /* ========== Interaction (drag rotate) ========== */
+    // 기본 정지. 드래그 시 velY/velX 가 채워지고, 손 떼면 0.93 배씩 감쇠해 자연스럽게 멈춤.
     let rotY = 0.0,
       rotX = 0.18,
-      velY = 0.003,
+      velY = 0,
       velX = 0;
     let isDragging = false;
     let lastX = 0,
@@ -335,7 +336,6 @@ export default function PeersOrb({
 
     /* ========== Animate ========== */
     let raf;
-    const baseSpin = 0.0015;
     const tick = () => {
       raf = requestAnimationFrame(tick);
       if (!isDragging) {
@@ -345,9 +345,6 @@ export default function PeersOrb({
         velX *= 0.93;
         rotX = Math.max(-0.9, Math.min(0.9, rotX));
         rotX += (0.18 - rotX) * 0.005;
-        if (Math.abs(velY) < 0.0008 && Math.abs(velX) < 0.0008) {
-          rotY += baseSpin;
-        }
       }
       orbGroup.rotation.y = rotY;
       orbGroup.rotation.x = rotX;
