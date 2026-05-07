@@ -128,6 +128,93 @@ export default function MyExperience() {
             onClear={() => {
               setFilter('all');
               setQuery('');
-
-  return null;
+            }}
+          />
+        ) : (
+          <ol className="divide-y divide-ink-150">
+            {filtered.map((it, i) => (
+              <ExpRow key={it.experienceId} index={i + 1} item={it} />
+            ))}
+          </ol>
+        )}
+      </section>
+    </>
+  );
 }
+
+/* ---------- 행 ---------- */
+
+function ExpRow({ index, item }) {
+  const cat = EXPERIENCE_CATEGORY_TO_FRONT[item.experienceCategory];
+  const label = EXPERIENCE_CATEGORY_LABEL[cat] || item.experienceCategory;
+  const period = `${fmtYM(item.startDate)} ~ ${fmtYM(item.endDate)}`;
+
+  return (
+    <li>
+      <Link
+        to={`/my-experience/${item.experienceId}`}
+        className="block px-4 sm:px-5 py-2.5 hover:bg-ink-50/60 transition-colors"
+      >
+        <div className="flex items-start gap-3">
+          <span className="text-[12.5px] font-semibold text-ink-400 tabular-nums shrink-0 w-6 pt-[3px] text-right">
+            {index}.
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="badge-navy">{label}</span>
+              <h3 className="text-[14px] font-semibold text-ink-900 tracking-tight break-keep">
+                {item.experienceTitle}
+              </h3>
+            </div>
+            <div className="text-[12px] text-ink-500 mt-0.5 flex flex-wrap items-center gap-x-1.5 tabular-nums">
+              <span>{period}</span>
+              {item.relatedMajor && (
+                <>
+                  <span className="text-ink-300">·</span>
+                  <span>관련 전공 {item.relatedMajor}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </Link>
+    </li>
+  );
+}
+
+/* ---------- 필터 칩 / 상태 ---------- */
+
+function FilterChip({ active, onClick, label, count }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'px-3 py-1.5 rounded-full text-[12.5px] font-semibold border transition-colors',
+        active
+          ? 'bg-primary-50 border-primary-600 text-primary-800'
+          : 'bg-paper border-ink-200 text-ink-600 hover:bg-ink-50'
+      )}
+    >
+      {label}
+      <span className="ml-1.5 text-ink-400 font-normal tabular-nums">
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function Loading() {
+  return (
+    <ul className="divide-y divide-ink-150">
+      {[0, 1, 2].map((i) => (
+        <li key={i} className="px-4 sm:px-5 py-2.5 animate-pulse">
+          <div className="flex items-start gap-3">
+            <div className="h-3 w-4 bg-ink-100 rounded shrink-0" />
+            <div className="flex-1">
+              <div className="h-3.5 w-1/3 bg-ink-100 rounded mb-1.5" />
+              <div className="h-3 w-2/3 bg-ink-100 rounded" />
+            </div>
+          </div>
+        </li>
+      ))}
