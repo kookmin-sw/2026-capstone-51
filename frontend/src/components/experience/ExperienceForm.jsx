@@ -73,6 +73,46 @@ export default function ExperienceForm({
                   ? 'bg-primary-50 border-primary-600 text-primary-800'
                   : 'bg-paper border-ink-200 text-ink-700 hover:bg-ink-50'
               )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* 기본 정보 */}
+      <Section title="기본 정보">
+        <div className="grid gap-4">
+          <Field label="제목" required error={errors.title}>
+            <input
+              className={cn(
+                'field text-[14px] py-2.5',
+                errors.title && 'border-red-500 focus:border-red-500'
+              )}
+              placeholder="예: AI 자소서 보조 캡스톤 프로젝트"
+              maxLength={200}
+              value={form.title}
+              onChange={(e) => update('title', e.target.value)}
+            />
+          </Field>
+          <Field
+            label="관련 전공"
+            required
+            error={errors.relatedMajor}
+            hint="이 경험과 가장 관련 있는 전공을 선택하세요."
+          >
+            <Combobox
+              value={form.relatedMajor}
+              onChange={(v) => update('relatedMajor', v)}
+              options={KOOKMIN_DEPT_OPTIONS}
+              placeholder="전공 선택"
+              searchPlaceholder="단과대 / 학과 검색"
+              hasError={!!errors.relatedMajor}
+            />
+          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="시작일" required error={errors.startDate}>
+              <DatePicker
 
   return null;
 }
