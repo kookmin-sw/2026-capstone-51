@@ -28,5 +28,46 @@ export default function MyExperience() {
 
   const items = useMemo(() => exps.data || [], [exps.data]);
 
+  const byCategory = useMemo(() => {
+    if (filter === 'all') return items;
+    return items.filter(
+      (e) => EXPERIENCE_CATEGORY_TO_FRONT[e.experienceCategory] === filter
+    );
+  }, [items, filter]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return byCategory;
+    return byCategory.filter((e) =>
+      String(e.experienceTitle || '')
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [byCategory, query]);
+
+  const isFiltered = filter !== 'all' || query.trim().length > 0;
+
+  return (
+    <>
+      <Crumbs items={['MyPage', '내 경험']} />
+
+      <header className="flex items-end justify-between gap-3 mb-4 flex-wrap">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight text-ink-900">
+            내 경험
+          </h1>
+          <p className="text-[12.5px] text-ink-500 mt-1">
+            STAR 구조로 저장한 경험은 자소서 추천에 활용됩니다.
+          </p>
+        </div>
+        <Link to="/my-experience/new" className="btn-primary">
+          <Plus size={14} strokeWidth={2.2} />
+          경험 추가
+        </Link>
+      </header>
+
+      <section className="card !p-0 overflow-hidden">
+        {/* 검색창 */}
+
   return null;
 }
