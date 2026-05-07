@@ -70,6 +70,21 @@ api.interceptors.request.use((config) => {
 let isRefreshing = false;
 let refreshQueue = [];
 
+/**
+ * 세션 만료(reissue 실패) 시 useAuth zustand 도 갱신 — ProtectedRoute 가
+ * isAuthenticated 변화를 보고 /landing 으로 보냄.
+ *
+ * useAuth ↔ axios 양방향 의존이라 동기 import 시 cycle.
+ * runtime 에서만 호출되므로 lazy dynamic import 로 회피.
+ */
+const notifySessionExpired = () => {
+  import('../store/useAuth')
+    .then(({ useAuth }) => {
+      useAuth.setState({ user: null, isAuthenticated: false });
+    })
+    .catch(() => {});
+};
+
 const flushQueue = (newAccess, error) => {
   refreshQueue.forEach(({ resolve, reject, config }) => {
     if (error) reject(error);
@@ -138,6 +153,7 @@ api.interceptors.response.use(
 
       if (!tokenStore.getRefresh()) {
         tokenStore.clear();
+        notifySessionExpired();
         return Promise.reject(error);
       }
 
@@ -150,6 +166,7 @@ api.interceptors.response.use(
       } catch (e) {
         flushQueue(null, e);
         tokenStore.clear();
+        notifySessionExpired();
         return Promise.reject(e);
       } finally {
         isRefreshing = false;

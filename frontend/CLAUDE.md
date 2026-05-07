@@ -35,10 +35,14 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 `src/main.jsx` 는 `createRoot(...).render(<App />)` 만. 라우트 트리 + `QueryClientProvider` + `HashRouter` 는 `src/App.jsx` 에 분리되어 있음 (이렇게 분리 안 하면 `react-refresh/only-export-components` 룰 때문에 HMR 깨짐).
 
 - **`HashRouter`** (BrowserRouter 아님) — URL이 `#/...`. 정적 호스팅(GitHub Pages 등)에서도 라우팅 깨지지 않게.
-- 라우트 두 종류:
-  - **Chromeless**: `/landing`, `/auth/callback`, `/onboarding` — 사이드바 없이 전체 화면.
-  - **Layout-wrapped**: 그 외 전부 `<Layout/>`(사이드바 + `<Outlet/>`)에 감싸짐. 인덱스(`/`)와 unknown path는 `/dashboard`로 redirect.
-- 미구현 페이지(`/write`, `/essays`, `/essays/:id`, `/stats`, `/info`, `/my-experience`, `/my-experience/new`, `/my-experience/:id`, `/my-certificates`, `/my-certificates/new`, `/my-certificates/:id/edit`)는 전부 `<Placeholder/>`.
+- 라우트 세 종류:
+  - **Chromeless 공개**: `/landing`, `/auth/callback` — 사이드바 없이 전체 화면, 인증 불필요.
+  - **Chromeless 보호**: `/onboarding` — `<ProtectedRoute/>` 래핑.
+  - **Layout-wrapped 보호**: 그 외 전부 `<ProtectedRoute/>` → `<Layout/>`(사이드바 + `<Outlet/>`) 안에. 인덱스(`/`)와 unknown path 는 `/dashboard` 로 redirect.
+- 미구현 페이지(`/write`, `/essays`, `/essays/:id`, `/stats`, `/my-experience`, `/my-experience/new`, `/my-experience/:id`, `/my-certificates`, `/my-certificates/new`, `/my-certificates/:id/edit`)는 전부 `<Placeholder/>`.
+- 구현된 페이지: `/landing`, `/auth/callback`, `/onboarding`, `/dashboard`(mock), `/info`.
+
+`ProtectedRoute` 는 `useAuth.isAuthenticated` 만 보고 `/landing` 으로 redirect. axios 의 reissue 실패 시 `notifySessionExpired` 가 lazy import 로 useAuth 의 isAuthenticated 를 false 로 만들어, ProtectedRoute 가 재렌더 → 자동 /landing 이동. (cycle 회피용 dynamic import.)
 
 #### 로그인 플로우
 
@@ -69,11 +73,10 @@ Sidebar 로그아웃
 
 Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/auth/callback` 으로 들어옴. HashRouter 는 pathname 을 라우팅에 쓰지 않으므로 `main.jsx` 가 React 마운트 전에 `history.replaceState` 로 `/#/auth/callback?...` 으로 옮겨 라우터가 잡게 함.
 
-**Onboarding → /users/me 매핑 정책 (현재):**
+**`/users/me` 매핑 정책:**
 
-- `userName ← name (trim)`, `schoolNumber ← studentId (trim)`, `score ← parseFloat(gpa) || null`.
-- `state ← year(1..5)` 단순 매핑 (`FRESH_MAN/SOPHOMORE/JUNIOR/SENIOR/SENIOR`).
-- `major / minor / jobFirst / jobSecond / jobThird` 는 **null** — 백엔드 enum (KookminDepartment 한국어 풀네임, JobFirst·Second·Third 한국 표준직업분류) 정합성 정책 미정. 단계 3 (페이지 빌드) 에서 enum 어댑터 완성 후 매핑 추가.
+- `Info.jsx` (수정 페이지): 모든 enum 필드를 백엔드 직렬화 값으로 직접 사용. `KookminDepartment` 풀네임, `JobFirst/Second/Third` 한국 표준직업분류 — `lib/enums.js` 의 옵션 그대로.
+- `Onboarding.jsx` (첫 로그인): 기본 텍스트 필드만 매핑 (userName / schoolNumber / score / state). `major / minor / jobFirst / jobSecond / jobThird` 는 **null** — 회원가입 시점에는 굳이 백엔드 enum 풀 트리를 보여주지 않고, 추후 `/info` 에서 정식으로 채우게 함. (Onboarding 의 mock `MAJORS` / `JOB_TREE` 는 deprecation 대상 — 향후 정리 가능.)
 
 ### CSS / Tailwind
 
@@ -130,10 +133,13 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 - `useAuth` — `isAuthenticated`, `user`, `setTokens`, `setUser`, `logout`. `logout` 은 클라이언트 상태 즉시 비우고 백엔드 `/auth/logout` 을 best-effort 호출 (실패 무시).
 - `useToast` — `toasts`, `push`, `dismiss` + 컴포넌트 외부 헬퍼 `toast.info/success/error`.
 
-**enum 어댑터** — [`src/lib/enums.js`](2026-capstone-51/frontend/src/lib/enums.js)
+**enum 어댑터** — [`src/lib/enums.js`](2026-capstone-51/frontend/src/lib/enums.js) + [`src/lib/enums-data.js`](2026-capstone-51/frontend/src/lib/enums-data.js)
 
 - `ExperienceCategory` 백엔드↔프론트 매핑, `Progress`/`State` 한글 라벨, 통계 groupBy.
-- `KookminDepartment` / `JobFirst·Second·Third` 는 백엔드 정책 결정 후 추가 (한국어 풀네임 ↔ 프론트 옵션 차이).
+- `KookminDepartment` (54 개) — `KOOKMIN_DEPT_OPTIONS` (`{value, label, group}`) + `KOOKMIN_COLLEGES` (15). value 는 백엔드 직렬화 값(`"단과대학 학과명"`) 그대로라 select 의 value 로 그대로 PUT.
+- `JobFirst/Second/Third` — `JOB_TREE_BACKEND` 3 단 트리 + `JOB_FIRST_OPTIONS` / `jobSecondOptions(first)` / `jobThirdOptions(first, second)` 헬퍼. 13 / 114 / 1,125 개. enum 이름 자체가 직렬화 값.
+- `humanizeEnum(value)` — 한국어 + 언더스코어 형태(`경영_사무_금융_보험`)를 `·` 로 치환해 사람 가독.
+- 큰 정적 데이터(58 KB raw)는 `enums-data.js` 분리. 백엔드 enum 변경 시 수동 갱신 필요(스크립트 도입 후보).
 
 **Toaster 컴포넌트** — [`src/components/Toaster.jsx`](2026-capstone-51/frontend/src/components/Toaster.jsx)
 
@@ -167,6 +173,7 @@ src/
 │   └── essays.js
 ├── components/
 │   ├── Layout.jsx        # Sidebar + Outlet 셸 (max-width 1100)
+│   ├── ProtectedRoute.jsx# useAuth.isAuthenticated 가드. 미인증 → /landing replace
 │   ├── Sidebar.jsx       # NAV/RELATED_SITES 렌더, lucide ICONS lookup, DEV 빌드에서만 미리보기 링크 + 사용자 footer. 로그아웃 = useAuth.logout() (클라 즉시 비움 + 백엔드 /auth/logout best-effort)
 │   ├── Toaster.jsx       # 우상단 토스트 스택. App 루트에 한 번 마운트
 │   ├── Crumbs.jsx        # 빵부스러기. items: string[] | {label, to?}[]
@@ -181,6 +188,7 @@ src/
 │   ├── AuthCallback.jsx  # OAuth 콜백 — grant code → POST /auth/login → firstLogin 분기
 │   ├── Onboarding.jsx    # 단일 페이지 폼. 시작하기 = PUT /users/me → /dashboard
 │   ├── Dashboard.jsx     # Crumbs + HeroBanner + (PeersOrb + MyRoadmapCard + SeniorRoadmapCard) 스택 (mock)
+│   ├── Info.jsx          # /info — useMe + view/edit 모드 + useUpdateMe. 학적/직무 enum 선택자
 │   └── Placeholder.jsx   # 미구현 라우트 공통 stub
 └── assets/               # hero.png, react.svg, vite.svg
 ```
