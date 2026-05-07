@@ -153,6 +153,88 @@ export default function ExperienceForm({
             value={form.star.t}
             onChange={(v) => updateStar('t', v)}
             error={errors.starT}
+          />
+          <StarField
+            label="Action"
+            sub="구체적으로 어떤 행동을 했는지"
+            value={form.star.a}
+            onChange={(v) => updateStar('a', v)}
+            error={errors.starA}
+          />
+          <StarField
+            label="Result"
+            sub="어떤 결과·교훈을 얻었는지"
+            value={form.star.r}
+            onChange={(v) => updateStar('r', v)}
+            error={errors.starR}
+          />
+        </div>
+      </Section>
 
-  return null;
+      <div className="flex justify-end gap-2 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isPending}
+          className="btn-default"
+        >
+          취소
+        </button>
+        <button type="submit" disabled={isPending} className="btn-primary">
+          {isPending ? '저장 중…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
 }
+
+/* ---------- 데이터 변환 ---------- */
+
+function toDraft(d) {
+  return {
+    category: d?.experienceCategory
+      ? EXPERIENCE_CATEGORY_TO_FRONT[d.experienceCategory] || ''
+      : '',
+    relatedMajor: d?.relatedMajor ?? '',
+    title: d?.experienceTitle ?? '',
+    startDate: d?.startDate ?? '',
+    endDate: d?.endDate ?? '',
+    star: {
+      s: d?.starStructure?.s ?? '',
+      t: d?.starStructure?.t ?? '',
+      a: d?.starStructure?.a ?? '',
+      r: d?.starStructure?.r ?? '',
+    },
+  };
+}
+
+function toBody(form) {
+  return {
+    experienceCategory: EXPERIENCE_CATEGORY_TO_BACK[form.category],
+    relatedMajor: form.relatedMajor,
+    experienceTitle: form.title.trim(),
+    startDate: form.startDate,
+    endDate: form.endDate,
+    starStructure: {
+      s: form.star.s.trim(),
+      t: form.star.t.trim(),
+      a: form.star.a.trim(),
+      r: form.star.r.trim(),
+    },
+  };
+}
+
+/* ---------- 검증 ---------- */
+
+function validate(form) {
+  const e = {};
+  const today = todayIso();
+  if (!form.category) e.category = '카테고리를 선택해주세요.';
+  if (!form.relatedMajor) e.relatedMajor = '관련 전공을 선택해주세요.';
+  if (!form.title.trim()) e.title = '제목을 입력해주세요.';
+  else if (form.title.length > 200) e.title = '200자 이내로 입력해주세요.';
+  if (!form.startDate) e.startDate = '시작일을 선택해주세요.';
+  else if (form.startDate > today)
+    e.startDate = '시작일은 오늘 이전이어야 합니다.';
+  if (!form.endDate) e.endDate = '종료일을 선택해주세요.';
+  else if (form.endDate > today) e.endDate = '종료일은 오늘 이전이어야 합니다.';
