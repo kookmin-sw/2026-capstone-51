@@ -249,3 +249,72 @@ function Bar({ value, max, color, label }) {
 }
 
 /* ---------- 본인 카테고리 분포 ---------- */
+
+function MyDistribution({ data }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  const slices = buildPieSlices(data, total);
+  const [hoverKey, setHoverKey] = useState(null);
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+
+  const hoveredSlice = slices.find((s) => s.key === hoverKey);
+  const hoveredData = data.find((d) => d.key === hoverKey);
+  const hoveredPct =
+    hoveredData && total > 0 ? (hoveredData.value / total) * 100 : 0;
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  // 슬라이스 비율에 따라 stroke 굵기 — 작은 슬라이스가 stroke 에 잡아먹히지 않게.
+  const strokeFor = (pct) => (pct < 3 ? 0.3 : pct < 8 ? 0.6 : 1);
+
+  return (
+    <div className="px-4 sm:px-5 py-5">
+      <h2 className="text-[15px] font-bold text-ink-900 mb-1">내 경험 분포</h2>
+      <p className="text-[12px] text-ink-500 mb-4">
+        총 {total}건. 카테고리별 비율을 비교 대상과 무관하게 보여줍니다.
+      </p>
+
+      <div className="flex flex-col items-center gap-4">
+        <div
+          className="relative"
+          style={{ width: 260, height: 260 }}
+          onMouseLeave={() => setHoverKey(null)}
+          onMouseMove={handleMouseMove}
+        >
+          <svg
+            viewBox="0 0 120 120"
+            className="w-full h-full"
+            style={{ overflow: 'visible' }}
+          >
+            {total === 0 ? (
+              <DonutRing color="#eef0f3" />
+            ) : slices.length === 1 ? (
+              <DonutRing color={slices[0].color} />
+            ) : (
+              slices.map((s) => {
+                const isHovered = s.key === hoverKey;
+                return (
+                  <path
+                    key={s.key}
+                    d={s.d}
+                    fill={s.color}
+                    stroke="#ffffff"
+                    strokeWidth={strokeFor(s.pct)}
+                    strokeLinejoin="round"
+                    shapeRendering="geometricPrecision"
+                    onMouseEnter={() => setHoverKey(s.key)}
+                    style={{
+                      transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                      transformBox: 'fill-box',
+                      transformOrigin: 'center',
+                      transition:
+                        'transform 0.18s ease-out, filter 0.18s ease-out',
+                      filter: isHovered
+                        ? 'drop-shadow(0 8px 12px rgba(0,0,0,0.4)) brightness(1.06)'
+                        : 'none',
+                      cursor: 'pointer',
+                    }}
+                  />
+                );
