@@ -28,6 +28,25 @@ export default function NewExperience() {
 
   return (
     <>
+      <Crumbs items={['MyPage', '내 경험', '추가']} />
 
-  return null;
+      <header className="mb-5">
+        <h1 className="text-[22px] font-bold tracking-tight text-ink-900">
+          경험 추가
+        </h1>
+        <p className="text-[12.5px] text-ink-500 mt-1">
+          저장된 경험은 자소서 추천 / 동기 비교 통계에 활용됩니다.
+        </p>
+      </header>
+
+      <div className="card">
+        <ExperienceForm
+          onSubmit={handleSubmit}
+          onCancel={() => nav('/my-experience')}
+          isPending={create.isPending}
+          submitLabel="저장"
+        />
+      </div>
+    </>
+  );
 }
