@@ -398,3 +398,83 @@ function DonutRing({ color }) {
   const cx = 60;
   const cy = 60;
   const rO = 57;
+  const rI = 39;
+  const d = `M ${cx - rO} ${cy} A ${rO} ${rO} 0 1 0 ${cx + rO} ${cy} A ${rO} ${rO} 0 1 0 ${cx - rO} ${cy} Z M ${cx - rI} ${cy} A ${rI} ${rI} 0 1 0 ${cx + rI} ${cy} A ${rI} ${rI} 0 1 0 ${cx - rI} ${cy} Z`;
+  return <path d={d} fill={color} fillRule="evenodd" />;
+}
+
+// 채워진 도넛 슬라이스(annulus segment) path 빌더.
+// stroke-dasharray 방식보다 경계가 깔끔 — anti-aliasing 잔금/겹침 없음.
+// 각도는 12시(-90°) 시작, 시계방향 누적.
+function buildPieSlices(data, total) {
+  if (total === 0) return [];
+  const cx = 60;
+  const cy = 60;
+  const rO = 57;
+  const rI = 39;
+  const items = data.filter((d) => d.value > 0);
+  let acc = -Math.PI / 2;
+  return items.map((d) => {
+    const ang = (d.value / total) * Math.PI * 2;
+    const start = acc;
+    const end = acc + ang;
+    acc = end;
+    const largeArc = ang > Math.PI ? 1 : 0;
+    const sxO = cx + rO * Math.cos(start);
+    const syO = cy + rO * Math.sin(start);
+    const exO = cx + rO * Math.cos(end);
+    const eyO = cy + rO * Math.sin(end);
+    const sxI = cx + rI * Math.cos(end);
+    const syI = cy + rI * Math.sin(end);
+    const exI = cx + rI * Math.cos(start);
+    const eyI = cy + rI * Math.sin(start);
+    const dPath = `M ${sxO} ${syO} A ${rO} ${rO} 0 ${largeArc} 1 ${exO} ${eyO} L ${sxI} ${syI} A ${rI} ${rI} 0 ${largeArc} 0 ${exI} ${eyI} Z`;
+    return {
+      key: d.key,
+      color: CAT_COLORS[d.key] || '#9ca3af',
+      d: dPath,
+      midAngle: (start + end) / 2,
+      pct: (d.value / total) * 100,
+    };
+  });
+}
+
+/* ---------- 부족한 경험 ---------- */
+
+function Shortages({ items, groupLabel }) {
+  if (!items || items.length === 0) {
+    return (
+      <div className="px-4 sm:px-5 py-5">
+        <h2 className="text-[15px] font-bold text-ink-900 mb-2">부족한 경험</h2>
+        <p className="text-[13px] text-ink-600 break-keep">
+          현재 모든 카테고리에서 비교 대상 평균을 따라잡고 있어요. 다른 집단(예:
+          같은 학번)과도 비교해보면 더 정확한 인사이트를 얻을 수 있습니다.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 sm:px-5 py-5">
+      <h2 className="text-[15px] font-bold text-ink-900 mb-1">부족한 경험</h2>
+      <p className="text-[12px] text-ink-500 mb-4 break-keep">
+        {groupLabel} 그룹의 평균 대비 부족한 카테고리와 도움될 만한 경험 추천.
+      </p>
+      <div className="grid gap-3">
+        {items.map((it) => (
+          <div
+            key={it.category}
+            className="rounded-md border border-ink-150 bg-paper p-3"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="badge-amber">{it.category}</span>
+              <span className="text-[11.5px] text-ink-500 tabular-nums">
+                나 {it.me}건 · 평균 {Number(it.peers).toFixed(1)}건
+              </span>
+            </div>
+            {it.suggestions?.length > 0 && (
+              <div className="grid gap-1.5">
+                <div className="text-[11.5px] font-semibold text-ink-500 inline-flex items-center gap-1">
+                  <Sparkles size={11} strokeWidth={2.2} /> 추천 경험
+                </div>
+                <ul className="grid gap-0.5 text-[12px] text-ink-700 break-keep">
