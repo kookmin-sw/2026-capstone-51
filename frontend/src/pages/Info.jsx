@@ -41,6 +41,9 @@ export default function Info() {
   // 손실되므로. view 모드에서는 draft 무시하고 me.data 직접 렌더.
   const [mode, setMode] = useState('view');
   const [draft, setDraft] = useState(null);
+  // 첫 "저장" 클릭 후부터 라이브 검증 (Onboarding 패턴 일치).
+  const [submitted, setSubmitted] = useState(false);
+  const errors = mode === 'edit' && submitted && draft ? validate(draft) : {};
 
   if (me.isLoading) {
     return (
