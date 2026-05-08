@@ -139,3 +139,94 @@ export default function Stats() {
 }
 
 /* ---------- 5축 비교 막대그래프 ---------- */
+
+function FiveAxisCompare({ data, groupBy, peerCount, onPrev, onNext }) {
+  const max = Math.max(...data.flatMap((d) => [d.me, d.peers]), 1);
+  const groupLabel = STATS_GROUP_LABEL[groupBy];
+
+  return (
+    <div className="px-4 sm:px-5 py-5">
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <button
+          type="button"
+          onClick={onPrev}
+          aria-label="이전 비교 그룹"
+          className="shrink-0 w-7 h-7 -ml-1 flex items-center justify-center text-ink-400 hover:text-primary-700 transition-colors"
+        >
+          <ChevronLeft size={20} strokeWidth={2.2} />
+        </button>
+
+        <div className="flex-1 min-w-0 flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="text-[15px] font-bold text-ink-900 inline-flex items-center gap-2">
+            <span className="badge-navy">{groupLabel}</span>
+            <span>비교</span>
+          </h2>
+          <span className="text-[11.5px] text-ink-500 tabular-nums">
+            비교 대상 {peerCount}명
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={onNext}
+          aria-label="다음 비교 그룹"
+          className="shrink-0 w-7 h-7 -mr-1 flex items-center justify-center text-ink-400 hover:text-primary-700 transition-colors"
+        >
+          <ChevronRight size={20} strokeWidth={2.2} />
+        </button>
+      </div>
+
+      <p className="text-[12px] text-ink-500 mb-3">
+        대내·대외·인턴·아르바이트·자격증 5축 — 비교 대상 평균과 내 개수.
+      </p>
+
+      {/* dot indicators */}
+      <div className="flex justify-center gap-1.5 mb-4">
+        {GROUP_KEYS.map((k) => (
+          <span
+            key={k}
+            className={cn(
+              'h-1.5 rounded-full transition-all',
+              k === groupBy ? 'bg-primary-600 w-4' : 'bg-ink-200 w-1.5'
+            )}
+          />
+        ))}
+      </div>
+
+      <div className="grid gap-3">
+        {data.map((row) => (
+          <div
+            key={row.key}
+            className="grid grid-cols-[64px_1fr_56px] items-center gap-2"
+          >
+            <div className="text-[12.5px] font-semibold text-ink-700 truncate">
+              {row.label}
+            </div>
+            <div className="grid gap-1.5">
+              <Bar value={row.me} max={max} color="bg-primary-600" label="나" />
+              <Bar
+                value={row.peers}
+                max={max}
+                color="bg-ink-300"
+                label="평균"
+              />
+            </div>
+            <div className="text-[11.5px] text-ink-500 tabular-nums text-right">
+              {row.me} / {row.peers.toFixed(1)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-ink-150 flex items-center gap-3 text-[11.5px] text-ink-500">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-2 rounded-sm bg-primary-600" />나
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-2 rounded-sm bg-ink-300" />
+          비교 평균
+        </span>
+      </div>
+    </div>
+  );
+}
