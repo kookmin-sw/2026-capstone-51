@@ -24,7 +24,6 @@ import com.github.logi.global.embedding.EmbeddingClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.core.exception.SdkException;
 
 import java.util.List;
 import java.util.UUID;
@@ -142,12 +141,7 @@ public class EssayService {
     }
 
     public EssayRecommendResponse recommendExperiences(User user, EssayRecommendRequest request) {
-        float[] questionEmbedding;
-        try {
-            questionEmbedding = embeddingClient.embed(request.question());
-        } catch (SdkException | IllegalStateException e) {
-            throw EssayExceptions.EMBEDDING_FAILED.toException();
-        }
+        float[] questionEmbedding = embeddingClient.embed(request.question());
         String embeddingLiteral = toVectorLiteral(questionEmbedding);
 
         List<ExperienceRepository.RecommendedExperienceView> rows =
