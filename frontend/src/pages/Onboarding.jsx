@@ -17,24 +17,19 @@ import { toast } from '../store/useToast';
  * 첫 로그인 후 1회만 거치는 온보딩.
  * 한 페이지에 모든 항목을 모아 보여주고, 하단의 "시작하기"로 PUT /users/me 후 /dashboard 이동.
  *
- * 항목:
- *   - 이름, 학번 (필수)
- *   - 전공 / 부전공 / 학년 / 학점
- *   - 관심 직무 — 대분류 / 중분류 / 소분류 3단 드롭다운
+ * 필수: 이름(2자+), 학번(8자리 숫자), 전공, 현재상태, 학점(0~4.5), 희망직무 대/중/소.
+ * 옵셔널: 부전공.
+ * 부전공은 전공과 동일하게 선택 불가 (옵션 자체에서 제외).
+ * 검증 실패는 인라인 에러로 노출.  최초 "시작하기" 클릭 후부터 라이브 검증.
  *
- * 백엔드 매핑 정책:
+ * 백엔드 매핑:
  *  - userName ← name (trim)
- *  - schoolNumber ← studentId (trim)
- *  - score ← parseFloat(gpa) || null
- *  - state ← year(1..5) 를 FRESH_MAN/SOPHOMORE/JUNIOR/SENIOR/SENIOR 로 단순 매핑
- *    (5 = 초과학기는 SENIOR 로. JOBSEEKER/WORKER 는 온보딩 폼에 옵션 없음)
- *  - major / minor / jobFirst / jobSecond / jobThird = null
- *    백엔드 enum 정합성 정책 미정 — 단계 3 에서 enum 어댑터 완성 후 매핑.
- *    (KookminDepartment 한국어 풀네임, JobFirst/Second/Third 한국 표준직업분류 enum.)
- *  - 위 매핑 정책은 frontend/CLAUDE.md 에 별도 명시.
- *
- * 검증: name / studentId 두 필드만 trim 후 빈 값이면 토스트 + 제출 차단.
- *       나머지는 정책 미정이라 입력 검증 보류 (백엔드 422 메시지에 의존).
+ *  - schoolNumber ← studentId
+ *  - state ← STATE_OPTIONS value 그대로 (FRESH_MAN | SOPHOMORE | JUNIOR | SENIOR | JOBSEEKER | WORKER)
+ *  - score ← parseFloat(gpa) (없으면 null)
+ *  - major ← KookminDepartment 직렬화 값
+ *  - minor ← KookminDepartment 직렬화 값 또는 null
+ *  - jobFirst/Second/Third ← 한국 표준직업분류 enum 값 그대로
  */
 export default function Onboarding() {
   const nav = useNavigate();
