@@ -115,25 +115,13 @@ export default function Info() {
     <>
       <Crumbs items={['MyPage', '내 정보']} />
 
-      {/* 페이지 헤더 + 수정/저장 버튼 */}
-      <header className="flex flex-wrap items-center gap-3 mb-4">
+      {/* 페이지 헤더 + 수정/저장 버튼.
+          부제(학번·학년)는 학적 정보 카드와 중복이라 제거 — 이름만 아바타 옆에 수직 중앙 정렬. */}
+      <header className="flex flex-wrap items-center gap-3 mb-5">
         <Avatar name={data.userName} />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-[22px] font-bold tracking-tight text-ink-900 truncate">
-            {data.userName || '회원'}
-          </h1>
-          <div className="text-[12.5px] text-ink-500 mt-0.5">
-            {data.schoolNumber
-              ? `학번 ${data.schoolNumber}`
-              : '학번을 입력해주세요'}
-            {data.state && (
-              <>
-                <span className="text-ink-300 mx-1.5">·</span>
-                <span>{STATE_LABEL[data.state] || data.state}</span>
-              </>
-            )}
-          </div>
-        </div>
+        <h1 className="min-w-0 flex-1 text-[22px] font-bold tracking-tight text-ink-900 truncate">
+          {data.userName || '회원'}
+        </h1>
         <div className="flex gap-2 sm:shrink-0 w-full sm:w-auto">
           {isEdit ? (
             <>
