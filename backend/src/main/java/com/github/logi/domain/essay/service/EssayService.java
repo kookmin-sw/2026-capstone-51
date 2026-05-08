@@ -24,6 +24,7 @@ import com.github.logi.global.embedding.EmbeddingClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.core.exception.SdkException;
 
 import java.util.List;
 import java.util.UUID;
@@ -141,17 +142,23 @@ public class EssayService {
     }
 
     public EssayRecommendResponse recommendExperiences(User user, EssayRecommendRequest request) {
-        float[] questionEmbedding = embeddingClient.embed(request.question());
+        float[] questionEmbedding;
+        try {
+            questionEmbedding = embeddingClient.embed(request.question());
+        } catch (SdkException | IllegalStateException e) {
+            throw EssayExceptions.EMBEDDING_FAILED.toException();
+        }
         String embeddingLiteral = toVectorLiteral(questionEmbedding);
 
-        List<Object[]> rows = experienceRepository.findRecommendedByEmbedding(
-                user.getId(), embeddingLiteral, RECOMMEND_LIMIT);
+        List<ExperienceRepository.RecommendedExperienceView> rows =
+                experienceRepository.findRecommendedByEmbedding(
+                        user.getId(), embeddingLiteral, RECOMMEND_LIMIT);
 
         List<EssayRecommendResponse.RelatedExperience> related = rows.stream()
-                .map(row -> new EssayRecommendResponse.RelatedExperience(
-                        (UUID) row[0],
-                        (String) row[1],
-                        1.0 - ((Number) row[2]).doubleValue()
+                .map(view -> new EssayRecommendResponse.RelatedExperience(
+                        view.getId(),
+                        view.getExperienceTitle(),
+                        1.0 - view.getDistance()
                 ))
                 .toList();
 

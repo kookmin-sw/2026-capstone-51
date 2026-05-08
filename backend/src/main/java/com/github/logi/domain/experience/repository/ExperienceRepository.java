@@ -28,9 +28,15 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             ORDER BY distance
             LIMIT :limit
             """, nativeQuery = true)
-    List<Object[]> findRecommendedByEmbedding(
+    List<RecommendedExperienceView> findRecommendedByEmbedding(
             @Param("userId") UUID userId,
             @Param("embedding") String embedding,
             @Param("limit") int limit
     );
+
+    interface RecommendedExperienceView {
+        UUID getId();
+        String getExperienceTitle();
+        Double getDistance();
+    }
 }
