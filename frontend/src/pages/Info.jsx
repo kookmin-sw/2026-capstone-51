@@ -78,20 +78,24 @@ export default function Info() {
 
   const enterEdit = () => {
     setDraft(toDraft(data));
+    setSubmitted(false);
     setMode('edit');
   };
   const cancelEdit = () => {
     setDraft(toDraft(data));
+    setSubmitted(false);
     setMode('view');
   };
 
   const save = () => {
-    const body = toRequest(draft);
-    if (!body.userName?.trim()) {
-      toast.error('이름을 입력해주세요.');
+    setSubmitted(true);
+    const errs = validate(draft);
+    if (Object.keys(errs).length > 0) {
+      toast.error('입력값을 다시 확인해주세요.');
       return;
     }
     if (updateMe.isPending) return;
+    const body = toRequest(draft);
     updateMe.mutate(body, {
       onSuccess: () => {
         toast.success('내 정보를 저장했어요.');
