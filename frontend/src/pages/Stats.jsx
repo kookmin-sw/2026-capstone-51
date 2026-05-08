@@ -91,5 +91,51 @@ export default function Stats() {
     };
   }, [q.data]);
 
-  return null;
+  return (
+    <>
+      <Crumbs items={['통계']} />
+
+      <header className="flex items-end justify-between gap-3 mb-4 flex-wrap">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight text-ink-900">
+            통계
+          </h1>
+          <p className="text-[12.5px] text-ink-500 mt-1">
+            같은 그룹 친구들의 평균과 내 경험을 비교해보세요.
+          </p>
+        </div>
+      </header>
+
+      {q.isLoading ? (
+        <Loading />
+      ) : q.isError ? (
+        <ErrorState
+          message={q.error?.apiMessage || '통계를 불러오지 못했습니다.'}
+          onRetry={() => q.refetch()}
+        />
+      ) : (
+        <section className="card !p-0 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
+            <FiveAxisCompare
+              data={view.byCategory}
+              groupBy={groupBy}
+              peerCount={view.peerCount}
+              onPrev={() => setGroupBy(cycleGroup(groupBy, -1))}
+              onNext={() => setGroupBy(cycleGroup(groupBy, 1))}
+            />
+            <div className="border-t lg:border-t-0 lg:border-l border-ink-150">
+              <MyDistribution data={view.distribution} />
+            </div>
+          </div>
+          <div className="border-t border-ink-150" />
+          <Shortages
+            items={view.shortages}
+            groupLabel={STATS_GROUP_LABEL[groupBy]}
+          />
+        </section>
+      )}
+    </>
+  );
 }
+
+/* ---------- 5축 비교 막대그래프 ---------- */
