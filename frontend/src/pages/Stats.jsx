@@ -478,3 +478,56 @@ function Shortages({ items, groupLabel }) {
                   <Sparkles size={11} strokeWidth={2.2} /> 추천 경험
                 </div>
                 <ul className="grid gap-0.5 text-[12px] text-ink-700 break-keep">
+                  {it.suggestions.map((s, i) => (
+                    <li key={i} className="ml-2">
+                      · {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="mt-3">
+              <Link to="/my-experience/new" className="btn-default btn-sm">
+                <Plus size={11} strokeWidth={2.2} />이 카테고리 경험 추가
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- 상태 ---------- */
+
+function Loading() {
+  return (
+    <section className="card animate-pulse">
+      <div className="h-4 w-1/3 bg-ink-100 rounded mb-3" />
+      <div className="h-3 w-1/2 bg-ink-100 rounded mb-5" />
+      <div className="grid gap-2">
+        {[0, 1, 2, 3, 4].map((j) => (
+          <div key={j} className="h-3 bg-ink-100 rounded" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <section className="card text-center py-10">
+      <AlertTriangle
+        size={20}
+        strokeWidth={2}
+        className="mx-auto mb-2 text-ink-400"
+      />
+      <p className="text-[13px] text-ink-700 mb-3 break-keep">{message}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="btn-default">
+          다시 시도
+        </button>
+      )}
+    </section>
+  );
+}
