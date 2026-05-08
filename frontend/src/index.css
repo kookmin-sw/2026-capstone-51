@@ -15,13 +15,16 @@
     @apply font-sans bg-page text-ink-900 antialiased;
     font-feature-settings: 'cv11';
   }
-  /* Pretendard — preview/Vite 모두에서 사용 */
+  /* Pretendard — preview/Vite 모두에서 사용.
+     이전엔 gh/orioncactus/pretendard 경로였는데 jsdelivr 가 GitHub 직링크를
+     deprecate 해서 npm 패키지 경로로 마이그레이션. 버전 명시 고정으로 캐시
+     안정성 확보. latest 갱신 시 https://www.npmjs.com/package/pretendard 와 비교. */
   @font-face {
     font-family: 'Pretendard';
     font-weight: 45 920;
     font-style: normal;
     font-display: swap;
-    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/PretendardVariable.woff2')
+    src: url('https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/woff2/PretendardVariable.woff2')
       format('woff2-variations');
   }
 }
