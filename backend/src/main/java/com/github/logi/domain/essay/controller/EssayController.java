@@ -3,12 +3,14 @@ package com.github.logi.domain.essay.controller;
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
+import com.github.logi.domain.essay.dto.request.EssayRecommendRequest;
 import com.github.logi.domain.essay.dto.request.EssayResultUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
 import com.github.logi.domain.essay.dto.response.EssayQuestionCreateResponse;
+import com.github.logi.domain.essay.dto.response.EssayRecommendResponse;
 import com.github.logi.domain.essay.service.EssayService;
 import com.github.logi.domain.user.entity.User;
 import com.github.logi.global.dto.ApiResponse;
@@ -107,5 +109,14 @@ public class EssayController {
     ) {
         essayService.updateQuestion(user, essayId, questionId, request);
         return ApiResponse.ok();
+    }
+
+    @Operation(summary = "관련 경험 추천", description = "자소서 문항을 임베딩하여 사용자의 경험 중 관련도가 높은 경험을 벡터 서치로 추천합니다.")
+    @PostMapping("/recommend")
+    public ApiResponse<EssayRecommendResponse> recommendExperiences(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody EssayRecommendRequest request
+    ) {
+        return ApiResponse.ok(essayService.recommendExperiences(user, request));
     }
 }

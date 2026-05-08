@@ -21,6 +21,7 @@ repositories {
 dependencies {
 	implementation platform('software.amazon.awssdk:bom:2.44.0')
 	implementation 'software.amazon.awssdk:sqs'
+	implementation 'software.amazon.awssdk:bedrockruntime'
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'

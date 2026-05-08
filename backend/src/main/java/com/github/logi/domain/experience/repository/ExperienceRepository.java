@@ -16,4 +16,27 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
     @Modifying
     @Query(value = "DELETE FROM experiences WHERE user_id = :userId", nativeQuery = true)
     void hardDeleteAllByUserId(@Param("userId") UUID userId);
+
+    @Query(value = """
+            SELECT id,
+                   experience_title,
+                   experience_embeddings <=> CAST(:embedding AS vector) AS distance
+            FROM experiences
+            WHERE user_id = :userId
+              AND deleted_at IS NULL
+              AND experience_embeddings IS NOT NULL
+            ORDER BY distance
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<RecommendedExperienceView> findRecommendedByEmbedding(
+            @Param("userId") UUID userId,
+            @Param("embedding") String embedding,
+            @Param("limit") int limit
+    );
+
+    interface RecommendedExperienceView {
+        UUID getId();
+        String getExperienceTitle();
+        Double getDistance();
+    }
 }

@@ -3,12 +3,14 @@ package com.github.logi.domain.essay.service;
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
+import com.github.logi.domain.essay.dto.request.EssayRecommendRequest;
 import com.github.logi.domain.essay.dto.request.EssayResultUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
 import com.github.logi.domain.essay.dto.response.EssayQuestionCreateResponse;
+import com.github.logi.domain.essay.dto.response.EssayRecommendResponse;
 import com.github.logi.domain.essay.entity.Essay;
 import com.github.logi.domain.essay.entity.EssayQuestion;
 import com.github.logi.domain.essay.exception.EssayExceptions;
@@ -18,6 +20,7 @@ import com.github.logi.domain.experience.entity.Experience;
 import com.github.logi.domain.experience.exception.ExperienceExceptions;
 import com.github.logi.domain.experience.repository.ExperienceRepository;
 import com.github.logi.domain.user.entity.User;
+import com.github.logi.global.embedding.EmbeddingClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +33,12 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class EssayService {
 
+    private static final int RECOMMEND_LIMIT = 5;
+
     private final EssayRepository essayRepository;
     private final EssayQuestionRepository essayQuestionRepository;
     private final ExperienceRepository experienceRepository;
+    private final EmbeddingClient embeddingClient;
 
     @Transactional
     public EssayCreateResponse createEssay(User user, EssayCreateRequest request) {
@@ -134,6 +140,25 @@ public class EssayService {
         essay.updateProgress(request.progress());
     }
 
+    public EssayRecommendResponse recommendExperiences(User user, EssayRecommendRequest request) {
+        float[] questionEmbedding = embeddingClient.embed(request.question());
+        String embeddingLiteral = toVectorLiteral(questionEmbedding);
+
+        List<ExperienceRepository.RecommendedExperienceView> rows =
+                experienceRepository.findRecommendedByEmbedding(
+                        user.getId(), embeddingLiteral, RECOMMEND_LIMIT);
+
+        List<EssayRecommendResponse.RelatedExperience> related = rows.stream()
+                .map(view -> new EssayRecommendResponse.RelatedExperience(
+                        view.getId(),
+                        view.getExperienceTitle(),
+                        1.0 - view.getDistance()
+                ))
+                .toList();
+
+        return new EssayRecommendResponse(related);
+    }
+
     private List<Experience> resolveExperiences(List<UUID> ids) {
         if (ids.isEmpty()) {
             return List.of();
@@ -143,5 +168,18 @@ public class EssayService {
             throw ExperienceExceptions.EXPERIENCE_NOT_FOUND.toException();
         }
         return experiences;
+    }
+
+    private String toVectorLiteral(float[] embedding) {
+        StringBuilder sb = new StringBuilder(embedding.length * 8);
+        sb.append('[');
+        for (int i = 0; i < embedding.length; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(embedding[i]);
+        }
+        sb.append(']');
+        return sb.toString();
     }
 }
