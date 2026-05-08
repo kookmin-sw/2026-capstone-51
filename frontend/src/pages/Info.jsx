@@ -158,144 +158,351 @@ export default function Info() {
       </header>
 
       <div className="grid gap-4">
-        {/* 기본 정보 */}
-        <Card title="기본 정보">
-          <Grid cols={2}>
-            <Field label="이름" required>
-              {isEdit ? (
-                <input
-                  className="field text-[14px] py-2.5"
-                  value={draft?.userName ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, userName: e.target.value }))
-                  }
-                  placeholder="홍길동"
-                />
-              ) : (
-                <ReadOnly value={data.userName} />
-              )}
-            </Field>
-            <Field label="학번">
-              {isEdit ? (
-                <input
-                  className="field text-[14px] py-2.5"
-                  value={draft?.schoolNumber ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, schoolNumber: e.target.value }))
-                  }
-                  placeholder="20221234"
-                />
-              ) : (
-                <ReadOnly value={data.schoolNumber} />
-              )}
-            </Field>
-          </Grid>
-        </Card>
+        {/* 기본 / 학적 / 진로 관심사 — 하나의 카드 안에서 섹션 헤딩으로 분리. */}
+        <section className="card">
+          <div className="grid gap-6">
+            <Section title="기본 정보">
+              <Grid cols={2}>
+                <Field label="이름" required={isEdit} error={errors.userName}>
+                  {isEdit ? (
+                    <input
+                      className={cn(
+                        'field text-[14px] py-2.5',
+                        errors.userName && 'border-red-500 focus:border-red-500'
+                      )}
+                      value={draft?.userName ?? ''}
+                      onChange={(e) =>
+                        setDraft((d) => ({ ...d, userName: e.target.value }))
+                      }
+                      placeholder="홍길동"
+                    />
+                  ) : (
+                    <ReadOnly value={data.userName} />
+                  )}
+                </Field>
+                <Field
+                  label="학번"
+                  required={isEdit}
+                  error={errors.schoolNumber}
+                >
+                  {isEdit ? (
+                    <input
+                      className={cn(
+                        'field text-[14px] py-2.5',
+                        errors.schoolNumber &&
+                          'border-red-500 focus:border-red-500'
+                      )}
+                      value={draft?.schoolNumber ?? ''}
+                      onChange={(e) =>
+                        setDraft((d) => ({
+                          ...d,
+                          schoolNumber: e.target.value
+                            .replace(/\D/g, '')
+                            .slice(0, 8),
+                        }))
+                      }
+                      placeholder="20221234"
+                      inputMode="numeric"
+                      maxLength={8}
+                    />
+                  ) : (
+                    <ReadOnly value={data.schoolNumber} />
+                  )}
+                </Field>
+              </Grid>
+            </Section>
 
-        {/* 학적 정보 */}
-        <Card
-          title="학적 정보"
-          sub="같은 전공·학번 친구들과의 비교 통계에 활용됩니다."
-        >
-          <Grid cols={2}>
-            <Field label="현재 상태">
-              {isEdit ? (
-                <DeptOrPlainSelect
-                  value={draft?.state ?? ''}
-                  onChange={(v) =>
-                    setDraft((d) => ({ ...d, state: v || null }))
-                  }
-                  options={[
-                    { value: '', label: '선택 안 함' },
-                    ...STATE_OPTIONS,
-                  ]}
-                />
-              ) : (
-                <ReadOnly value={data.state ? STATE_LABEL[data.state] : null} />
-              )}
-            </Field>
-            <Field label="학점 (4.5 만점)">
-              {isEdit ? (
-                <input
-                  type="number"
-                  min="0"
-                  max="4.5"
-                  step="0.01"
-                  className="field text-[14px] py-2.5"
-                  value={draft?.score ?? ''}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, score: e.target.value }))
-                  }
-                  placeholder="3.85"
-                />
-              ) : (
-                <ReadOnly
-                  value={
-                    data.score == null ? null : Number(data.score).toFixed(2)
-                  }
-                />
-              )}
-            </Field>
-          </Grid>
-          <Grid cols={2}>
-            <Field label="전공">
-              {isEdit ? (
-                <DeptSelect
-                  value={draft?.major ?? ''}
-                  onChange={(v) =>
-                    setDraft((d) => ({ ...d, major: v || null }))
-                  }
-                  allowEmpty
-                />
-              ) : (
-                <ReadOnly value={data.major} />
-              )}
-            </Field>
-            <Field label="부전공">
-              {isEdit ? (
-                <DeptSelect
-                  value={draft?.minor ?? ''}
-                  onChange={(v) =>
-                    setDraft((d) => ({ ...d, minor: v || null }))
-                  }
-                  allowEmpty
-                  emptyLabel="없음"
-                />
-              ) : (
-                <ReadOnly value={data.minor} fallback="없음" />
-              )}
-            </Field>
-          </Grid>
-        </Card>
+            <Section
+              title="학적 정보"
+              sub="같은 전공·학번 친구들과의 비교 통계에 활용됩니다."
+              divider
+            >
+              <Grid cols={2}>
+                <Field label="현재 상태" required={isEdit} error={errors.state}>
+                  {isEdit ? (
+                    <Combobox
+                      value={draft?.state ?? ''}
+                      onChange={(v) =>
+                        setDraft((d) => ({ ...d, state: v || null }))
+                      }
+                      options={STATE_OPTIONS}
+                      placeholder="선택"
+                      searchable={false}
+                      forceDirection="down"
+                      hasError={!!errors.state}
+                    />
+                  ) : (
+                    <ReadOnly
+                      value={data.state ? STATE_LABEL[data.state] : null}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label="학점 (4.5 만점)"
+                  required={isEdit}
+                  error={errors.score}
+                >
+                  {isEdit ? (
+                    <input
+                      type="number"
+                      min="0"
+                      max="4.5"
+                      step="0.01"
+                      className={cn(
+                        'field text-[14px] py-2.5',
+                        errors.score && 'border-red-500 focus:border-red-500'
+                      )}
+                      value={draft?.score ?? ''}
+                      onChange={(e) =>
+                        setDraft((d) => ({ ...d, score: e.target.value }))
+                      }
+                      placeholder="3.85"
+                    />
+                  ) : (
+                    <ReadOnly
+                      value={
+                        data.score == null
+                          ? null
+                          : Number(data.score).toFixed(2)
+                      }
+                    />
+                  )}
+                </Field>
+              </Grid>
+              <Grid cols={2}>
+                <Field label="전공" required={isEdit} error={errors.major}>
+                  {isEdit ? (
+                    <DeptCascadeSelect
+                      value={draft?.major ?? ''}
+                      onChange={(v) =>
+                        setDraft((d) => ({ ...d, major: v || null }))
+                      }
+                      excludeValue={draft?.minor || undefined}
+                      hasError={!!errors.major}
+                    />
+                  ) : (
+                    <ReadOnly value={data.major} />
+                  )}
+                </Field>
+                <Field label="부전공" error={errors.minor}>
+                  {isEdit ? (
+                    <DeptCascadeSelect
+                      value={draft?.minor ?? ''}
+                      onChange={(v) =>
+                        setDraft((d) => ({ ...d, minor: v || null }))
+                      }
+                      excludeValue={draft?.major || undefined}
+                      allowClear
+                      hasError={!!errors.minor}
+                    />
+                  ) : (
+                    <ReadOnly value={data.minor} fallback="없음" />
+                  )}
+                </Field>
+              </Grid>
+            </Section>
 
-        {/* 진로 관심사 */}
-        <Card title="진로 관심사" sub="자소서 추천과 경험 분석에 활용됩니다.">
-          {isEdit ? (
-            <JobTreeSelect
-              value={{
-                first: draft?.jobFirst ?? '',
-                second: draft?.jobSecond ?? '',
-                third: draft?.jobThird ?? '',
-              }}
-              onChange={(next) => setDraft((d) => ({ ...d, ...next }))}
-            />
-          ) : (
-            <Grid cols={3}>
-              <Field label="대분류">
-                <ReadOnly value={humanizeEnum(data.jobFirst)} />
-              </Field>
-              <Field label="중분류">
-                <ReadOnly value={humanizeEnum(data.jobSecond)} />
-              </Field>
-              <Field label="소분류">
-                <ReadOnly value={humanizeEnum(data.jobThird)} />
-              </Field>
-            </Grid>
-          )}
-        </Card>
+            <Section
+              title="진로 관심사"
+              sub="자소서 추천과 경험 분석에 활용됩니다."
+              divider
+            >
+              {isEdit ? (
+                <JobTreeSelect
+                  value={{
+                    first: draft?.jobFirst ?? '',
+                    second: draft?.jobSecond ?? '',
+                    third: draft?.jobThird ?? '',
+                  }}
+                  onChange={(next) => setDraft((d) => ({ ...d, ...next }))}
+                  errors={errors}
+                />
+              ) : (
+                <Grid cols={3}>
+                  <Field label="대분류">
+                    <ReadOnly value={humanizeEnum(data.jobFirst)} />
+                  </Field>
+                  <Field label="중분류">
+                    <ReadOnly value={humanizeEnum(data.jobSecond)} />
+                  </Field>
+                  <Field label="소분류">
+                    <ReadOnly value={humanizeEnum(data.jobThird)} />
+                  </Field>
+                </Grid>
+              )}
+            </Section>
+          </div>
+        </section>
+
+        {!isEdit && <DangerZone />}
       </div>
     </>
   );
+}
+
+/* ---------- 회원 탈퇴 ---------- */
+
+/**
+ * 위험 영역 — 회원 탈퇴 카드 + 확인 모달.
+ *  - POST /auth/withdraw 성공 시 모든 react-query 캐시 wipe + zustand clearSession +
+ *    /landing 으로 replace 라우팅.
+ *  - "탈퇴" 두 글자 정확 입력해야 버튼 활성화. 오발 방지.
+ *  - edit 모드에서는 카드 자체가 숨겨져 호출부에서 분기.
+ */
+function DangerZone() {
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const clearSession = useAuth((s) => s.clearSession);
+  const withdraw = useWithdraw();
+
+  const close = () => {
+    if (withdraw.isPending) return;
+    setOpen(false);
+    setConfirmText('');
+  };
+
+  const onConfirm = () => {
+    if (withdraw.isPending) return;
+    withdraw.mutate(undefined, {
+      onSuccess: () => {
+        qc.clear();
+        clearSession();
+        toast.success('회원 탈퇴가 완료되었어요.');
+        navigate('/landing', { replace: true });
+      },
+      onError: (e) => {
+        toast.error(
+          e?.apiMessage ||
+            '탈퇴 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.'
+        );
+      },
+    });
+  };
+
+  const canConfirm = confirmText.trim() === '탈퇴' && !withdraw.isPending;
+
+  return (
+    <>
+      <section className="card border-red-500/30 bg-red-50/30">
+        <div className="flex items-start gap-3">
+          <span className="grid place-items-center w-8 h-8 rounded-md bg-red-50 text-red-600 shrink-0">
+            <AlertTriangle size={16} strokeWidth={2} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[15px] font-bold text-ink-900 tracking-tight">
+              회원 탈퇴
+            </h2>
+            <p className="text-[12.5px] text-ink-500 mt-1 break-keep leading-relaxed">
+              계정을 삭제하면 자소서·경험·자격증·통계 데이터가 모두 사라지고
+              복구할 수 없어요.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="btn-base bg-paper border border-red-500/40 text-red-600 hover:bg-red-50 shrink-0"
+          >
+            <Trash2 size={13} strokeWidth={2} />
+            회원 탈퇴
+          </button>
+        </div>
+      </section>
+
+      <Modal
+        open={open}
+        onClose={close}
+        title="정말 탈퇴하시겠어요?"
+        sub={
+          <>
+            계정을 삭제하면 그동안 작성한 자소서, 등록한 경험·자격증, 통계
+            데이터가 즉시 삭제되며{' '}
+            <b className="text-ink-800">복구할 수 없어요.</b>
+            <br />
+            계속하려면 아래에 <b className="text-ink-800">탈퇴</b> 두 글자를
+            입력해주세요.
+          </>
+        }
+        width={460}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={close}
+              disabled={withdraw.isPending}
+              className="btn-default"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={!canConfirm}
+              className={cn(
+                'btn-base text-white',
+                canConfirm
+                  ? 'bg-red-600 border border-red-600 hover:bg-red-700'
+                  : 'bg-red-600/40 border border-red-600/40 cursor-not-allowed'
+              )}
+            >
+              <Trash2 size={13} strokeWidth={2} />
+              {withdraw.isPending ? '처리 중…' : '탈퇴하기'}
+            </button>
+          </>
+        }
+      >
+        <input
+          type="text"
+          autoFocus
+          value={confirmText}
+          onChange={(e) => setConfirmText(e.target.value)}
+          placeholder="탈퇴"
+          disabled={withdraw.isPending}
+          className="field text-[14px] py-2.5"
+          aria-label="탈퇴 확인 입력"
+        />
+      </Modal>
+    </>
+  );
+}
+
+/* ---------- 검증 (Onboarding 과 동일 정책) ---------- */
+
+/**
+ * 검증 규칙 (Onboarding 와 일치):
+ *  - userName trim 후 2자 이상
+ *  - schoolNumber 8자리 숫자
+ *  - state / major / jobFirst / jobSecond / jobThird / score 모두 필수
+ *  - score 0~4.5
+ *  - minor 가 있으면 major 와 같지 않아야 함 (부전공은 옵셔널)
+ */
+function validate(draft) {
+  const e = {};
+  if (!draft) return e;
+  if ((draft.userName ?? '').trim().length < 2) {
+    e.userName = '이름은 2자 이상 입력해주세요.';
+  }
+  if (!/^\d{8}$/.test((draft.schoolNumber ?? '').trim())) {
+    e.schoolNumber = '학번은 8자리 숫자로 입력해주세요.';
+  }
+  if (!draft.state) e.state = '현재 상태를 선택해주세요.';
+  if (!draft.major) e.major = '전공을 선택해주세요.';
+  if (draft.minor && draft.minor === draft.major) {
+    e.minor = '부전공은 전공과 다르게 선택해주세요.';
+  }
+  if (draft.score === '' || draft.score == null) {
+    e.score = '학점을 입력해주세요.';
+  } else {
+    const n = Number.parseFloat(draft.score);
+    if (!Number.isFinite(n) || n < 0 || n > 4.5) {
+      e.score = '학점은 0 ~ 4.5 사이로 입력해주세요.';
+    }
+  }
+  if (!draft.jobFirst) e.jobFirst = '대분류를 선택해주세요.';
+  if (!draft.jobSecond) e.jobSecond = '중분류를 선택해주세요.';
+  if (!draft.jobThird) e.jobThird = '소분류를 선택해주세요.';
+  return e;
 }
 
 /* ---------- 데이터 변환 ---------- */
