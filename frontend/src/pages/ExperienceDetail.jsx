@@ -178,3 +178,80 @@ export default function ExperienceDetail() {
               onClick={handleConfirmDelete}
             >
               <Trash2 size={13} strokeWidth={2} />
+              {del.isPending ? '삭제 중…' : '삭제'}
+            </button>
+          </>
+        }
+      >
+        <></>
+      </Modal>
+
+      {mode === 'edit' ? (
+        <div className="card">
+          <ExperienceForm
+            initialValue={data}
+            onSubmit={handleSave}
+            onCancel={() => setMode('view')}
+            isPending={update.isPending}
+            submitLabel="저장"
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          <section className="card">
+            <h2 className="text-[14px] font-bold text-ink-900 mb-2">
+              기본 정보
+            </h2>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px]">
+              <Item label="관련 전공" value={data.relatedMajor} />
+              <Item
+                label="진행 기간"
+                value={`${data.startDate} ~ ${data.endDate}`}
+              />
+            </dl>
+          </section>
+
+          <section className="card">
+            <h2 className="text-[14px] font-bold text-ink-900 mb-3">
+              활동 내용 (STAR)
+            </h2>
+            <div className="grid gap-4">
+              <Star label="Situation" text={data.starStructure?.s} />
+              <Star label="Task" text={data.starStructure?.t} />
+              <Star label="Action" text={data.starStructure?.a} />
+              <Star label="Result" text={data.starStructure?.r} />
+            </div>
+          </section>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ---------- 빌딩블록 ---------- */
+
+function Item({ label, value }) {
+  return (
+    <div>
+      <dt className="text-[11.5px] font-semibold text-ink-500 mb-0.5">
+        {label}
+      </dt>
+      <dd className="text-[14px] text-ink-900 break-keep">
+        {value || <span className="text-ink-400">—</span>}
+      </dd>
+    </div>
+  );
+}
+
+function Star({ label, text }) {
+  return (
+    <div>
+      <div className="text-[11px] font-bold uppercase tracking-wide text-primary-700 mb-1">
+        {label}
+      </div>
+      <p className="text-[13.5px] text-ink-800 leading-relaxed break-keep whitespace-pre-line">
+        {text || <span className="text-ink-400">—</span>}
+      </p>
+    </div>
+  );
+}
