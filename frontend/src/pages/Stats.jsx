@@ -230,3 +230,22 @@ function FiveAxisCompare({ data, groupBy, peerCount, onPrev, onNext }) {
     </div>
   );
 }
+
+function Bar({ value, max, color, label }) {
+  const pct = Math.min(100, (value / max) * 100);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="text-[10.5px] text-ink-500 w-7 shrink-0 tabular-nums">
+        {label}
+      </div>
+      <div className="flex-1 h-3 bg-ink-100 rounded overflow-hidden">
+        <div
+          className={cn('h-full rounded', color)}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ---------- 본인 카테고리 분포 ---------- */
