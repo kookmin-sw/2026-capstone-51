@@ -39,6 +39,8 @@ export const tokenStore = {
 const api = axios.create({
   baseURL,
   withCredentials: true,
+  // 백엔드 다운/네트워크 끊김 시 무한 대기 방지. 정상 응답엔 영향 없음.
+  timeout: 15_000,
 });
 
 /**
@@ -173,14 +175,23 @@ api.interceptors.response.use(
       }
     }
 
-    // 자동 토스트 — 네트워크/서버 에러만. 4xx 는 페이지에서 처리.
-    if (!error.response) {
-      toast.error('네트워크 연결을 확인해주세요.');
-    } else if (status >= 500) {
-      toast.error(
-        error.apiMessage ||
-          '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
-      );
+    // 자동 토스트 — 네트워크/서버/타임아웃만. 4xx 는 페이지에서 처리.
+    // /auth/* 는 페이지(AuthCallback) 가 자체 토스트 띄우므로 중복 방지.
+    if (!isAuthEndpoint) {
+      if (!error.response) {
+        const isTimeout =
+          error.code === 'ECONNABORTED' || /timeout/i.test(error.message ?? '');
+        toast.error(
+          isTimeout
+            ? '응답이 늦어요. 잠시 후 다시 시도해주세요.'
+            : '네트워크 연결을 확인해주세요.'
+        );
+      } else if (status >= 500) {
+        toast.error(
+          error.apiMessage ||
+            '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        );
+      }
     }
 
     return Promise.reject(error);

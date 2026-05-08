@@ -7,9 +7,29 @@
  *   title, sub
  *
  * 5축 파라미터(label/me/peers)는 절대 변경하지 않고, 시각화만 입체로 바꿉니다.
+ *
+ * WebGL 미지원 / 컨텍스트 생성 실패 시 막대 그래프로 graceful degradation.
+ *  - 마운트 전에 canvas.getContext('webgl') 으로 사전 체크
+ *  - 사전 체크 통과해도 런타임에 WebGLRenderer 생성 실패할 수 있어 try/catch
+ *  - 어느 쪽이든 실패하면 PeersFallbackChart 로 5축 값 그대로 렌더
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+
+function isWebGLAvailable() {
+  if (typeof window === 'undefined') return false;
+  try {
+    const c = document.createElement('canvas');
+    return !!(
+      window.WebGLRenderingContext &&
+      (c.getContext('webgl2') ||
+        c.getContext('webgl') ||
+        c.getContext('experimental-webgl'))
+    );
+  } catch {
+    return false;
+  }
+}
 
 export default function PeersOrb({
   axes,
@@ -17,8 +37,10 @@ export default function PeersOrb({
   sub = '소프트웨어학부 22학번 · 익명 집계 · 214명 기준',
 }) {
   const wrapRef = useRef(null);
+  const [webglOK, setWebglOK] = useState(isWebGLAvailable);
 
   useEffect(() => {
+    if (!webglOK) return;
     const wrap = wrapRef.current;
     if (!wrap) return;
 
@@ -45,7 +67,18 @@ export default function PeersOrb({
     camera.position.set(0, 0.3, 8.5);
     camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.warn('[PeersOrb] WebGLRenderer 생성 실패, fallback 렌더', e);
+      }
+      // 사전 체크 통과했지만 런타임에 컨텍스트 생성 실패한 케이스 — fallback 으로 전환.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWebglOK(false);
+      return;
+    }
     renderer.setSize(wrap.clientWidth, wrap.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -375,7 +408,7 @@ export default function PeersOrb({
       renderer.dispose();
       wrap.removeChild(dom);
     };
-  }, [axes]);
+  }, [axes, webglOK]);
 
   return (
     <section className="card">
@@ -400,20 +433,26 @@ export default function PeersOrb({
         </div>
       </div>
 
-      <div
-        ref={wrapRef}
-        className="w-full aspect-square relative rounded-lg overflow-hidden mt-4"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, #ffffff 0%, #f9fafb 70%, #f3f4f6 100%)',
-          maxWidth: 560,
-          marginLeft: 'auto',
-          marginRight: 'auto',
-        }}
-      />
-      <p className="text-center text-[11px] text-ink-400 mt-1.5 tracking-wide">
-        ↻ 드래그해서 돌려보세요
-      </p>
+      {webglOK ? (
+        <>
+          <div
+            ref={wrapRef}
+            className="w-full aspect-square relative rounded-lg overflow-hidden mt-4"
+            style={{
+              background:
+                'radial-gradient(ellipse at center, #ffffff 0%, #f9fafb 70%, #f3f4f6 100%)',
+              maxWidth: 560,
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+          />
+          <p className="text-center text-[11px] text-ink-400 mt-1.5 tracking-wide">
+            ↻ 드래그해서 돌려보세요
+          </p>
+        </>
+      ) : (
+        <PeersFallbackChart axes={axes} />
+      )}
       <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-ink-150">
         <span className="flex items-center gap-2 text-[13px] font-medium text-ink-700">
           <span
@@ -437,5 +476,59 @@ export default function PeersOrb({
         </span>
       </div>
     </section>
+  );
+}
+
+/**
+ * WebGL 미지원/실패 시 단순 막대 차트 fallback.
+ * 5축 데이터(label/me/peers) 그대로 표시 — 시연 안전망.
+ */
+function PeersFallbackChart({ axes }) {
+  return (
+    <div className="mt-4 grid gap-3 px-2 pb-2">
+      {axes.map((a) => (
+        <div
+          key={a.label}
+          className="grid grid-cols-[80px_1fr] items-center gap-3"
+        >
+          <div className="text-[12.5px] font-semibold text-ink-700 truncate">
+            {a.label}
+          </div>
+          <div className="grid gap-1.5">
+            <FallbackBar
+              label="나"
+              value={a.me}
+              color="linear-gradient(90deg, #3b82f6, #1e40af)"
+            />
+            <FallbackBar
+              label="동기"
+              value={a.peers}
+              color="linear-gradient(90deg, #c4b5fd, #7c3aed)"
+            />
+          </div>
+        </div>
+      ))}
+      <div className="text-center text-[11px] text-ink-400 mt-1 tracking-wide">
+        3D 차트를 표시할 수 없어 단순 모드로 보이는 중
+      </div>
+    </div>
+  );
+}
+
+function FallbackBar({ label, value, color }) {
+  const v = Math.max(0, Math.min(100, value ?? 0));
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10.5px] text-ink-500 w-7 shrink-0">{label}</span>
+      <div className="flex-1 h-2.5 rounded-full bg-ink-100 overflow-hidden">
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${v}%`, background: color }}
+        />
+      </div>
+      <span className="text-[11px] text-ink-700 tabular-nums w-8 text-right shrink-0">
+        {v}
+      </span>
+    </div>
   );
 }

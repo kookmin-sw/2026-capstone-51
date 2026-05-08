@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Crumbs from '../components/Crumbs';
+import ErrorBoundary from '../components/ErrorBoundary';
 import HeroBanner from '../components/dashboard/HeroBanner';
 import PeersOrb from '../components/PeersOrb';
 import MyRoadmapCard from '../components/dashboard/MyRoadmapCard';
@@ -12,6 +13,9 @@ import { PEER_AXES } from '../data/dashboard';
  *  2) PeersOrb   (5축 입체 레이더)
  *  3) MyRoadmapCard (내 학기별 마일스톤 압축 타임라인)
  *  4) SeniorRoadmapCard (선배 비교 타임라인 carousel)
+ *
+ * 각 카드는 개별 ErrorBoundary 로 감싸 — 한 카드(예: PeersOrb 의 WebGL 실패)
+ * 가 throw 해도 나머지 카드 + 사이드바는 정상 렌더.
  */
 export default function Dashboard() {
   // 신규 사용자(=내 경험 비어있음) 시뮬레이션 토글은 기획상 보류, 추후 데모용 hook 자리만 유지.
@@ -23,9 +27,15 @@ export default function Dashboard() {
       <HeroBanner hasProfile={hasProfile} />
       {hasProfile ? (
         <div className="grid gap-4">
-          <PeersOrb axes={PEER_AXES} />
-          <MyRoadmapCard />
-          <SeniorRoadmapCard />
+          <ErrorBoundary name="동기 비교">
+            <PeersOrb axes={PEER_AXES} />
+          </ErrorBoundary>
+          <ErrorBoundary name="내 로드맵">
+            <MyRoadmapCard />
+          </ErrorBoundary>
+          <ErrorBoundary name="선배 로드맵">
+            <SeniorRoadmapCard />
+          </ErrorBoundary>
         </div>
       ) : (
         <div className="bg-paper border border-border rounded-lg p-10 text-center text-ink-500 text-sm">
