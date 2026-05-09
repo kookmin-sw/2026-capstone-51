@@ -5,6 +5,7 @@ import com.github.logi.domain.essay.dto.request.EssayGenerateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayRecommendRequest;
+import com.github.logi.domain.essay.dto.request.EssayRegenerateRequest;
 import com.github.logi.domain.essay.dto.request.EssayResultUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
@@ -160,8 +161,31 @@ public class EssayService {
             throw EssayExceptions.FORBIDDEN_ESSAY.toException();
         }
 
-        EssayPromptBuilder.GeneratePrompt prompt = essayPromptBuilder.buildGeneratePrompt(
+        EssayPromptBuilder.Prompt prompt = essayPromptBuilder.buildGeneratePrompt(
                 essay, question, question.getExperiences());
+        String generated = llmClient.invoke(prompt.system(), prompt.user());
+
+        return new EssayGenerateResponse(generated);
+    }
+
+    public EssayGenerateResponse regenerateResponse(User user, EssayRegenerateRequest request) {
+        EssayQuestion question = essayQuestionRepository
+                .findByIdWithEssayAndExperiences(request.questionId())
+                .orElseThrow(EssayExceptions.QUESTION_NOT_FOUND::toException);
+
+        Essay essay = question.getEssay();
+
+        if (!essay.getId().equals(request.essayId())) {
+            throw EssayExceptions.QUESTION_ESSAY_MISMATCH.toException();
+        }
+
+        if (!essay.getUser().getId().equals(user.getId())) {
+            throw EssayExceptions.FORBIDDEN_ESSAY.toException();
+        }
+
+        EssayPromptBuilder.Prompt prompt = essayPromptBuilder.buildRegeneratePrompt(
+                essay, question, question.getExperiences(),
+                request.currentResponse(), request.questionReq());
         String generated = llmClient.invoke(prompt.system(), prompt.user());
 
         return new EssayGenerateResponse(generated);

@@ -10,7 +10,7 @@ import java.util.List;
 @Component
 public class EssayPromptBuilder {
 
-    private static final String SYSTEM_PROMPT = """
+    private static final String GENERATE_SYSTEM_PROMPT = """
             당신은 국내 대기업과 주요 스타트업 채용을 10년 이상 컨설팅해 온 자소서 첨삭 전문가입니다.
             합격자 자소서의 공통 패턴을 분석해 왔으며, 두루뭉술한 다짐이나 미사여구 대신
             구체적인 수치·행동·결과로 설득력을 만들어내는 글을 씁니다.
@@ -52,44 +52,121 @@ public class EssayPromptBuilder {
             - 답변 본문만 출력. 머리글, 인사말, 메타설명, 글자 수 표기, 코드블록 모두 금지.
             """;
 
-    public GeneratePrompt buildGeneratePrompt(Essay essay, EssayQuestion question, List<Experience> experiences) {
-        return new GeneratePrompt(SYSTEM_PROMPT, buildUserPrompt(essay, question, experiences));
+    private static final String REGENERATE_SYSTEM_PROMPT = """
+            당신은 국내 대기업과 주요 스타트업 채용을 10년 이상 컨설팅해 온 자소서 첨삭 전문가입니다.
+            합격자 자소서의 공통 패턴을 분석해 왔으며, 두루뭉술한 다짐이나 미사여구 대신
+            구체적인 수치·행동·결과로 설득력을 만들어내는 글을 씁니다.
+            이번 작업은 새 글 작성이 아니라 기존 답변을 사용자의 수정 요청에 맞춰 개선하는 일입니다.
+
+            [개선 원칙]
+            - 기존 답변에서 잘 작동하는 부분(구체적 수치, 효과적 표현, 경험의 연결 흐름 등)은 가능한 보존한다.
+            - 사용자가 명시한 수정 요청을 정확히 반영한다.
+            - 주어진 경험 정보의 범위 안에서만 변경한다. 새로운 사실이나 수치를 임의로 만들지 않는다.
+
+            [개선 절차 — 내부적으로 수행하고 최종 본문만 출력]
+            1) 기존 답변의 잘 작동하는 부분과 약점을 식별한다.
+            2) 사용자의 수정 요청을 분석해 어떤 변화가 필요한지 명확히 한다.
+            3) 약점/요청에 해당하는 부분만 수정하고, 잘 작동하는 부분은 그대로 둔다.
+            4) 본문을 작성한 뒤, 글자 수를 직접 세어 사용자가 명시한 글자 수 범위 안에 들어오도록 자체 수정한다.
+            5) 최종본만 출력한다.
+
+            [작성 지침]
+            - 사용자가 명시한 글자 수 범위 안으로 작성. 범위를 벗어나면 스스로 수정 후 최종본만 출력.
+            - STAR 구조를 흐름으로 녹이되, "상황:", "과제:", "행동:", "결과:" 같은 라벨이나 머리글은 절대 사용 금지.
+            - 한 편의 짧은 에세이처럼 자연스럽게 읽히게 작성.
+            - 가능한 한 구체적 수치, 고유명사, 실제 행동, 측정 가능한 결과로 설득.
+            - 한국어로 작성.
+
+            [금지 사항]
+            - 진부한 도입: "저는 어릴 때부터 ~", "~라는 가치관을 가지고 있습니다", "~하는 사람이 되고자 합니다"
+            - 추상적 마무리: "최선을 다했습니다", "많은 것을 배웠습니다", "성장할 수 있는 계기였습니다"
+            - 인재상 키워드를 그대로 나열하거나 회사명을 과도하게 호명하는 표현
+            - 과장된 미사여구, 진부한 비유, 자기소개식 인사말
+            - 경험에 없는 사실, 수치, 직책의 임의 생성(주어진 경험 정보 범위 안에서만 구체화할 것)
+
+            [출력 포맷]
+            - 개선된 답변 본문만 출력. 머리글, 인사말, 메타설명, 변경 사항 설명, 글자 수 표기, 코드블록 모두 금지.
+            """;
+
+    public Prompt buildGeneratePrompt(Essay essay, EssayQuestion question, List<Experience> experiences) {
+        return new Prompt(GENERATE_SYSTEM_PROMPT, buildGenerateUserPrompt(essay, question, experiences));
     }
 
-    private String buildUserPrompt(Essay essay, EssayQuestion question, List<Experience> experiences) {
-        int maxLen = question.getMaxLength();
-        int minLen = (int) (maxLen * 0.92);
+    public Prompt buildRegeneratePrompt(
+            Essay essay,
+            EssayQuestion question,
+            List<Experience> experiences,
+            String currentResponse,
+            String questionReq
+    ) {
+        String user = buildRegenerateUserPrompt(essay, question, experiences, currentResponse, questionReq);
+        return new Prompt(REGENERATE_SYSTEM_PROMPT, user);
+    }
 
+    private String buildGenerateUserPrompt(Essay essay, EssayQuestion question, List<Experience> experiences) {
         StringBuilder sb = new StringBuilder();
+        appendApplicationContext(sb, essay);
+        appendQuestion(sb, question);
+        appendExperiences(sb, experiences);
+        sb.append("위 정보를 바탕으로 자소서 답변을 작성해주세요.");
+        return sb.toString();
+    }
 
+    private String buildRegenerateUserPrompt(
+            Essay essay,
+            EssayQuestion question,
+            List<Experience> experiences,
+            String currentResponse,
+            String questionReq
+    ) {
+        StringBuilder sb = new StringBuilder();
+        appendApplicationContext(sb, essay);
+        appendQuestion(sb, question);
+        appendExperiences(sb, experiences);
+
+        sb.append("[현재 작성된 답변]\n");
+        sb.append(currentResponse).append("\n\n");
+
+        sb.append("[수정 요청]\n");
+        sb.append(questionReq).append("\n\n");
+
+        sb.append("위 [현재 작성된 답변]을 [수정 요청]에 맞춰 개선해주세요.");
+        return sb.toString();
+    }
+
+    private void appendApplicationContext(StringBuilder sb, Essay essay) {
         sb.append("[지원 정보]\n");
         sb.append("- 회사: ").append(essay.getCompanyName()).append("\n");
         sb.append("- 직무: ").append(essay.getWishJob()).append("\n");
         sb.append("- 회사 인재상/요구사항: ").append(essay.getGlobalReq()).append("\n\n");
+    }
+
+    private void appendQuestion(StringBuilder sb, EssayQuestion question) {
+        int maxLen = question.getMaxLength();
+        int minLen = (int) (maxLen * 0.92);
 
         sb.append("[자소서 문항]\n");
         sb.append(question.getQuestion()).append("\n");
         sb.append("(글자 수 범위: ").append(minLen).append("~").append(maxLen).append("자 — 이 범위 안에서 작성)\n\n");
-
-        if (experiences == null || experiences.isEmpty()) {
-            sb.append("[지원자의 관련 경험]\n없음\n\n");
-        } else {
-            sb.append("[지원자의 관련 경험들]\n");
-            for (int i = 0; i < experiences.size(); i++) {
-                Experience exp = experiences.get(i);
-                sb.append(i + 1).append(". ").append(exp.getExperienceTitle()).append("\n");
-                sb.append("   - 상황(S): ").append(exp.getStarS()).append("\n");
-                sb.append("   - 과제(T): ").append(exp.getStarT()).append("\n");
-                sb.append("   - 행동(A): ").append(exp.getStarA()).append("\n");
-                sb.append("   - 결과(R): ").append(exp.getStarR()).append("\n\n");
-            }
-        }
-
-        sb.append("위 정보를 바탕으로 자소서 답변을 작성해주세요.");
-
-        return sb.toString();
     }
 
-    public record GeneratePrompt(String system, String user) {
+    private void appendExperiences(StringBuilder sb, List<Experience> experiences) {
+        if (experiences == null || experiences.isEmpty()) {
+            sb.append("[지원자의 관련 경험]\n없음\n\n");
+            return;
+        }
+
+        sb.append("[지원자의 관련 경험들]\n");
+        for (int i = 0; i < experiences.size(); i++) {
+            Experience exp = experiences.get(i);
+            sb.append(i + 1).append(". ").append(exp.getExperienceTitle()).append("\n");
+            sb.append("   - 상황(S): ").append(exp.getStarS()).append("\n");
+            sb.append("   - 과제(T): ").append(exp.getStarT()).append("\n");
+            sb.append("   - 행동(A): ").append(exp.getStarA()).append("\n");
+            sb.append("   - 결과(R): ").append(exp.getStarR()).append("\n\n");
+        }
+    }
+
+    public record Prompt(String system, String user) {
     }
 }

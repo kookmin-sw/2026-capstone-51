@@ -5,6 +5,7 @@ import com.github.logi.domain.essay.dto.request.EssayGenerateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayRecommendRequest;
+import com.github.logi.domain.essay.dto.request.EssayRegenerateRequest;
 import com.github.logi.domain.essay.dto.request.EssayResultUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
@@ -129,5 +130,14 @@ public class EssayController {
             @Valid @RequestBody EssayGenerateRequest request
     ) {
         return ApiResponse.ok(essayService.generateResponse(user, request));
+    }
+
+    @Operation(summary = "자소서 답변 재생성", description = "현재 답변과 수정 요청을 바탕으로 LLM이 답변을 개선하여 반환합니다. (DB 저장하지 않음)")
+    @PostMapping("/regenerate")
+    public ApiResponse<EssayGenerateResponse> regenerateResponse(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody EssayRegenerateRequest request
+    ) {
+        return ApiResponse.ok(essayService.regenerateResponse(user, request));
     }
 }
