@@ -575,7 +575,7 @@ function Grid({ cols = 2, children }) {
   return <div className={gridClass}>{children}</div>;
 }
 
-function Field({ label, required, children }) {
+function Field({ label, required, hint, error, children }) {
   return (
     <div className="grid gap-1.5">
       <label className="flex items-center gap-1 text-[12.5px] font-semibold text-ink-700">
