@@ -141,25 +141,38 @@ export default function Onboarding() {
           </div>
         </div>
 
-        {/* 본문 — 섹션별 그룹 */}
+        {/* 본문 */}
         <div className="px-6 sm:px-10 lg:px-12 pt-8 sm:pt-10 pb-4 grid gap-7 sm:gap-9">
           {/* 기본 정보 */}
           <Section title="기본 정보">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-              <Field label="이름" required>
+              <Field label="이름" required error={errors.name}>
                 <input
-                  className="field text-[14px] py-2.5"
+                  className={cn(
+                    'field text-[14px] py-2.5',
+                    errors.name && 'border-red-500 focus:border-red-500'
+                  )}
                   placeholder="홍길동"
                   value={form.name}
                   onChange={(e) => update('name', e.target.value)}
                 />
               </Field>
-              <Field label="학번" required>
+              <Field label="학번" required error={errors.studentId}>
                 <input
-                  className="field text-[14px] py-2.5"
+                  className={cn(
+                    'field text-[14px] py-2.5',
+                    errors.studentId && 'border-red-500 focus:border-red-500'
+                  )}
                   placeholder="20221234"
+                  inputMode="numeric"
+                  maxLength={8}
                   value={form.studentId}
-                  onChange={(e) => update('studentId', e.target.value)}
+                  onChange={(e) =>
+                    update(
+                      'studentId',
+                      e.target.value.replace(/\D/g, '').slice(0, 8)
+                    )
+                  }
                 />
               </Field>
             </div>
