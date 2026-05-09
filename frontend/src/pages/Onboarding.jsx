@@ -98,9 +98,9 @@ export default function Onboarding() {
         toast.success('회원가입이 완료되었습니다.');
         nav('/dashboard', { replace: true });
       },
-      onError: (e) => {
+      onError: (err) => {
         toast.error(
-          e?.apiMessage ||
+          err?.apiMessage ||
             '정보 저장 중 오류가 발생했습니다. 다시 시도해주세요.'
         );
       },
