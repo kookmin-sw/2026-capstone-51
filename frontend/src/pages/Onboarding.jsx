@@ -130,7 +130,7 @@ export default function Onboarding() {
       </div>
 
       <div className="w-full max-w-[920px] bg-paper border border-border rounded-xl shadow-md overflow-hidden">
-        {/* 헤더 — 큼직하게 */}
+        {/* 헤더 */}
         <div className="px-6 sm:px-10 lg:px-12 pt-8 sm:pt-10 lg:pt-12 pb-6 sm:pb-8 border-b border-ink-150">
           <h1 className="text-[24px] sm:text-[28px] lg:text-[30px] font-bold text-ink-900 tracking-tight leading-tight mb-2 sm:mb-2.5">
             Logi에 오신 걸 환영합니다
