@@ -38,77 +38,59 @@ export default function Onboarding() {
   const [form, setForm] = useState({
     name: '',
     studentId: '',
-    major: '소프트웨어학부',
+    state: '',
+    major: '',
     minor: '',
-    year: 4,
     gpa: '',
-    jobL1: 'IT·개발',
-    jobL2: '엔지니어링',
-    jobL3: '백엔드 엔지니어',
+    jobFirst: '',
+    jobSecond: '',
+    jobThird: '',
   });
+  const [submitted, setSubmitted] = useState(false);
+
+  const errors = submitted ? validate(form) : {};
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // 직무 트리 — 상위 변경 시 하위 자동 보정
-  const onChangeL1 = (l1) => {
-    const l2Keys = Object.keys(JOB_TREE[l1] || {});
-    const nextL2 = l2Keys[0];
-    const nextL3 = (JOB_TREE[l1] || {})[nextL2]?.[0];
-    setForm((f) => ({ ...f, jobL1: l1, jobL2: nextL2, jobL3: nextL3 }));
-  };
-  const onChangeL2 = (l2) => {
-    const nextL3 = (JOB_TREE[form.jobL1] || {})[l2]?.[0];
-    setForm((f) => ({ ...f, jobL2: l2, jobL3: nextL3 }));
-  };
+  // 전공 변경: 부전공이 같아지면 부전공 비움
+  const onChangeMajor = (v) =>
+    setForm((f) => ({ ...f, major: v, minor: f.minor === v ? '' : f.minor }));
 
-  const l1Options = useMemo(() => Object.keys(JOB_TREE), []);
-  const l2Options = useMemo(
-    () => Object.keys(JOB_TREE[form.jobL1] || {}),
-    [form.jobL1]
-  );
-  const l3Options = useMemo(
-    () => (JOB_TREE[form.jobL1] || {})[form.jobL2] || [],
-    [form.jobL1, form.jobL2]
-  );
+  // 직무 트리: 상위 변경 시 하위 초기화
+  const onChangeJobFirst = (v) =>
+    setForm((f) => ({ ...f, jobFirst: v, jobSecond: '', jobThird: '' }));
+  const onChangeJobSecond = (v) =>
+    setForm((f) => ({ ...f, jobSecond: v, jobThird: '' }));
 
-  const yearToState = (year) => {
-    const map = {
-      1: 'FRESH_MAN',
-      2: 'SOPHOMORE',
-      3: 'JUNIOR',
-      4: 'SENIOR',
-      5: 'SENIOR', // 초과학기 — JOBSEEKER/WORKER 옵션 추가 시 재매핑
-    };
-    return map[year] || null;
-  };
+  const seconds = useMemo(
+    () => jobSecondOptions(form.jobFirst),
+    [form.jobFirst]
+  );
+  const thirds = useMemo(
+    () => jobThirdOptions(form.jobFirst, form.jobSecond),
+    [form.jobFirst, form.jobSecond]
+  );
 
   const start = () => {
-    const name = form.name.trim();
-    const studentId = form.studentId.trim();
-    if (!name) {
-      toast.error('이름을 입력해주세요.');
-      return;
-    }
-    if (!studentId) {
-      toast.error('학번을 입력해주세요.');
+    setSubmitted(true);
+    const e = validate(form);
+    if (Object.keys(e).length > 0) {
+      toast.error('입력값을 다시 확인해주세요.');
       return;
     }
     if (updateMe.isPending) return;
 
     const score = form.gpa === '' ? null : Number.parseFloat(form.gpa);
     const body = {
-      userName: name,
-      schoolNumber: studentId,
-      state: yearToState(form.year),
+      userName: form.name.trim(),
+      schoolNumber: form.studentId.trim(),
+      state: form.state,
       score: Number.isFinite(score) ? score : null,
-      // TODO(단계 3 — enum 어댑터 완성 후 매핑):
-      // major / minor 는 KookminDepartment 한국어 풀네임,
-      // jobFirst/Second/Third 는 한국 표준직업분류 enum 으로 매핑 필요.
-      major: null,
-      minor: null,
-      jobFirst: null,
-      jobSecond: null,
-      jobThird: null,
+      major: form.major,
+      minor: form.minor || null,
+      jobFirst: form.jobFirst,
+      jobSecond: form.jobSecond,
+      jobThird: form.jobThird,
     };
 
     updateMe.mutate(body, {
