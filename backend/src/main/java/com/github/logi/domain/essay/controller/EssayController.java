@@ -1,6 +1,7 @@
 package com.github.logi.domain.essay.controller;
 
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
+import com.github.logi.domain.essay.dto.request.EssayGenerateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayRecommendRequest;
@@ -8,6 +9,7 @@ import com.github.logi.domain.essay.dto.request.EssayResultUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
+import com.github.logi.domain.essay.dto.response.EssayGenerateResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
 import com.github.logi.domain.essay.dto.response.EssayQuestionCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayRecommendResponse;
@@ -118,5 +120,14 @@ public class EssayController {
             @Valid @RequestBody EssayRecommendRequest request
     ) {
         return ApiResponse.ok(essayService.recommendExperiences(user, request));
+    }
+
+    @Operation(summary = "자소서 답변 생성", description = "자소서/문항/관련 경험 정보를 바탕으로 LLM이 답변 초안을 생성하여 반환합니다. (DB 저장하지 않음)")
+    @PostMapping("/generate")
+    public ApiResponse<EssayGenerateResponse> generateResponse(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody EssayGenerateRequest request
+    ) {
+        return ApiResponse.ok(essayService.generateResponse(user, request));
     }
 }
