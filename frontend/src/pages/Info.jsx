@@ -583,6 +583,13 @@ function Field({ label, required, hint, error, children }) {
         {required && <span className="text-primary-600 font-bold">*</span>}
       </label>
       {children}
+      {error ? (
+        <div className="text-[11.5px] text-red-600 mt-0.5 break-keep">
+          {error}
+        </div>
+      ) : hint ? (
+        <div className="text-[11.5px] text-ink-500 mt-0.5">{hint}</div>
+      ) : null}
     </div>
   );
 }
