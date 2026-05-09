@@ -366,31 +366,55 @@ function Field({ label, required, hint, error, children }) {
         {required && <span className="text-primary-600 font-bold">*</span>}
       </label>
       {children}
-      {hint && <div className="text-[11.5px] text-ink-500 mt-0.5">{hint}</div>}
+      {error ? (
+        <div className="text-[11.5px] text-red-600 mt-0.5 break-keep">
+          {error}
+        </div>
+      ) : hint ? (
+        <div className="text-[11.5px] text-ink-500 mt-0.5">{hint}</div>
+      ) : null}
     </div>
   );
 }
 
 /**
  * 표준 select. options 는 string[] 또는 {value,label}[].
- * 우측에 chevron 아이콘 — appearance:none + custom indicator.
+ * value 가 빈 문자열이면 placeholder 옵션을 회색으로 보여줌.
  */
-function Select({ value, onChange, options }) {
-  const norm = options.map((o) =>
+function PlainSelect({
+  value,
+  onChange,
+  options,
+  placeholder = '선택',
+  disabled,
+  hasError,
+}) {
+  const norm = (options || []).map((o) =>
     typeof o === 'object' ? o : { value: o, label: o }
   );
+  const empty = value === '' || value == null;
   return (
     <div className="relative">
       <select
-        value={String(value)}
+        value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
         className={cn(
-          'field text-[14px] py-2.5 pr-9 cursor-pointer appearance-none',
-          'bg-paper'
+          'field text-[14px] py-2.5 pr-9 cursor-pointer appearance-none bg-paper',
+          hasError && 'border-red-500 focus:border-red-500',
+          disabled && 'opacity-60 cursor-not-allowed',
+          empty && 'text-ink-400'
         )}
       >
+        <option value="" disabled hidden>
+          {placeholder}
+        </option>
         {norm.map((o) => (
-          <option key={o.value} value={String(o.value)}>
+          <option
+            key={String(o.value)}
+            value={String(o.value)}
+            className="text-ink-900"
+          >
             {o.label}
           </option>
         ))}
