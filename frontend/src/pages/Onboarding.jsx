@@ -209,6 +209,25 @@ export default function Onboarding() {
                 />
               </Field>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+              <Field label="전공" required error={errors.major}>
+                <DeptCascadeSelect
+                  value={form.major}
+                  onChange={onChangeMajor}
+                  excludeValue={form.minor || undefined}
+                  hasError={!!errors.major}
+                />
+              </Field>
+              <Field label="부전공" error={errors.minor}>
+                <DeptCascadeSelect
+                  value={form.minor}
+                  onChange={(v) => update('minor', v)}
+                  excludeValue={form.major || undefined}
+                  allowClear
+                  hasError={!!errors.minor}
+                />
+              </Field>
+            </div>
           </Section>
 
           {/* 관심 직무 */}
