@@ -548,17 +548,22 @@ function Avatar({ name }) {
   );
 }
 
-function Card({ title, sub, children }) {
+/**
+ * 단일 카드 안에서 의미 단위(기본 / 학적 / 진로 관심사)를 시각적으로
+ * 분리하는 인라인 섹션. divider 가 true 이면 위쪽에 가는 구분선 + 여백을
+ * 둬서 이전 섹션과 구분.
+ */
+function Section({ title, sub, divider, children }) {
   return (
-    <section className="card">
+    <div className={cn(divider && 'pt-6 border-t border-border')}>
       <div className="mb-4">
-        <h2 className="text-[15px] font-bold text-ink-900 tracking-tight">
+        <h2 className="text-[14px] font-bold text-ink-900 tracking-tight">
           {title}
         </h2>
         {sub && <p className="text-[12px] text-ink-500 mt-1">{sub}</p>}
       </div>
       <div className="grid gap-4">{children}</div>
-    </section>
+    </div>
   );
 }
 
