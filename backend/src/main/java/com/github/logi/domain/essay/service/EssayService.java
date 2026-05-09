@@ -1,13 +1,16 @@
 package com.github.logi.domain.essay.service;
 
 import com.github.logi.domain.essay.dto.request.EssayCreateRequest;
+import com.github.logi.domain.essay.dto.request.EssayGenerateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionCreateRequest;
 import com.github.logi.domain.essay.dto.request.EssayQuestionUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayRecommendRequest;
+import com.github.logi.domain.essay.dto.request.EssayRegenerateRequest;
 import com.github.logi.domain.essay.dto.request.EssayResultUpdateRequest;
 import com.github.logi.domain.essay.dto.request.EssayUpdateRequest;
 import com.github.logi.domain.essay.dto.response.EssayCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayDetailResponse;
+import com.github.logi.domain.essay.dto.response.EssayGenerateResponse;
 import com.github.logi.domain.essay.dto.response.EssayListResponse;
 import com.github.logi.domain.essay.dto.response.EssayQuestionCreateResponse;
 import com.github.logi.domain.essay.dto.response.EssayRecommendResponse;
@@ -21,6 +24,7 @@ import com.github.logi.domain.experience.exception.ExperienceExceptions;
 import com.github.logi.domain.experience.repository.ExperienceRepository;
 import com.github.logi.domain.user.entity.User;
 import com.github.logi.global.embedding.EmbeddingClient;
+import com.github.logi.global.llm.LlmClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +43,8 @@ public class EssayService {
     private final EssayQuestionRepository essayQuestionRepository;
     private final ExperienceRepository experienceRepository;
     private final EmbeddingClient embeddingClient;
+    private final LlmClient llmClient;
+    private final EssayPromptBuilder essayPromptBuilder;
 
     @Transactional
     public EssayCreateResponse createEssay(User user, EssayCreateRequest request) {
@@ -138,6 +144,51 @@ public class EssayService {
         }
 
         essay.updateProgress(request.progress());
+    }
+
+    public EssayGenerateResponse generateResponse(User user, EssayGenerateRequest request) {
+        EssayQuestion question = essayQuestionRepository
+                .findByIdWithEssayAndExperiences(request.questionId())
+                .orElseThrow(EssayExceptions.QUESTION_NOT_FOUND::toException);
+
+        Essay essay = question.getEssay();
+
+        if (!essay.getId().equals(request.essayId())) {
+            throw EssayExceptions.QUESTION_ESSAY_MISMATCH.toException();
+        }
+
+        if (!essay.getUser().getId().equals(user.getId())) {
+            throw EssayExceptions.FORBIDDEN_ESSAY.toException();
+        }
+
+        EssayPromptBuilder.Prompt prompt = essayPromptBuilder.buildGeneratePrompt(
+                essay, question, question.getExperiences());
+        String generated = llmClient.invoke(prompt.system(), prompt.user());
+
+        return new EssayGenerateResponse(generated);
+    }
+
+    public EssayGenerateResponse regenerateResponse(User user, EssayRegenerateRequest request) {
+        EssayQuestion question = essayQuestionRepository
+                .findByIdWithEssayAndExperiences(request.questionId())
+                .orElseThrow(EssayExceptions.QUESTION_NOT_FOUND::toException);
+
+        Essay essay = question.getEssay();
+
+        if (!essay.getId().equals(request.essayId())) {
+            throw EssayExceptions.QUESTION_ESSAY_MISMATCH.toException();
+        }
+
+        if (!essay.getUser().getId().equals(user.getId())) {
+            throw EssayExceptions.FORBIDDEN_ESSAY.toException();
+        }
+
+        EssayPromptBuilder.Prompt prompt = essayPromptBuilder.buildRegeneratePrompt(
+                essay, question, question.getExperiences(),
+                request.currentResponse(), request.questionReq());
+        String generated = llmClient.invoke(prompt.system(), prompt.user());
+
+        return new EssayGenerateResponse(generated);
     }
 
     public EssayRecommendResponse recommendExperiences(User user, EssayRecommendRequest request) {

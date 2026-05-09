@@ -10,4 +10,8 @@ public interface ApiExceptions {
     default ApiException toException() {
         return new ApiException(this);
     }
+
+    default ApiException toException(Throwable cause) {
+        return new ApiException(this, cause);
+    }
 }

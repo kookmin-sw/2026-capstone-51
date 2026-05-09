@@ -12,4 +12,12 @@ public interface EssayQuestionRepository extends JpaRepository<EssayQuestion, UU
 
     @Query("SELECT q FROM EssayQuestion q JOIN FETCH q.essay WHERE q.id = :questionId")
     Optional<EssayQuestion> findByIdWithEssay(@Param("questionId") UUID questionId);
+
+    @Query("""
+            SELECT DISTINCT q FROM EssayQuestion q
+            JOIN FETCH q.essay
+            LEFT JOIN FETCH q.experiences
+            WHERE q.id = :questionId
+            """)
+    Optional<EssayQuestion> findByIdWithEssayAndExperiences(@Param("questionId") UUID questionId);
 }

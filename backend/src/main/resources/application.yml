@@ -27,6 +27,10 @@ app:
   cors:
     allowed-origins:
       - http://localhost:3000
+  llm:
+    model-id: ${LLM_MODEL_ID:us.anthropic.claude-sonnet-4-5-20250929-v1:0}
+    max-tokens: ${LLM_MAX_TOKENS:4096}
+    temperature: ${LLM_TEMPERATURE:0.7}
 
 aws:
   region: us-east-1
