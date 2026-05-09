@@ -18,4 +18,9 @@ public class ApiException extends RuntimeException {
         super(e.getMessage());
         this.status = e.getHttpStatus();
     }
+
+    public ApiException(ApiExceptions e, Throwable cause) {
+        super(e.getMessage(), cause);
+        this.status = e.getHttpStatus();
+    }
 }
