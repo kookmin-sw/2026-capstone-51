@@ -308,6 +308,40 @@ export default function Onboarding() {
   );
 }
 
+/* ---------- 검증 ---------- */
+
+function validate(form) {
+  const e = {};
+
+  if (form.name.trim().length < 2) {
+    e.name = '이름은 2자 이상 입력해주세요.';
+  }
+  if (!/^\d{8}$/.test(form.studentId.trim())) {
+    e.studentId = '학번은 8자리 숫자로 입력해주세요.';
+  }
+  if (!form.state) e.state = '현재 상태를 선택해주세요.';
+  if (!form.major) e.major = '전공을 선택해주세요.';
+
+  if (form.minor && form.minor === form.major) {
+    e.minor = '부전공은 전공과 다르게 선택해주세요.';
+  }
+
+  if (form.gpa === '') {
+    e.gpa = '학점을 입력해주세요.';
+  } else {
+    const score = Number.parseFloat(form.gpa);
+    if (!Number.isFinite(score) || score < 0 || score > 4.5) {
+      e.gpa = '학점은 0 ~ 4.5 사이로 입력해주세요.';
+    }
+  }
+
+  if (!form.jobFirst) e.jobFirst = '대분류를 선택해주세요.';
+  if (!form.jobSecond) e.jobSecond = '중분류를 선택해주세요.';
+  if (!form.jobThird) e.jobThird = '소분류를 선택해주세요.';
+
+  return e;
+}
+
 /* ---------- 빌딩블록 ---------- */
 
 function Section({ title, sub, children }) {
