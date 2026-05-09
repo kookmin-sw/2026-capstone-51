@@ -611,130 +611,59 @@ function ReadOnly({ value, fallback = '—' }) {
 
 /* ---------- Selects ---------- */
 
-function PlainSelect({ value, onChange, options, className }) {
-  return (
-    <div className="relative">
-      <select
-        value={String(value ?? '')}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          'field text-[14px] py-2.5 pr-9 cursor-pointer appearance-none bg-paper',
-          className
-        )}
-      >
-        {options.map((o) => (
-          <option key={String(o.value)} value={String(o.value)}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={15}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-400"
-      />
-    </div>
-  );
-}
-
-// alias 로 사용하는 단순 select
-const DeptOrPlainSelect = PlainSelect;
-
-/**
- * KookminDepartment 단과대 → 학과 그룹 select.
- * value 는 백엔드 직렬화 값(풀네임) 그대로 — onChange 도 같은 문자열 반환.
- */
-function DeptSelect({
-  value,
-  onChange,
-  allowEmpty,
-  emptyLabel = '선택 안 함',
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-        className="field text-[14px] py-2.5 pr-9 cursor-pointer appearance-none bg-paper"
-      >
-        {allowEmpty && <option value="">{emptyLabel}</option>}
-        {KOOKMIN_COLLEGES.map((college) => {
-          const inCollege = KOOKMIN_DEPT_OPTIONS.filter(
-            (o) => o.group === college
-          );
-          return (
-            <optgroup key={college} label={college}>
-              {inCollege.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </optgroup>
-          );
-        })}
-      </select>
-      <ChevronDown
-        size={15}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-400"
-      />
-    </div>
-  );
-}
-
 /**
  * 직무 3단 트리 select.
  *  - first 선택 → second 옵션 갱신, second/third 초기화
  *  - second 선택 → third 옵션 갱신, third 초기화
- *  - 모든 단계는 "선택 안 함" 허용 (null 허용)
+ *  - 모든 단계는 비우기(null) 허용 — Combobox 의 allowClear X 버튼으로.
+ *  - 옵션 수가 큼 (대분류 13 / 중분류 ~114 / 소분류 ~1,125) → 검색 가능한 Combobox 필수.
  */
-function JobTreeSelect({ value, onChange }) {
+function JobTreeSelect({ value, onChange, errors = {} }) {
   const { first, second, third } = value;
 
   const seconds = useMemo(() => jobSecondOptions(first), [first]);
   const thirds = useMemo(() => jobThirdOptions(first, second), [first, second]);
 
-  const onFirst = (v) => {
-    onChange({
-      jobFirst: v || null,
-      jobSecond: null,
-      jobThird: null,
-    });
-  };
-  const onSecond = (v) => {
-    onChange({ jobSecond: v || null, jobThird: null });
-  };
-  const onThird = (v) => {
-    onChange({ jobThird: v || null });
-  };
+  const onFirst = (v) =>
+    onChange({ jobFirst: v || null, jobSecond: null, jobThird: null });
+  const onSecond = (v) => onChange({ jobSecond: v || null, jobThird: null });
+  const onThird = (v) => onChange({ jobThird: v || null });
 
   return (
     <Grid cols={3}>
-      <Field label="대분류">
-        <PlainSelect
-          value={first}
+      <Field label="대분류" required error={errors.jobFirst}>
+        <Combobox
+          value={first || ''}
           onChange={onFirst}
-          options={[{ value: '', label: '선택 안 함' }, ...JOB_FIRST_OPTIONS]}
+          options={JOB_FIRST_OPTIONS}
+          placeholder="대분류 선택"
+          searchable={false}
+          forceDirection="down"
+          hasError={!!errors.jobFirst}
         />
       </Field>
-      <Field label="중분류">
-        <PlainSelect
-          value={second}
+      <Field label="중분류" required error={errors.jobSecond}>
+        <Combobox
+          value={second || ''}
           onChange={onSecond}
-          options={[
-            { value: '', label: first ? '선택 안 함' : '대분류부터 선택' },
-            ...seconds,
-          ]}
-          className={!first ? 'opacity-60' : ''}
+          options={seconds}
+          placeholder={first ? '중분류 선택' : '대분류부터 선택'}
+          searchable={false}
+          forceDirection="down"
+          disabled={!first}
+          hasError={!!errors.jobSecond}
         />
       </Field>
-      <Field label="소분류">
-        <PlainSelect
-          value={third}
+      <Field label="소분류" required error={errors.jobThird}>
+        <Combobox
+          value={third || ''}
           onChange={onThird}
-          options={[
-            { value: '', label: second ? '선택 안 함' : '중분류부터 선택' },
-            ...thirds,
-          ]}
-          className={!second ? 'opacity-60' : ''}
+          options={thirds}
+          placeholder={second ? '소분류 선택' : '중분류부터 선택'}
+          searchable={false}
+          forceDirection="down"
+          disabled={!second}
+          hasError={!!errors.jobThird}
         />
       </Field>
     </Grid>
