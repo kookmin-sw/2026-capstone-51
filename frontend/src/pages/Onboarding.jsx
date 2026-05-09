@@ -184,42 +184,22 @@ export default function Onboarding() {
             sub="같은 전공·학번 친구들과의 비교 통계에 활용됩니다."
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-              <Field label="전공">
-                <Select
-                  value={form.major}
-                  onChange={(v) => update('major', v)}
-                  options={MAJORS}
+              <Field label="현재 상태" required error={errors.state}>
+                <PlainSelect
+                  value={form.state}
+                  onChange={(v) => update('state', v)}
+                  options={STATE_OPTIONS}
+                  placeholder="선택"
+                  hasError={!!errors.state}
                 />
               </Field>
-              <Field label="부전공">
-                <Select
-                  value={form.minor}
-                  onChange={(v) => update('minor', v)}
-                  options={[
-                    { value: '', label: '없음' },
-                    ...MAJORS.map((m) => ({ value: m, label: m })),
-                  ]}
-                />
-              </Field>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-              <Field label="학년">
-                <Select
-                  value={form.year}
-                  onChange={(v) => update('year', +v)}
-                  options={[
-                    { value: 1, label: '1학년' },
-                    { value: 2, label: '2학년' },
-                    { value: 3, label: '3학년' },
-                    { value: 4, label: '4학년' },
-                    { value: 5, label: '초과학기' },
-                  ]}
-                />
-              </Field>
-              <Field label="학점 (4.5 만점)">
+              <Field label="학점 (4.5 만점)" required error={errors.gpa}>
                 <input
                   type="number"
-                  className="field text-[14px] py-2.5"
+                  className={cn(
+                    'field text-[14px] py-2.5',
+                    errors.gpa && 'border-red-500 focus:border-red-500'
+                  )}
                   placeholder="3.85"
                   min="0"
                   max="4.5"
