@@ -73,3 +73,42 @@
 - **검증**: `npx eslint src/pages/Stats.jsx src/pages/MyCertificates.jsx` 무에러, `npx prettier --check` 통과.
 
 ### PeersOrb 샌드위치 prism + mock 평균 보강 + 확대 모달 (2026-05-10)
+
+- **목표**: (a) prism 이 +z 방향으로만 솟아 뒤에서 보면 평면이라, z=0 평면을 가운데 두고 ±양쪽으로 솟는 "샌드위치"(앞 폴리곤 / 그리드 / 뒷 폴리곤) 로 바꾸기. (b) 백엔드 동기/선배 평균이 비어 시연용 mock 보강. (c) 카드 우상단 확대 아이콘 → 모달로 PeersOrb 크게 보기 (Esc / X 닫기).
+- **변경 파일**:
+  - [`src/components/PeersOrb.jsx`](../frontend/src/components/PeersOrb.jsx) —
+    - `buildDataMesh`: extrude 결과를 `mesh.position.z = -depth/2` 로 z=0 중심 정렬, `MeshPhongMaterial.side = DoubleSide` 추가, edge line 을 앞/뒤(`+depth/2 + 0.004`, `-depth/2 - 0.004`) 양쪽 cap 모두에 그림.
+    - props 신설: `chartMaxWidth`(기본 360, 모달에서 키워 사용), `onExpand` 콜백.
+    - 헤더 우측에 `Maximize2` 아이콘 버튼 추가 (`onExpand` 가 있을 때만 노출).
+  - [`src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) —
+    - `PEER_MOCK` / `SENIOR_MOCK` 상수 (대내 3·5 / 대외 4·6 / 인턴 2·3 / 알바 5·7 / 자격증 4·6). axes 정규화에서 `peerAvgFor` = 백엔드 값 || mock, `seniorAvgFor` = 항상 mock.
+    - `orbExpanded` state + `<Modal width=720>` 안에 `<PeersOrb embedded chartMaxWidth=620>`. PeersOrb 의 `onExpand` 가 setOrbExpanded(true).
+- **이유**: 회전 시 어느 각도에서 봐도 prism 윤곽이 또렷. 백엔드 fix 까지 시연 안전망(mock). 작은 카드에서 답답한 정보 밀도를 모달에서 큰 화면으로 확인 가능.
+- **건드리지 않은 항목**: 5축 정의, 회전/모멘텀 인터랙션, glass sphere / grid / 라벨, 색 커스텀 / 토글 / fallback 막대 차트.
+- **검증**: `npx eslint src/components/PeersOrb.jsx src/pages/Dashboard.jsx` ✅. `npx prettier --check` ✅. `npm run build` ✅ (678ms).
+
+### PeersOrb 본인 5축 — 백엔드 dashboard myCount 우회, 클라이언트 직접 카운트 (2026-05-10)
+
+- **배경**: 백엔드 `GET /users/me/dashboard` 의 `statistics.myCount` 가 0 으로 비어 옴 (집계 미구현/버그). 동일 본인 데이터가 `GET /experiences` / `GET /certificates` 로는 멀쩡히 내려와서 `/my-experience` · `/my-certificates` 탭엔 정상 노출. 데이터는 살아있는데 dashboard 엔드포인트가 못 끌어옴 → PeersOrb "나" 5각형 안 보임.
+- **변경**: [`src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) — `useExperiences()` + `useCertificates()` 추가. axes useMemo 에서 myCount 를 백엔드 stats 가 아니라 클라가 카테고리(`experienceCategory` → `EXPERIENCE_CATEGORY_TO_FRONT`) 별 카운트, cert 는 certificates 길이. peerAvg 는 dashboard 응답 그대로 (백엔드 fix 시 자동 반영). seniorAvg mock(× 1.2) 유지.
+- **이유**: 본인 데이터는 클라가 가진 진실(=경험/자격증 페이지에서 보이는 그대로) 이라 백엔드 dashboard 집계 주기/캐시/버그와 무관하게 즉시 PeersOrb 에 반영돼야 함. 백엔드 dashboard myCount 가 나중에 정상화돼도 코드 변경 없이 무해(둘 다 같은 값으로 수렴).
+- **건드리지 않은 항목**: PeersOrb 컴포넌트, 5축 정의, 정규화 로직, 동기/선배 표현, ErrorBoundary 분리.
+- **검증**: `npx eslint src/pages/Dashboard.jsx` ✅. `npx prettier --check` ✅. `npm run build` ✅ (652ms, 1889 modules).
+
+### PeersOrb 선배 평균 추가 + 색 커스텀 + nested prism 중첩 (2026-05-10)
+
+- **목표**: 사용자 요청 — (a) 범례 swatch 클릭으로 색 커스터마이즈 (b) "동기 평균" 옆에 "선배 평균" 5각형 추가 (c) 기존엔 my(짙은 prism)가 avg(얕은 prism) 위에 "쌓이는" 모양이라 avg 가 가려졌는데, 같은 baseZ 에서 depth 만 단계화해 "블록 안에 블록이 끼워진" 단계형 중첩(stepped pyramid)으로.
+- **변경 파일**:
+  - [`src/components/PeersOrb.jsx`](../frontend/src/components/PeersOrb.jsx) —
+    - 색 state 3 종 (`me`/`peers`/`seniors`) + `localStorage` (`peersOrb.colors.v1`) 영속화. 기본값 `#1e40af` / `#94a3b8` / `#c2410c`.
+    - axes contract 확장: `[{ label, me, peers, seniors? }]`. `seniors` 누락 시 0 처리.
+    - `buildDataMesh` 호출 3 회 — 모두 `baseZ=0`, depth 만 0.07(선배) / 0.10(동기) / 0.13(나) 단계화. 면적이 큰 폴리곤이 더 낮게 깔리고 작은 폴리곤이 위로 빼꼼히 솟는 stepped pyramid 효과.
+    - mesh 색/가시성은 ref 기반으로 별도 effect 가 직접 갱신 — scene 재구축 회피.
+    - `ToggleChip` 리팩터: 단일 `<button>` → 컨테이너 `<div>` 안에 `<label><input type="color"></label>` (swatch, 클릭 시 native color picker) + `<button>` (라벨, 클릭 시 가시성 토글) 분리. 의도가 섞이지 않게.
+    - `PeersFallbackChart` / `FallbackBar` 도 3 막대 + dynamic color 로 동기화.
+    - 가이드 카피 변경: "↻ 드래그해서 돌려보세요 · 색칸을 누르면 색을 바꿀 수 있어요".
+  - [`src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) — `axes` `useMemo` 에 `seniors` 필드 추가. **백엔드가 senior 평균 통계를 아직 안 줘서 동기 평균 × 1.2 mock**. 정규화 max 계산에도 senior 포함. 백엔드가 senior 통계 추가하면 `pickStat(stats, 'seniorAvg')` 같은 키로 한 줄 교체.
+- **건드리지 않은 항목**: 5축 정의 (AXIS_DEFS), 회전 인터랙션, glass sphere / grid / 라벨 sprite, ErrorBoundary 분리, EssayListCard / MyRoadmap / SeniorRoadmap 카드.
+- **검증**: `npx eslint src/components/PeersOrb.jsx src/pages/Dashboard.jsx` ✅. `npx prettier --check` ✅. `npm run build` ✅ (750ms, 1889 modules, dist/index.js 1073 kB — 기존과 동일).
+
+### 백엔드 신규 엔드포인트 4종 흡수 — Dashboard/Stats 실 데이터 + /essays/:id 활성 (2026-05-10)
