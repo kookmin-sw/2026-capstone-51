@@ -287,3 +287,49 @@
 - **검증**: `npx eslint src/components/PeersOrb.jsx src/components/dashboard/` ✅. dev HMR 자동 반영.
 
 ### 회원 탈퇴 (POST /auth/withdraw) 연결 (2026-05-10)
+
+- **목표**: Swagger 재검증 결과 백엔드 완성됐지만 프론트 미연결인 유일한 엔드포인트 — `POST /auth/withdraw` — 를 사용자 페이지에 연결.
+- **신규 hook**:
+  - [`src/api/queries/useMe.js`](../frontend/src/api/queries/useMe.js) — `useWithdraw()` mutation. body 없음, 200 OK 응답. 후처리(토큰/캐시/라우팅)는 호출부 책임.
+- **변경**:
+  - [`src/store/useAuth.js`](../frontend/src/store/useAuth.js) — `clearSession()` action 추가. `logout()` 과 달리 `/auth/logout` 백엔드 호출을 하지 않고 로컬 토큰/유저만 비움. 회원 탈퇴 직후 서버 세션이 이미 사라진 경우용.
+  - [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx) — 페이지 하단(view 모드 전용)에 `DangerZone` 카드 + 확인 모달. 모달은 `"탈퇴"` 두 글자 정확 입력 시에만 버튼 활성. 성공 시 `qc.clear()` + `clearSession()` + `/landing` replace.
+- **연결한 API**:
+  - `POST /auth/withdraw` — 회원 탈퇴
+- **건드리지 않은 항목** (백엔드 의존 — 변경 없음):
+  - `EssayResponse.essayId` 누락 → `useEssay` / `useDeleteEssay` / `useUpdateEssayResult` hook 은 존재하지만 페이지에서 호출 못함. 그대로.
+  - `EssayDetailResponse` 의 `requirement` / `modifiedDate` 필드명 mismatch — normalize 어댑터 미작성.
+- **삭제**: 없음.
+- **검증**: `npx eslint src/store/useAuth.js src/api/queries/useMe.js src/pages/Info.jsx` ✅. dev HMR 자동 반영.
+
+### 통계 페이지 mock UI + 자소서 글자수 카운터 (2026-05-09)
+
+- **목표**: 백엔드 통신 차단 항목 외 남은 미완성 페이지/UI 마무리.
+- **신규**:
+  - [`src/pages/Stats.jsx`](../frontend/src/pages/Stats.jsx) — `/stats` 통계 mock 페이지. 비교 대상 필터(STATE/SCHOOL_NUM/WORKER), 5축 막대그래프(대내/대외/인턴/알바/자격증, 본인 vs 평균), 본인 카테고리 분포, 부족한 경험 카드 + 추천. 백엔드 미반영 안내 인라인 노출. 백엔드 완성 시 `useMyStats(groupBy)` 훅으로 mock 변수 교체만 하면 됨.
+- **변경**:
+  - [`src/components/essay/QuestionEditor.jsx`](../frontend/src/components/essay/QuestionEditor.jsx) — 답변 textarea 위 우측에 글자수 카운터 추가 (`현재 / 최대` 자). 5/3 회의록 명시 TODO 항목. 초과 시 빨간 텍스트 + 초과 안내 라인 노출. **백엔드는 변경 없음** — `maxLength` 필드는 이미 `EssayQuestionCreateRequest` 에 존재, UI 노출만 추가.
+  - [`src/App.jsx`](../frontend/src/App.jsx) — `/stats` 라우트를 Placeholder → 실 컴포넌트로 교체.
+- **건드리지 않은 항목** (이번 세션 정책 — 백엔드 통신 필요한 것 제외):
+  - `/essays/:id` 상세 페이지 — `EssayResponse.essayId` 누락 차단으로 그대로 Placeholder 유지.
+  - 자격증 폼의 native date input → DatePicker 교체 — 사용자가 이전 "내 경험 한정"이라 명시.
+  - 자소서 작성의 "내 이력에서 직접 찾기" 모달 — 핵심 외 기능, 별도 단위로.
+- **삭제**: 없음.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 645ms ✅.
+
+### P0 자소서 작성 + 목록 페이지 연결 (2026-05-09)
+
+- **목표**: Swagger 에 이미 구현된 essay API 들을 `/write`, `/essays` 페이지에 연결. 백엔드가 응답 안 하는 부분(상세 라우팅용 `essayId`)은 추측 구현하지 말고 비활성 + 안내 노출.
+- **신규 파일**:
+  - [`src/components/essay/EssayMetaForm.jsx`](../frontend/src/components/essay/EssayMetaForm.jsx) — 회사명/희망직무/글로벌 요구사항 폼. swagger `EssayCreateRequest` / `EssayUpdateRequest` 동일 shape.
+  - [`src/components/essay/QuestionEditor.jsx`](../frontend/src/components/essay/QuestionEditor.jsx) — 단일 문항 편집기. 추천(`/recommend`) → 초안 생성(`/generate`) → 재생성(`/regenerate`) → 저장(`POST /essays/:id/questions` 또는 `PATCH /essays/:id/questions/:qid`) 한 카드에 통합.
+  - [`src/pages/Write.jsx`](../frontend/src/pages/Write.jsx) — `/write` 페이지. 2-stage machine (meta → questions). 메타 인라인 수정 (`PATCH /essays/:id`) 지원.
+  - [`src/pages/MyEssays.jsx`](../frontend/src/pages/MyEssays.jsx) — `/essays` 목록. 클라이언트 검색. 카드 표시까지 정상이지만 **상세 진입 비활성** (백엔드 의존).
+- **변경**: [`src/App.jsx`](../frontend/src/App.jsx) — `/write`, `/essays` 실 컴포넌트로 교체. `/essays/:id` 는 essayId 라우팅 차단으로 Placeholder 유지.
+- **연결한 API** (모두 swagger 검증):
+  - `POST /essays/create` — 자소서 메타 생성 → essayId 반환
+  - `PATCH /essays/{essayId}` — 메타 수정
+  - `GET /essays` — 목록
+  - `POST /essays/recommend` — 관련 경험 추천
+  - `POST /essays/generate` — AI 초안 생성
+  - `POST /essays/regenerate` — AI 재생성
