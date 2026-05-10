@@ -153,3 +153,48 @@
 
 - **목표**: 사용자 요청 — 상단 HeroBanner / PeersOrb / EssayListCard 3개 카드를 한 통합 카드로 묶어 hero 영역의 시각적 단위를 하나로.
 - **변경**:
+  - [`src/components/dashboard/HeroBanner.jsx`](../frontend/src/components/dashboard/HeroBanner.jsx) — `embedded` prop 추가. `embedded=true` 면 외곽 `rounded-2xl border shadow-lg mb-3` 제거하고 그라데이션 배경만 유지. 통합 카드 안의 상단 띠로 들어감.
+  - [`src/components/PeersOrb.jsx`](../frontend/src/components/PeersOrb.jsx) — `embedded` prop 추가. `embedded=true` 면 외곽 `<section className="card !p-4">` 의 `card !p-4` 클래스 제거. 헤더/차트/토글 내부 구조는 동일.
+  - [`src/components/dashboard/EssayListCard.jsx`](../frontend/src/components/dashboard/EssayListCard.jsx) — `embedded` prop 추가. `embedded=true` 면 `card !p-4 flex flex-col` → `flex flex-col h-full`. 그리드 셀 높이로 stretch.
+  - [`src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) — `hasProfile=true` 분기를 단일 `<section className="card !p-0 overflow-hidden">` 으로 감쌈. 그 안에 `<HeroBanner embedded>` (그라데이션 띠) → `<div grid lg:grid-cols-2 lg:divide-x>` 좌(PeersOrb embedded) / 우(EssayListCard embedded). 영역별 `ErrorBoundary` 는 유지하되 fallback 으로 카드 스타일 없는 `<InnerError>` 로컬 컴포넌트 사용해 카드-in-카드 중첩 회피. `!hasProfile` 분기는 기존 HeroBanner 단독(온보딩 CTA) + placeholder 안내 그대로.
+- **레이아웃 디테일**: 모바일은 `gap-4 p-4` 단일 컬럼 스택, `lg` 이상은 `gap-0 p-0 grid-cols-2 divide-x divide-ink-150` + 각 컬럼 `lg:p-4` 로 가운데 디바이더 + 양쪽 16px 패딩. PeersOrb 의 자연 높이를 EssayListCard 의 `h-full + flex-col + flex-1` 이 흡수해 CTA bar 우하단 고정.
+- **건드리지 않은 항목**: PeersOrb 데이터 contract, 5축 정의, 차트/토글 내부 마크업, EssayListCard 의 행/로딩/에러/빈 상태 처리, MyRoadmap/SeniorRoadmap 카드, `!hasProfile` 분기 UX.
+- **검증**: `npx eslint` ✅. `npx prettier --check` ✅ (포맷 자동 정리 후).
+
+### Dashboard PeersOrb 카드 2-column 확장 + EssayListCard 신설 (2026-05-10)
+
+- **목표**: 사용자 요청 — HeroBanner 의 "자소서 작성" CTA 를 제거하고, 그 자리에 PeersOrb 카드를 2-column 으로 확장. 좌측은 PeersOrb, 우측은 내 자소서 목록, 우하단은 "자소서 작성하기" CTA.
+- **변경**:
+  - [`src/components/dashboard/HeroBanner.jsx`](../frontend/src/components/dashboard/HeroBanner.jsx) — `hasProfile=true` 분기에서 자소서 작성 CTA 버튼 제거. `PencilLine` import 도 제거. 하단 CTA wrapper 는 `!hasProfile` 일 때만 렌더(온보딩 시작하기 유지). 인사 카피만 남김.
+  - [`src/components/dashboard/EssayListCard.jsx`](../frontend/src/components/dashboard/EssayListCard.jsx) — **신규**. `useEssays` 로 자소서 목록을 받아 최대 5개 행 렌더(회사명·진행상태 뱃지·직무·최종수정일). 로딩/에러/빈 상태 처리. 우하단에 `자소서 작성하기` btn-primary CTA → `/write`. 6개 이상이면 좌하단 `전체 보기 (N)` → `/essays` 링크. 백엔드 `EssayResponse.essayId` 누락 이슈로 행 클릭 → 상세 진입은 비활성, 카드 자체는 비링크.
+  - [`src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) — `EssayListCard` import 추가. `hasProfile=true` 본문에서 PeersOrb 만 들어있던 `<ErrorBoundary>` 를 `<div className="grid gap-4 lg:grid-cols-2 lg:items-stretch">` 로 감싸 좌(PeersOrb)·우(EssayListCard) 2-column. 모바일은 단일 컬럼으로 자연 스택. MyRoadmap / SeniorRoadmap 은 그대로 아래에 stack.
+- **건드리지 않은 항목**: PeersOrb 데이터 contract, 5축 정의, 카드 셸 자체, MyRoadmap/SeniorRoadmap, ErrorBoundary 분리, Hero 의 `!hasProfile` 온보딩 CTA — 모두 그대로.
+- **검증**: `npx eslint` ✅. `npx prettier --write` 후 `--check` ✅. `lg` 이상에서 좌우 동일 높이(`items-stretch`) — PeersOrb 가 더 높으면 EssayListCard 의 `flex-col` + 본문 `flex-1` 이 아래 빈공간 흡수, CTA bar 는 항상 우하단 고정.
+- **알려진 한계**: 백엔드 `GET /essays` 응답이 `essayId` 누락이라 자소서 행 → 상세 라우팅 비활성. 이 카드도 동일 한계 — 우측은 일람 + CTA 진입만 제공.
+
+### Dashboard HeroBanner + PeersOrb 한 화면 fit + prism 두께 축소 (2026-05-10)
+
+- **목표**: 사용자 요청 — 대시보드 진입 시 인사 카드(HeroBanner) + 동기 비교 카드(PeersOrb) 가 한 viewport 에 들어오도록 압축. PeersOrb prism 두께도 살짝 줄임.
+- **변경**:
+  - [`src/components/dashboard/HeroBanner.jsx`](../frontend/src/components/dashboard/HeroBanner.jsx) — 패딩/폰트/간격 압축.
+    - `mb-4` → `mb-3`, `px-6 py-7` → `px-5 py-4`.
+    - Sparkles 행: text-[12]/size-14/mb-2 → text-[11]/size-13/mb-1.
+    - h1 text-[22] → text-[18]. 본문 p mt-2 text-[13] → mt-1 text-[12]. CTA 행 mt-5 → mt-3.
+  - [`src/components/PeersOrb.jsx`](../frontend/src/components/PeersOrb.jsx) — 카드 내부 여백·차트 크기·prism 두께 동시 축소.
+    - 카드: `.card`(p-5) → `.card !p-4`. 헤더 mb-1 제거. h2 text-[16] → text-[15], sub text-[12] mt-1 → text-[11] mt-0.5.
+    - 차트 wrap: maxWidth 560 → 360 (aspect-square 라 캔버스 ~360² 로 축소). mt-4 → mt-2.
+    - 드래그 안내: mt-1.5 → mt-1.
+    - 토글 행: mt-4 pt-4 → mt-2 pt-3.
+    - 데이터 prism: avg depth 0.14 → 0.09, my depth 0.26 → 0.16. 전체 두께 ~38% 감소 — 입체감은 유지하되 차분해짐.
+- **건드리지 않은 항목**: 데이터 contract, 5축 정의, 회전/드래그, fallback 차트, MyRoadmap/SeniorRoadmap 카드 — 모두 그대로.
+- **추정 컨텐츠 높이** (lg viewport): 약 710px — 일반 노트북 viewport (720~820) 한 화면에 인사+동기비교 카드 모두 들어옴. 그 아래 카드(MyRoadmap/SeniorRoadmap) 는 스크롤로 노출.
+- **검증**: `npx eslint src/components/PeersOrb.jsx src/components/dashboard/HeroBanner.jsx` ✅. `npx prettier --check` ✅. dev HMR 자동 반영.
+
+### Info 페이지 카드 통합 (2026-05-10)
+
+- **목표**: 사용자 요청 — `/info` 페이지의 기본 정보 / 학적 정보 / 진로 관심사 세 카드가 시각적으로 분리돼 페이지가 길어 보임. 하나의 카드로 합쳐 정보 밀도를 높이되, 의미 단위는 시각적으로 유지.
+- **변경**:
+  - [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx) — 세 개의 `<Card>` 를 단일 `<section className="card">` 로 감싸고, 각 영역은 새 `Section` 컴포넌트(헤딩 + sub + divider) 로 분리. 두번째·세번째 섹션에 `divider` prop 으로 상단 가는 구분선(`pt-6 border-t border-border`) 노출. 섹션 제목 폰트 크기는 카드 타이틀(15px) → 섹션 헤딩(14px) 으로 한 단계 낮춤 — 카드 자체에 외곽 타이틀이 없으니 내부 위계 일관.
+  - 옛 `Card({title, sub, children})` 인라인 함수는 더 이상 사용처 없어 새 `Section` 으로 대체 (외부 import 0 건이라 단순 교체).
+- **건드리지 않은 항목**: 헤더(아바타·이름·수정/저장 버튼), `DangerZone` 카드, validate / toDraft / toRequest, JobTreeSelect / DeptCascadeSelect — 모두 그대로.
+- **검증**: `npx eslint src/pages/Info.jsx` ✅ EXIT 0. dev HMR 자동 반영.
