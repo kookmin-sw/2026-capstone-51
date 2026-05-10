@@ -468,3 +468,48 @@
   - [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx): 동일 정책 적용 — `validate()` minor 의존 제거, Field 항상 `required={isEdit}`, hint 제거.
 - **변경 2: 진로 관심사 드롭다운에서 검색 제거 + 항상 아래로 펼침**.
   - [`src/components/Combobox.jsx`](../frontend/src/components/Combobox.jsx): 새 props 추가
+    - `searchable` (default `true`) — false 면 검색바 자체 미렌더.
+    - `forceDirection?: 'down' | 'up'` — viewport 자동 감지를 무시하고 강제 방향. (학과 cascade 등 자동 감지가 유리한 곳은 그대로 자동.)
+  - [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx) / [`src/pages/Onboarding.jsx`](../frontend/src/pages/Onboarding.jsx): `JobTreeSelect` 의 3개 Combobox 모두 `searchable={false}` + `forceDirection="down"`. `searchPlaceholder` prop 제거.
+- **불변 (참고)**: 학과 cascade(`DeptCascadeSelect`)는 검색·자동 펼침 그대로 유지. 사용자 요청은 진로 관심사에 한정.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 623ms ✅.
+
+### `/info` 검증 정책 Onboarding 일치 + 헤더 정리 (2026-05-09)
+
+- **목표**: Info 페이지 수정 모드에서 Onboarding 과 동일한 인라인 검증 적용. 헤더의 학번·학년 부제는 학적 정보 카드와 중복이라 제거 + 이름을 아바타 옆에 수직 중앙 정렬.
+- **변경**: [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx)
+  - 검증 함수 `validate(draft)` 신규 — Onboarding 과 동일 규칙: 이름 ≥2자, 학번 8자리 숫자, 현재상태/전공/직무 대·중·소 필수, 학점 0~4.5(부전공 입력 시 필수), 부전공 ≠ 전공.
+  - `submitted` state 추가 — 첫 "저장" 클릭 후 라이브 검증. enterEdit/cancelEdit 시 리셋.
+  - `save()` 수정 — toast 한 줄 검증 → validate 전체 검증 + 인라인 에러 노출 + 토스트.
+  - `Field` 컴포넌트에 `error`/`hint` prop 추가 (Onboarding 과 일치).
+  - 학번 input — `inputMode="numeric"`, `maxLength={8}`, `onChange` 에서 숫자 외 문자 제거.
+  - 현재 상태 select — `'선택 안 함'` 옵션 제거 → placeholder "선택" 패턴(필수 필드).
+  - 학점 Field — 부전공이 비어있을 때 hint "부전공 입력 시 필수" 노출.
+  - `JobTreeSelect` — `errors` prop 받아 각 Combobox 에 `hasError` 전달, 라벨에 `*` 마크.
+  - `PlainSelect` 업그레이드 — `placeholder`/`hasError`/`disabled` 지원.
+  - 헤더 — 부제 div(학번 · 학년) 제거. 이름은 `min-w-0 flex-1` h1 한 개로 아바타 옆 수직 중앙 정렬. `mb-4`→`mb-5`.
+
+### 진로 관심사 Combobox 전환 + Combobox 위/아래 자동 펼침 (2026-05-09)
+
+- **목표**: `/info` 의 진로 관심사 3단(대/중/소) 드롭다운을 검색 가능한 Combobox 로 교체. 옵션 수가 큼(대 13 / 중 ~114 / 소 ~1,125) → 검색 필수. 페이지 하단에서 펼치면 잘려 보이는 문제도 해결.
+- **변경**:
+  - [`src/components/Combobox.jsx`](../frontend/src/components/Combobox.jsx) — 열 때 `getBoundingClientRect()` 로 viewport 잔여 공간 측정 → 아래 공간 부족하면 **위로 펼침** (`bottom-full mb-1`). 충분하면 기본 아래(`top-full mt-1`).
+  - [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx) — `JobTreeSelect` 의 3개 PlainSelect 를 Combobox 로 교체. 각 단계 검색·`allowClear` 적용.
+  - [`src/pages/Onboarding.jsx`](../frontend/src/pages/Onboarding.jsx) — 일관성 위해 직무 트리 동일 적용. (현재 상태 enum 6개는 PlainSelect 유지 — 검색 불필요.)
+  - [`src/components/Layout.jsx`](../frontend/src/components/Layout.jsx) — main 영역 패딩을 `py-5 lg:py-7` → `pt-5 lg:pt-7 pb-24 lg:pb-32`. 페이지 끝에 펼침 영역 충분 확보(이중 안전망).
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 624ms ✅. dev HMR 자동 반영.
+
+### 학과 선택 UX — 단과대→학과 cascade + 검색 (2026-05-09)
+
+- **목표**: `/info`(전공·부전공)에서 단과대>학과 54개가 한 dropdown 에 펼쳐져 정보 과다. UX 개선 + 검색 기능.
+- **신규 파일**:
+  - [`src/components/Combobox.jsx`](../frontend/src/components/Combobox.jsx) — 재사용 가능한 검색형 dropdown. 외부 클릭/Esc 닫기, ↑/↓/Enter 키보드 nav, `allowClear` 옵션. 평면 옵션 리스트만 받음 (group 분리는 호출부 책임).
+  - [`src/components/DeptCascadeSelect.jsx`](../frontend/src/components/DeptCascadeSelect.jsx) — 단과대 → 학과 2단계 cascade. 둘 다 Combobox. 외부 `value` 변동 시 단과대 자동 매칭 (파생값 + interim state, useEffect 동기화 회피). 단과대 변경 시 학과 자동 비움.
+- **변경 파일**:
+  - [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx) — 전공/부전공 셀렉터를 `DeptSelect` (single big optgroup) → `DeptCascadeSelect`. 옛 `DeptSelect` 함수 정의 제거. `KOOKMIN_DEPT_OPTIONS / KOOKMIN_COLLEGES` import 제거 (cascade 컴포넌트 내부로 이동).
+  - [`src/pages/Onboarding.jsx`](../frontend/src/pages/Onboarding.jsx) — 일관성 위해 동일 cascade 적용. 옛 inline `DeptSelect` 함수 제거.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 607ms ✅. dev HMR 자동 반영.
+
+### P1 경험 CRUD 페이지 구현 — 2026-05-09
+
+- **목표**: `/my-experience*` 3개 라우트의 Placeholder 교체. 백엔드 `useExperiences*` 훅 100% 활용.
