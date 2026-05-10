@@ -24,11 +24,15 @@ public record UserStatsResponse(
             int myCount
     ) {
         public static CategoryStat of(double avg, long userCount, long myCount) {
-            return new CategoryStat((float) avg, (int) userCount, (int) myCount);
+            return new CategoryStat(round1(avg), (int) userCount, (int) myCount);
         }
 
         public static CategoryStat empty(long myCount) {
             return new CategoryStat(0f, 0, (int) myCount);
+        }
+
+        private static float round1(double value) {
+            return (float) (Math.round(value * 10) / 10.0);
         }
     }
 
