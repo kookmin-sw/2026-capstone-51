@@ -6,7 +6,9 @@ import com.github.logi.domain.certificate.entity.Certificate;
 import com.github.logi.domain.certificate.exception.CertificateExceptions;
 import com.github.logi.domain.certificate.repository.CertificateRepository;
 import com.github.logi.domain.user.entity.User;
+import com.github.logi.global.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class CertificateService {
     private final CertificateRepository certificateRepository;
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.USER_STATS_CACHE, allEntries = true)
     public void createCertificate(User user, CertificateRequest request) {
         certificateRepository.save(Certificate.create(user, request));
     }
@@ -29,6 +32,7 @@ public class CertificateService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.USER_STATS_CACHE, allEntries = true)
     public void updateCertificate(User user, UUID certificateId, CertificateRequest request) {
         Certificate certificate = certificateRepository.findById(certificateId)
                 .orElseThrow(CertificateExceptions.CERTIFICATE_NOT_FOUND::toException);
@@ -41,6 +45,7 @@ public class CertificateService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.USER_STATS_CACHE, allEntries = true)
     public void deleteCertificate(User user, UUID certificateId) {
         Certificate certificate = certificateRepository.findById(certificateId)
                 .orElseThrow(CertificateExceptions.CERTIFICATE_NOT_FOUND::toException);

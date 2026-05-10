@@ -7,8 +7,10 @@ import com.github.logi.domain.experience.entity.Experience;
 import com.github.logi.domain.experience.exception.ExperienceExceptions;
 import com.github.logi.domain.experience.repository.ExperienceRepository;
 import com.github.logi.domain.user.entity.User;
+import com.github.logi.global.config.CacheConfig;
 import com.github.logi.global.sqs.SqsMessagePublisher;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -25,6 +27,7 @@ public class ExperienceService {
     private final SqsMessagePublisher sqsMessagePublisher;
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.USER_STATS_CACHE, allEntries = true)
     public void createExperience(User user, ExperienceRequest request) {
         Experience experience = experienceRepository.save(Experience.create(user, request));
         UUID experienceId = experience.getId();
@@ -53,6 +56,7 @@ public class ExperienceService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.USER_STATS_CACHE, allEntries = true)
     public void updateExperience(User user, UUID experienceId, ExperienceRequest request) {
         Experience experience = experienceRepository.findById(experienceId)
                 .orElseThrow(ExperienceExceptions.EXPERIENCE_NOT_FOUND::toException);
@@ -72,6 +76,7 @@ public class ExperienceService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.USER_STATS_CACHE, allEntries = true)
     public void deleteExperience(User user, UUID experienceId) {
         Experience experience = experienceRepository.findById(experienceId)
                 .orElseThrow(ExperienceExceptions.EXPERIENCE_NOT_FOUND::toException);
