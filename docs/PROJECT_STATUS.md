@@ -112,3 +112,44 @@
 - **검증**: `npx eslint src/components/PeersOrb.jsx src/pages/Dashboard.jsx` ✅. `npx prettier --check` ✅. `npm run build` ✅ (750ms, 1889 modules, dist/index.js 1073 kB — 기존과 동일).
 
 ### 백엔드 신규 엔드포인트 4종 흡수 — Dashboard/Stats 실 데이터 + /essays/:id 활성 (2026-05-10)
+
+- **배경**: 백엔드 팀이 추가로 푼 4종 (`GET /users/me/dashboard`, `GET /users/me/stats?groupBy=`, `GET /essays/{essayId}`, `GET /experiences/{experienceId}`) 흡수. `/experiences/{id}` 는 이미 hook 사용 중이라 그대로. 나머지 3종 신규 연결.
+- **신규 hook**:
+  - [`src/api/queries/useMe.js`](../frontend/src/api/queries/useMe.js) — `useDashboard()` / `useMyStats(groupBy)` 추가.
+  - [`src/api/queries/keys.js`](../frontend/src/api/queries/keys.js) — `qk.dashboard()`, `qk.stats(groupBy)` 키 추가.
+  - [`src/api/queries/useEssays.js`](../frontend/src/api/queries/useEssays.js) — `useEssay(id)` 안에 `normalizeEssayDetail()` 어댑터 추가 (백엔드 `requirement`→`globalReq`, `modifiedDate`→`updatedAt`). 호출부는 통일 키로만 보면 됨.
+- **신규 매핑 헬퍼** ([`src/lib/enums.js`](../frontend/src/lib/enums.js)):
+  - `STATS_BACK_TO_FRONT` — 백엔드 Statistics 키 (`partTime/external/internal/license/intern`) ↔ 프론트 5축 키 (`parttime/activity/internal/cert/intern`).
+  - `pickStat(statistics, 'avg'|'userCount'|'myCount')` — 백엔드 5축 객체 → 프론트 키 record.
+  - `weakPointLabel(type)` — 백엔드 `WeakPoint.type` 을 프론트 한글 라벨로 정규화 (enum 키/한글/stats 키 모두 수용).
+- **페이지 변경**:
+  - [`src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) — `useExperiences`/`useCertificates` 카운트 + `PEERS_MOCK_AVG` 사용을 모두 제거. `useDashboard()` 의 `statistics` 로 본인 5축(`myCount`) + 동기 평균(`avg`) + 비교 인원수(`userCount`) 산출. `peersSub` 의 "214명 기준" 하드코딩 → 실제 `userCount` 노출 (없으면 "집계 대기"). `graduateUserExperiences` 를 `SeniorRoadmapCard` 에 props 전달.
+  - [`src/components/dashboard/SeniorRoadmapCard.jsx`](../frontend/src/components/dashboard/SeniorRoadmapCard.jsx) — `SENIOR_ROADMAPS` mock 의존 제거. `graduates`, `isLoading`, `isError`, `onRetry` props 기반으로 재작성. 졸업생 N명 → 탭("선배 1·2·3") + 학기 축 자동 계산(min/max startDate). 백엔드 응답에 졸업생 표시명/합격 회사/시즌이 없어 index 라벨로만 표시 (필드 추가되면 같은 자리에 끼우면 됨).
+  - [`src/pages/Stats.jsx`](../frontend/src/pages/Stats.jsx) — 200줄 mock 데이터 (`MOCK = { STATE/SCHOOL_NUM/WORKER }`, `buildBy`) 통째로 제거. `useMyStats(groupBy)` 사용. `pickStat` 으로 5축 매핑, `weakPointLabel` 로 부족한 카테고리 라벨링, `recommendedItems` 그대로 표시. 백엔드 미구현 안내 박스 제거.
+  - [`src/pages/EssayDetail.jsx`](../frontend/src/pages/EssayDetail.jsx) — **신규 페이지**. 메타 view ↔ edit 토글 (PATCH `/essays/:id`), 결과 입력 (`PATCH /essays/:id/result` — IN_PROGRESS/PASS/FAIL 3개 버튼), 문항 목록(읽기 전용, 문항 번호+질문+답변+maxLength), 위험 영역 자소서 삭제(2클릭 confirm + 5초 자동 취소).
+  - [`src/pages/MyEssays.jsx`](../frontend/src/pages/MyEssays.jsx) — `essayId` opportunistic. 응답에 `essayId` 가 들어오면 카드의 "상세" 버튼이 `Link to /essays/:essayId` 로 활성, 누락이면 disabled + 안내 박스. 안내 박스 노출 조건도 "essayId 있는 항목 0건일 때만" 으로 좁힘.
+  - [`src/components/dashboard/EssayListCard.jsx`](../frontend/src/components/dashboard/EssayListCard.jsx) — 같은 패턴. `essayId` 있으면 행이 `Link` 로 감싸지고 hover border 강조, 없으면 일반 li.
+  - [`src/App.jsx`](../frontend/src/App.jsx) — `/essays/:id` 라우트의 `Placeholder` → `EssayDetail`. `Placeholder` import 제거.
+- **삭제**:
+  - `frontend/src/pages/Placeholder.jsx` — `/essays/:id` 가 실 컴포넌트로 교체되어 모든 라우트가 실 페이지를 가짐. 외부 import 0건.
+  - [`src/data/dashboard.js`](../frontend/src/data/dashboard.js) 의 `PEERS_MOCK_AVG`, `SEMESTERS`, `ymToSemIndex`, `SENIOR_ROADMAPS` — 백엔드 실 데이터 흡수로 사용처 0건. 파일 자체는 `CAT_LABELS` / `CAT_COLORS` 만 보유한 채 유지 (MyRoadmap/SeniorRoadmap/Stats 도넛 공유 토큰).
+- **건드리지 않은 항목**:
+  - `MyRoadmapCard.jsx` — 본인 마일스톤은 STAR 한 줄 요약 / 자격증 `getDate` 디테일을 그대로 노출하기 위해 `useExperiences` / `useCertificates` 직접 호출 유지. `useDashboard.userExperiences` 는 `ExperienceItem` shape 만 줘서 정보가 빈약함.
+  - `EssayResponse.essayId` 누락 — 여전히 백엔드 차단(스웨거 기준). 코드는 opportunistic 이라 백엔드가 풀어주면 즉시 활성.
+  - `EssayQuestionCreateRequest.response` minLen:1 — `/write` 의 placeholder 우회 그대로.
+  - 신규 필드 (경험 희망직무, 자격증 메모/증빙, /info 포트폴리오) — 백엔드 미반영, 그대로.
+- **검증**: `npx eslint src/` ✅ EXIT 0 / `npx prettier --check src/` ✅ "All matched files use Prettier code style!" / `npm run build` ✅ 730ms, 1889 modules. 기존 chunk 사이즈 / dynamic import 경고는 알려진 항목.
+
+### Stats `/stats` 내 경험 분포 카드 — 가로 막대 → SVG 도넛 차트 (2026-05-10)
+
+- **목표**: 사용자 요청 — `MyDistribution` 카드의 카테고리별 진행 막대를 원형 그래프로 교체. 이후 슬라이스 경계가 잔금/겹침으로 찌그러져 보인다는 후속 보고로 구현 방식 변경.
+- **변경**:
+  - [`src/pages/Stats.jsx`](../frontend/src/pages/Stats.jsx) — `MyDistribution` 본문을 [도넛 SVG + 우측 범례] 2-컬럼 레이아웃으로 교체. 모바일은 stack(`flex-col`), `sm` 이상에서 좌우 배치. 도넛 가운데에 총 경험 건수 + "총 경험" 라벨 노출. `CAT_COLORS` 를 `data/dashboard.js` 에서 import 해 대시보드와 색상 일관성 유지.
+  - **렌더 방식**: 1차 stroke-dasharray `<circle>` 누적 → anti-aliasing 으로 슬라이스 경계에 잔금이 보임 → 채워진 SVG `<path>` 호(annulus segment)로 재구현. `buildPieSlices(data, total)` 가 외/내 반지름(rO=57, rI=39) 두 호 + 두 직선의 path d 문자열을 생성, `shapeRendering="geometricPrecision"`. 12시 시작·시계방향 누적이라 추가 CSS 회전 없음. `total === 0` 빈 상태 / 단일 100% 슬라이스는 `<DonutRing>` 헬퍼(외/내 두 원 evenodd) 로 끊김 없는 링.
+- **건드리지 않은 항목**: `FiveAxisCompare` 비교 막대그래프, `Shortages`, 데이터 매핑(`view.distribution`), `useMyStats` 훅, 페이지 헤더/필터, 범례 마크업.
+- **검증**: `npx eslint src/pages/Stats.jsx` ✅.
+
+### Dashboard 상단 카드 3개 → 1개 통합 (2026-05-10)
+
+- **목표**: 사용자 요청 — 상단 HeroBanner / PeersOrb / EssayListCard 3개 카드를 한 통합 카드로 묶어 hero 영역의 시각적 단위를 하나로.
+- **변경**:
