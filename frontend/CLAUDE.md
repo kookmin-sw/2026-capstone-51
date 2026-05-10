@@ -127,9 +127,10 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 
 **도메인 훅** — [`src/api/queries/`](2026-capstone-51/frontend/src/api/queries/)
 
-- `keys.js` — queryKey 팩토리 (`qk.me()`, `qk.experiences.one(id)` ...).
-- `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. 실서버 OpenAPI 의 모든 구현된 엔드포인트 커버.
-- 미구현 백엔드 (`/essays/recommand`, `/generate`, `/regenerate`, `/users/me/dashboard`, `/users/me/stats`) 는 훅 없음 — 백엔드 일정 후 추가.
+- `keys.js` — queryKey 팩토리 (`qk.me()`, `qk.dashboard()`, `qk.stats(groupBy)`, `qk.experiences.one(id)` ...).
+- `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. **스웨거 28개 엔드포인트 1:1 매핑** (2026-05-10 백엔드 신규 4종 추가 후).
+- `useMe.js` 의 `useDashboard()` / `useMyStats(groupBy)` — `/users/me/dashboard`, `/users/me/stats?groupBy=` (groupBy: STATE|SCHOOL_NUM|WORKER).
+- `useEssays.js` 의 `useEssay(id)` 안에 `normalizeEssayDetail()` 어댑터 — 백엔드 `EssayDetailResponse` 의 `requirement`/`modifiedDate` 를 `globalReq`/`updatedAt` 으로 통일. 호출부는 둘 다 같은 키로만.
 
 **zustand 스토어** — [`src/store/`](2026-capstone-51/frontend/src/store/)
 
