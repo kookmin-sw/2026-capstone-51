@@ -27,6 +27,8 @@ app:
   cors:
     allowed-origins:
       - http://localhost:3000
+  embedding:
+    model-id: ${EMBEDDING_MODEL_ID:amazon.titan-embed-text-v2:0}
   llm:
     model-id: ${LLM_MODEL_ID:us.anthropic.claude-sonnet-4-5-20250929-v1:0}
     max-tokens: ${LLM_MAX_TOKENS:4096}
