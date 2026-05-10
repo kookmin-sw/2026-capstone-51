@@ -5,6 +5,7 @@ import com.github.logi.domain.experience.entity.ExperienceCategory;
 import com.github.logi.domain.user.entity.KookminDepartment;
 import com.github.logi.domain.user.entity.State;
 import com.github.logi.domain.user.entity.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -92,7 +93,7 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
 
     // major + state 기준 자신을 제외한 최신 경험 제목 Top N (weakPoints 추천)
     @Query("""
-            SELECT e.experienceTitle AS title, e.createdAt AS createdAt
+            SELECT e.experienceTitle AS title
             FROM Experience e
             JOIN e.user u
             WHERE u.major = :major AND u.state = :state AND e.experienceCategory = :category
@@ -103,11 +104,12 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             @Param("major") KookminDepartment major,
             @Param("state") State state,
             @Param("category") ExperienceCategory category,
-            @Param("me") User me
+            @Param("me") User me,
+            Pageable pageable
     );
 
     @Query("""
-            SELECT e.experienceTitle AS title, e.createdAt AS createdAt
+            SELECT e.experienceTitle AS title
             FROM Experience e
             JOIN e.user u
             WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
@@ -119,11 +121,12 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             @Param("major") KookminDepartment major,
             @Param("schoolNumPrefix") String schoolNumPrefix,
             @Param("category") ExperienceCategory category,
-            @Param("me") User me
+            @Param("me") User me,
+            Pageable pageable
     );
 
     @Query("""
-            SELECT e.experienceTitle AS title, e.createdAt AS createdAt
+            SELECT e.experienceTitle AS title
             FROM Experience e
             JOIN e.user u
             WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
@@ -134,7 +137,8 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
     List<TitleCountView> findTopTitlesByMajorAndWorkerAndCategory(
             @Param("major") KookminDepartment major,
             @Param("category") ExperienceCategory category,
-            @Param("me") User me
+            @Param("me") User me,
+            Pageable pageable
     );
 
     // 현재 유저의 카테고리별 경험 수
@@ -145,6 +149,13 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             GROUP BY e.experienceCategory
             """)
     List<CategoryCountView> findUserCategoryCount(@Param("user") User user);
+
+    // 여러 유저의 경험을 한 번에 조회 (N+1 방지)
+    @Query("""
+            SELECT e FROM Experience e
+            WHERE e.user IN :users
+            """)
+    List<Experience> findAllByUserIn(@Param("users") List<User> users);
 
     interface CategoryAvgView {
         ExperienceCategory getCategory();

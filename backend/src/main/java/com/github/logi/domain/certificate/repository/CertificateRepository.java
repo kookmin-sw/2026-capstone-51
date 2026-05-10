@@ -125,6 +125,10 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
     @Query("SELECT COUNT(c) FROM Certificate c WHERE c.user = :user")
     Long countByUser(@Param("user") User user);
 
+    // 여러 유저의 자격증을 한 번에 조회 (N+1 방지)
+    @Query("SELECT c FROM Certificate c WHERE c.user IN :users")
+    List<Certificate> findAllByUserIn(@Param("users") List<User> users);
+
     interface CertNameCountView {
         String getName();
         Long getCnt();

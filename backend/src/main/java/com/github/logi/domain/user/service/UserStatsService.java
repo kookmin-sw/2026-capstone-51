@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -99,13 +101,13 @@ public class UserStatsService {
     }
 
     private List<String> fetchTopExperienceTitles(User user, GroupContext ctx, ExperienceCategory category) {
+        PageRequest page = PageRequest.of(0, RECOMMEND_TOP_N);
         List<ExperienceRepository.TitleCountView> views = switch (ctx.groupBy()) {
-            case STATE -> experienceRepository.findTopTitlesByMajorAndStateAndCategory(user.getMajor(), ctx.state(), category, user);
-            case SCHOOL_NUM -> experienceRepository.findTopTitlesByMajorAndSchoolNumAndCategory(user.getMajor(), ctx.groupKey(), category, user);
-            case WORKER -> experienceRepository.findTopTitlesByMajorAndWorkerAndCategory(user.getMajor(), category, user);
+            case STATE -> experienceRepository.findTopTitlesByMajorAndStateAndCategory(user.getMajor(), ctx.state(), category, user, page);
+            case SCHOOL_NUM -> experienceRepository.findTopTitlesByMajorAndSchoolNumAndCategory(user.getMajor(), ctx.groupKey(), category, user, page);
+            case WORKER -> experienceRepository.findTopTitlesByMajorAndWorkerAndCategory(user.getMajor(), category, user, page);
         };
         return views.stream()
-                .limit(RECOMMEND_TOP_N)
                 .map(ExperienceRepository.TitleCountView::getTitle)
                 .toList();
     }
