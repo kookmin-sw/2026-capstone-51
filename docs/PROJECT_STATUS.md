@@ -333,3 +333,48 @@
   - `POST /essays/recommend` — 관련 경험 추천
   - `POST /essays/generate` — AI 초안 생성
   - `POST /essays/regenerate` — AI 재생성
+  - `POST /essays/{essayId}/questions` — 문항 신규 저장
+  - `PATCH /essays/{essayId}/questions/{questionId}` — 문항 수정
+- **확인 필요 / 추측한 부분 (위 PROJECT_STATUS 백엔드 의존 항목과 별개로 본 PR 에서 발견한 것들)**:
+  - `EssayQuestionCreateRequest.response` 가 `minLength:1`(required) — "초안 생성" 호출에 questionId 가 필요하므로 신규 카드는 placeholder 텍스트(`"(작성 예정)"`)로 일단 저장 후 generate 호출. **백엔드가 실제로 이 우회를 받아주는지 통합 테스트 필요**. 받아주지 않으면 백엔드 측에 응답 필드 nullable 또는 `POST /essays/:id/questions/draft` 같은 분리된 endpoint 협의.
+  - `EssayRecommendResponse.relatedExperience[]` 의 swagger 정의는 `{experienceId}` 만 — 노션 테스트 데이터엔 `experienceTitle`, `similarity` 도 있음. 둘 다 처리하되 title 누락 시 `useExperiences()` 캐시에서 매칭. **swagger 와 실 응답 불일치 — 백엔드 swagger 보강 필요**.
+- **건드리지 않은 애매한 항목**:
+  - `/essays/:id` 상세 페이지: `EssayResponse` 에 `essayId` 누락으로 라우팅 자체 불가능 → Placeholder 유지.
+  - "이어쓰기" / "결과 입력" 버튼: 같은 이유로 미노출. 미생성 문항 여부 / 결과 진행 가능 여부 판정용 필드도 `EssayResponse` 에 없어 백엔드 보강 후 활성.
+  - 자소서 합격 시 사용자 → WORKER 자동 전환 책임 분기: 백엔드 응답 후 결정.
+- **백엔드 미구현 / 대기 항목**: Dashboard 실 데이터, Stats 실 데이터, 자격증 가중치는 본 PR 스코프 밖 — 그대로 둠.
+- **삭제**: `frontend/src/data/essays.js` — 어디에서도 import 안 됨 (rg 0건). 옛 자소서 mock.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 623ms ✅. dev HMR 자동 반영.
+
+### Dashboard PeersOrb 본인 5축 실 데이터 연결 (2026-05-09)
+
+- **목표**: PeersOrb 가 모든 유저에게 동일한 mock 값을 보여주던 문제 해결. 본인 5축은 사용자 입력 데이터 기반으로.
+- **변경**:
+  - [`src/data/dashboard.js`](../frontend/src/data/dashboard.js) — 옛 `PEER_AXES` (이미 0-100 정규화된 가짜 me/peers 통합값) 제거. 대신 `PEERS_MOCK_AVG` (카테고리별 평균 카운트만, 동기 평균 mock) 로 분리.
+  - [`src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) — `useExperiences()` + `useCertificates()` 호출 → 본인 카테고리 카운트 (INTERNAL/EXTERNAL/INTERN/PARTTIME + 자격증) → `PEERS_MOCK_AVG` 와 통합 max 기준 0-100 정규화 → PeersOrb 에 전달. `useMemo` 로 캐싱.
+- **본인 데이터 진실 / 동기 평균 mock 유지**:
+  - 본인 5축은 `/my-experience` + `/my-certificates` 입력에 따라 즉시 변동 ✅
+  - 동기 평균은 백엔드 학과 기반 통계 엔드포인트 미구현 → PEERS_MOCK_AVG 그대로
+- **백엔드 의존 (신규 7번째 질의 후보)**: 학과 기반 동기 평균 — `groupBy=MAJOR` enum 추가 또는 별도 endpoint. 응답 후 PEERS_MOCK_AVG 변수만 교체하면 됨 (정규화 로직은 그대로).
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 682ms ✅.
+
+### 백엔드 IP 갱신: 98.92.68.10 (2026-05-09, EC2 재재시작)
+
+- **사유**: EC2 또 재시작. `98.82.110.229` → `98.92.68.10`.
+- **변경**: `vite.config.js` 의 `API_TARGET` 갱신, `.env.local.example` / `frontend/CLAUDE.md` 의 IP 안내 갱신, dev 서버 재시작.
+- **검증**: 새 IP HTTP 200 (3.15s), proxy 통과 HTTP 200 (1.30s).
+- **항목 6번 (Elastic IP 할당) 재강조 필요** — 같은 작업 반복.
+
+### 백엔드 IP 갱신: 98.82.110.229 (2026-05-09)
+
+- **사유**: EC2 재시작으로 IP 변경 (`3.239.83.170` → `98.82.110.229`). 인스턴스가 Elastic IP 미설정이라 재시작마다 변경됨.
+- **변경**:
+  - [`vite.config.js`](../frontend/vite.config.js): `API_TARGET` 기본값 갱신.
+  - [`.env.local.example`](../frontend/.env.local.example): 현재 IP 안내 + Elastic IP 미설정 경고 추가.
+  - [`frontend/CLAUDE.md`](../frontend/CLAUDE.md): API URL 안내 블록의 IP 갱신 + "재시작마다 IP 변경" 운영 노트 강화.
+- **검증**: 새 IP HTTP 200 (3.34s), CORS preflight allow-origin 정상. dev proxy 통과 확인 — `http://localhost:3000/api/v3/api-docs` HTTP 200, 1.3s.
+- **백엔드팀 신규 질의 (6번째)**: Elastic IP 할당해 재시작 시 IP 가 고정되도록 부탁 — 매 재시작마다 프론트 설정 갱신 + dev 서버 재시작은 비효율.
+
+### DatePicker — 헤더 ▾ chevron + 미래 nav 비활성 (2026-05-09)
+
+- **목표 1**: 헤더 텍스트("2026년 05월")가 클릭 가능함을 사용자가 인지 못 하던 발견성 문제.
