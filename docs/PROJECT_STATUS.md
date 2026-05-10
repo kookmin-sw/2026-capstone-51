@@ -558,3 +558,48 @@
 ### Notion 회의록 동기화 — 2026-05-09 분석 (이전 — Swagger 검증으로 일부 정정됨)
 
 - **목적**: Notion export(2026-05-09 시점)와 PROJECT_STATUS 비교, 누락된 기능 요구사항 / 디자인 변경사항 / 백엔드 진행상황 차이 정리.
+- **핵심 발견**:
+  - **백엔드 거의 다 완료**: API 명세 CSV에 따르면 essay 전체 (recommand/generate/regenerate/create/result/CRUD), certificate CRUD, experience CRUD, auth, GET·PUT /users/me 모두 `완료`. 미완료 둘만 남음 — `/users/me/stats`, `/users/me/dashboard`.
+  - **이전 PROJECT_STATUS의 "AI 추천 게이트(미구현)" 가정이 무효**: 자소서 페이지 구현 시 즉시 실 API 호출 가능.
+  - **Dashboard 5축 지표가 디자인 회의(4/27)와 어긋남**: 현재 코드의 `data/dashboard.js` `PEER_AXES`는 (학업/경험다양성/자소서/합격률/지원량). 새 명세는 (대내활동/대외활동/인턴/아르바이트/자격증). PeersOrb 데이터 + 로드맵 카테고리(학업→아르바이트, 프로젝트→대내활동) + 선배 로드맵 UI 정리(드롭다운/카테고리 표시/마일스톤 달성표시 제거) 동반 필요.
+  - **새 기능 요구사항 (5/1, 5/3 회의)**:
+    - 자격증 가중치 (자소서 합격 시 도움된 자격증 선택 → 통계 1등 표시) — 백엔드 API 미반영, 백엔드 협의 필요.
+    - 자소서 작성 진입 시 회사명·희망직무·글로벌 요구사항 입력 화면(자소서 onboarding) — `/essays/create` body가 `{companyName, wishJob, globalReq}`로 이미 구현됨 (테스트 페이로드 확인).
+    - 질문별 글자수 필드 (`maxLength`) — 백엔드 페이로드에 이미 존재(테스트 데이터 `maxLength: 600`), 프론트 UI에 노출/입력 필요.
+    - 자소서 수정 페이지: 질문별 재생성 / 새 질문 추가 / 요구사항 옆 "적용하기"·"수정하기" 버튼.
+- **데드라인**: 헤더 D-day 위젯 — **2026-05-22 최종 발표** (~13일 남음).
+- **Notion 사양 vs 현 코드 outdated 항목**: 4/27 디자인 문서의 온보딩 페이지가 `ID/PW` 입력 필드 명시 — Google OAuth 결정 이전 사양이라 무시. 현재 Onboarding.jsx가 옳음.
+- **enum 정합성 확인**: 노션 Enum 페이지(경험/자소서진행/현재상태/통계비교) 모두 `lib/enums-data.js`와 일치 ✅.
+
+### Onboarding 폼 전면 개편 (2026-05-09)
+
+- **목표**: 첫 로그인 온보딩 폼을 백엔드 `/users/me` PUT 계약과 완전히 일치시키고 인라인 검증 도입.
+- **변경 파일**: [`frontend/src/pages/Onboarding.jsx`](../frontend/src/pages/Onboarding.jsx) 전면 재작성.
+- **제거**: `frontend/src/data/onboarding.js` (mock `MAJORS` / `JOB_TREE`).
+- **요점**:
+  - 모든 enum 필드를 `lib/enums.js`의 백엔드 직렬화 값으로 직접 사용 (KookminDepartment, JobFirst/Second/Third, State).
+  - 학년 필드 → 현재 상태로 통합 (FRESH_MAN/SOPHOMORE/JUNIOR/SENIOR/JOBSEEKER/WORKER 6개).
+  - 폼 디폴트 값 제거 — 모든 필드 placeholder로 시작.
+  - 인라인 검증: 첫 "시작하기" 클릭 후부터 라이브 검증.
+  - 필수: 이름(2자+) / 학번(8자리 숫자) / 전공 / 현재상태 / 직무 대·중·소.
+  - 옵셔널: 부전공, 학점(0~4.5). **부전공 선택 시 학점 필수**. 부전공은 전공과 다르게(옵션에서 제외).
+
+## 진행 중인 작업
+
+(현재 진행 중인 작업 없음 — 위 단위 종료, 다음 지시 대기.)
+
+## 다음에 해야 할 작업 (우선순위 순)
+
+> **D-12 (2026-05-22 최종 발표 기준, 2026-05-10 시점)** 으로 정렬. 데모 핵심 가치 제안(자소서 추천)을 먼저 작동시키는 순서.
+
+### P0. 자소서 플로우 — ✅ 코어 완료 (2026-05-09)
+
+#### `/write` — 자소서 작성 페이지 (4/27, 5/3 디자인)
+
+- [x] 1단계: 회사명 / 희망직무 / 글로벌 요구사항 입력 폼 → `POST /essays/create`
+- [x] 2단계 진입 후 문항 추가 버튼 → 문항 입력(질문 + 글자수 `maxLength`)
+- [x] 문항 입력 완료 시 `POST /essays/recommend` 호출 → 추천 경험 상위 2개 자동 표시
+- [x] 추가 추천 경험 카드 클릭으로 토글, 활용 경험 **최대 2개**
+- [x] "초안 생성" → `POST /essays/generate`
+- [x] 재생성 영역: 사용자 요구사항 입력 + "다시 생성" → `POST /essays/regenerate`. "요구사항 비우기" 버튼.
+- [x] "이 문항 저장" → `POST /essays/:id/questions` (신규) / `PATCH /essays/:id/questions/:qid` (수정)
