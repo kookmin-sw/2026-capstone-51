@@ -242,4 +242,4 @@ src/
 2. 백엔드 yml의 `app.cors.allowed-origins`에 dev 포트 추가 — 현재는 `http://localhost:3000`만 허용.
 3. `axios.js`에 response interceptor 추가해서 `ApiResponse<T> = { statusCode, message, data }` 의 `data`를 까는 layer 만들면 호출부가 깔끔해짐.
 4. 토큰 저장 키는 `localStorage.token`으로 약속됨 (interceptor가 그 키를 읽음). 로그인 응답 `accessToken`을 그 키에 저장.
-5. `KookminDepartment`/`JobFirst/Second/Third` 등 백엔드 enum 직렬화 형식과 프론트 `data/onboarding.js`의 옵션이 일치해야 함 — 현재는 다름.
+5. `KookminDepartment`/`JobFirst/Second/Third` 등 백엔드 enum 직렬화 형식은 `lib/enums.js` 가 동기 보유 — 백엔드에서 enum 추가/변경 시 `enums-data.js` 수동 갱신 필요.
