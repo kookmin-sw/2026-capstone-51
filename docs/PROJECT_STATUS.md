@@ -378,3 +378,47 @@
 ### DatePicker — 헤더 ▾ chevron + 미래 nav 비활성 (2026-05-09)
 
 - **목표 1**: 헤더 텍스트("2026년 05월")가 클릭 가능함을 사용자가 인지 못 하던 발견성 문제.
+- **목표 2**: 미래 셀이 회색 + line-through 로 산만하던 UI.
+- **변경**: [`src/components/DatePicker.jsx`](../frontend/src/components/DatePicker.jsx)
+  - `NavHeader` — `onLabelClick` 있는 경우(day/month view) 라벨 옆에 ▾ `ChevronDown` 아이콘 추가 + hover 시 배경 진해지고(bg-ink-200) 텍스트·chevron 색 primary 로 변경. 모든 디바이스에서 dropdown 임이 명확.
+  - `NavHeader` 가 `disablePrev`/`disableNext` prop 받아 nav 버튼 비활성화 가능.
+  - 메인 컴포넌트에서 `min`/`max` 의 연·월 분해 → 각 view 의 ◀▶ disable 조건 계산:
+    - day view: 다음/이전 달이 max/min 의 달 범위 밖이면 ▶/◀ 비활성
+    - month view: 다음/이전 연도가 max/min 의 연 범위 밖이면
+    - year view: 다음/이전 12년 페이지가 max/min 의 연 포함 안 하면
+  - 셀 disabled 스타일에서 `line-through` + `opacity-60` 제거 → `text-ink-300 cursor-not-allowed` 만. day/month/year view 모두 동일.
+- **결과**: 미래 진입 자체가 차단되어 미래 셀 노출 빈도 거의 0. 같은 달 안의 미래 셀(예: 5/10~5/31)만 단순 회색으로 표시 → 시각 노이즈 대폭 감소. 헤더의 ▾ chevron 으로 drill-down 가능함을 시각 신호로 명시.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 639ms ✅.
+
+### DatePicker — 연/월/일 drill-down view (2026-05-09)
+
+- **목표**: 미래 날짜 비활성화 + 먼 과거(예: 2022년) 진입에 ◀ 36번 클릭이 필요했던 문제. 헤더 텍스트 클릭으로 빠른 점프 추가.
+- **변경**: [`src/components/DatePicker.jsx`](../frontend/src/components/DatePicker.jsx) — 단일 day grid → `mode: 'day' | 'month' | 'year'` 3 view drill-down 으로 리팩토링.
+  - **day view**: 기존 그리드 그대로. 헤더 "2026년 05월" 텍스트 클릭 시 `month` view 로.
+  - **month view**: 4×3 월 그리드. ◀▶ 1년 단위. 헤더 "2026년" 텍스트 클릭 시 `year` view 로. 월 선택 시 `day` view 복귀.
+  - **year view**: 4×3 연도 그리드(12년 페이지). ◀▶ 12년 단위. 연 선택 시 `month` view 복귀.
+  - **min/max 제약**: 모든 view 에 적용 — month view 에서는 해당 월의 first/last day 가 범위 밖이면 disabled, year view 에서는 해당 연의 1/1 ~ 12/31 이 범위 밖이면 disabled. `max=today` 와 결합하면 "오늘 이후 연/월/일" 모두 그레이 처리.
+  - 푸터의 "오늘"/"지우기" 버튼은 모든 view 공통 유지. 트리거 클릭 시 항상 `day` view 로 시작.
+- **사용 표준**: react-datepicker / MUI DatePicker 와 동일한 drill-down 패턴 — 사용자 학습 비용 0.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 623ms ✅.
+
+### 경험 폼 `관련 전공` 칩 셀렉터 (2026-05-09)
+
+- **변경 사유**: free text 한 줄 입력 → 본인 전공/부전공을 빠르게 고르는 칩 + "직접 입력" 폴백.
+- **변경 파일**: [`src/components/experience/ExperienceForm.jsx`](../frontend/src/components/experience/ExperienceForm.jsx) — `useMe()` 호출해 `major`/`minor` 를 칩으로 노출. 기존 데이터가 칩 값과 일치하면 자동 칩 선택, 다르면 직접 입력 모드 자동 표시.
+- **백엔드 정합**: `relatedMajor` 는 swagger 상 `string max 100` free text 라 어떤 값이든 통과. 정합 깨짐 없음.
+- **검증**: lint ✅ / prettier ✅ / build 632ms ✅.
+
+### 날짜 미래 차단 — 백엔드 @PastOrPresent 정합 (2026-05-09)
+
+- **확실히 알려진 백엔드 제약** (실측):
+  - 경험 `endDate` — 미래 날짜 입력 시 `422 "endDate: 과거 또는 현재의 날짜여야 합니다"` (Spring `@PastOrPresent` 기본 한국어 메시지) ← 사용자 422 에러로 확정.
+- **추정되는 제약 (실측 X — 미래 검증 시 사후 보정)**:
+  - 경험 `startDate` — 보통 짝이라 같이 적용했을 가능성 높음.
+  - 자격증 `getDate(취득일)` — 의미상 자연스러워 가정. 사용자 테스트 시 422 안 떨어지면 max 풀 수 있음.
+- **스웨거가 이 제약을 노출하지 않는 이유**: `springdoc-openapi` 가 기본 설정에서 Bean Validation 어노테이션(`@PastOrPresent` 등)을 OpenAPI 스키마로 매핑하지 않음. 백엔드에서 `springdoc.openapi.bean-validation.enabled=true` 같은 설정 켜야 노출됨 — 현재 꺼져있음.
+- **변경**:
+  - [`src/components/experience/ExperienceForm.jsx`](../frontend/src/components/experience/ExperienceForm.jsx) — 시작일·종료일 DatePicker 모두 `max={todayIso()}` 사전 차단 + validate() 메시지.
+  - [`src/components/certificate/CertificateForm.jsx`](../frontend/src/components/certificate/CertificateForm.jsx) — 취득일 native date input 도 같은 패턴 (자격증은 추정 제약). 만료일은 미래 허용 유지.
+- **백엔드팀 신규 질의 (5번째)**: springdoc 의 Bean Validation 노출 켜기 또는 검증 어노테이션 붙은 필드 목록 공유.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 643ms ✅.
