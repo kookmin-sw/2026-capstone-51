@@ -140,6 +140,8 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 **enum 어댑터** — [`src/lib/enums.js`](2026-capstone-51/frontend/src/lib/enums.js) + [`src/lib/enums-data.js`](2026-capstone-51/frontend/src/lib/enums-data.js)
 
 - `ExperienceCategory` 백엔드↔프론트 매핑, `Progress`/`State` 한글 라벨, 통계 groupBy.
+- `STATS_BACK_TO_FRONT` / `pickStat(statistics, 'avg'|'userCount'|'myCount')` — 백엔드 `Statistics` 5축 (`partTime/external/internal/license/intern`) → 프론트 5축 (`parttime/activity/internal/cert/intern`) 매핑. Dashboard / Stats 가 모두 사용.
+- `weakPointLabel(type)` — `WeakPoint.type` 을 한글 카테고리 라벨로 정규화 (enum 키 / 한글 / stats 키 모두 수용).
 - `KookminDepartment` (54 개) — `KOOKMIN_DEPT_OPTIONS` (`{value, label, group}`) + `KOOKMIN_COLLEGES` (15). value 는 백엔드 직렬화 값(`"단과대학 학과명"`) 그대로라 select 의 value 로 그대로 PUT.
 - `JobFirst/Second/Third` — `JOB_TREE_BACKEND` 3 단 트리 + `JOB_FIRST_OPTIONS` / `jobSecondOptions(first)` / `jobThirdOptions(first, second)` 헬퍼. 13 / 114 / 1,125 개. enum 이름 자체가 직렬화 값.
 - `humanizeEnum(value)` — 한국어 + 언더스코어 형태(`경영_사무_금융_보험`)를 `·` 로 치환해 사람 가독.
