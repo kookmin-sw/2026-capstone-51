@@ -2,6 +2,7 @@ package com.github.logi.domain.experience.dto.response;
 
 import com.github.logi.domain.experience.entity.Experience;
 import com.github.logi.domain.experience.entity.ExperienceCategory;
+import com.github.logi.domain.user.entity.State;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -9,6 +10,7 @@ import java.util.UUID;
 public record ExperienceResponse(
         UUID experienceId,
         ExperienceCategory experienceCategory,
+        State stateAtCreation,
         String relatedMajor,
         String experienceTitle,
         LocalDate startDate,
@@ -27,6 +29,7 @@ public record ExperienceResponse(
         return new ExperienceResponse(
                 experience.getId(),
                 experience.getExperienceCategory(),
+                experience.getStateAtCreation(),
                 experience.getRelatedMajor(),
                 experience.getExperienceTitle(),
                 experience.getStartDate(),

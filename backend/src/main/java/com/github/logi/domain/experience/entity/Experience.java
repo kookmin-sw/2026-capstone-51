@@ -69,7 +69,7 @@ public class Experience extends BaseEntity {
     public static Experience create(User user, ExperienceRequest request) {
         Experience experience = new Experience();
         experience.user = user;
-        experience.stateAtCreation = user.getState();
+        experience.stateAtCreation = request.stateAtCreation();
         experience.experienceCategory = request.experienceCategory();
         experience.relatedMajor = request.relatedMajor();
         experience.experienceTitle = request.experienceTitle();
@@ -88,6 +88,7 @@ public class Experience extends BaseEntity {
 
     public void update(ExperienceRequest request) {
         this.experienceCategory = request.experienceCategory();
+        this.stateAtCreation = request.stateAtCreation();
         this.relatedMajor = request.relatedMajor();
         this.experienceTitle = request.experienceTitle();
         this.startDate = request.startDate();

@@ -1,6 +1,7 @@
 package com.github.logi.domain.experience.dto.request;
 
 import com.github.logi.domain.experience.entity.ExperienceCategory;
+import com.github.logi.domain.user.entity.State;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 
 public record ExperienceRequest(
         @NotNull ExperienceCategory experienceCategory,
+        @NotNull State stateAtCreation,
         @NotBlank @Size(max = 100) String relatedMajor,
         @NotBlank @Size(max = 200) String experienceTitle,
         @NotNull @PastOrPresent LocalDate startDate,
