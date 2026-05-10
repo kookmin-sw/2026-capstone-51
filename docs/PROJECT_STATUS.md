@@ -513,3 +513,48 @@
 ### P1 경험 CRUD 페이지 구현 — 2026-05-09
 
 - **목표**: `/my-experience*` 3개 라우트의 Placeholder 교체. 백엔드 `useExperiences*` 훅 100% 활용.
+- **신규 파일**:
+  - [`frontend/src/components/experience/ExperienceForm.jsx`](../frontend/src/components/experience/ExperienceForm.jsx) — 신규/수정 공용 폼. swagger `ExperienceRequest` 형식으로 onSubmit 콜백. 카테고리(4종 칩) / 제목 / 관련 전공 / 시작·종료일 / STAR 4 텍스트영역. 인라인 검증(필수/길이/날짜 순서).
+  - [`frontend/src/pages/MyExperience.jsx`](../frontend/src/pages/MyExperience.jsx) — 목록. **검색 + 카테고리 필터 칩 + 항목 리스트가 하나의 .card 로 통합** (2026-05-10 개편). 검색은 제목/관련전공/STAR/카테고리 라벨 클라이언트 필터. row(badge·기간·제목·관련 전공·요약) + STAR 보기 토글(`line-clamp-2`). 로딩/에러/빈 상태 분기.
+  - [`frontend/src/pages/NewExperience.jsx`](../frontend/src/pages/NewExperience.jsx) — `useCreateExperience` + ExperienceForm 래퍼.
+  - [`frontend/src/pages/ExperienceDetail.jsx`](../frontend/src/pages/ExperienceDetail.jsx) — view/edit 토글 + 삭제(2클릭 confirm 패턴 — Modal 의존성 회피).
+- **변경 파일**:
+  - [`frontend/src/App.jsx`](../frontend/src/App.jsx) — 3개 Placeholder 라우트를 실 컴포넌트로 교체.
+- **삭제**:
+  - `frontend/src/data/experiences.js` — 더 이상 어디에서도 import 안 됨 (rg 0건). 옛 STAR mock.
+- **백엔드 제약 반영**:
+  - 백엔드가 검색 쿼리 파라미터 미지원 → 카테고리 필터는 클라이언트 사이드.
+  - 4/27 디자인의 "역할 / 간단 요약 / 희망 직무" 필드는 swagger `ExperienceRequest`에 미반영 → 폼에 포함하지 않음 (백엔드 추가 후 보강 예정 — PROJECT_STATUS 백엔드 의존 항목 참조).
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 619ms ✅. dev 서버 HMR 자동 갱신.
+
+### AI 3종 훅 추가 + Dashboard 5축 정리 — 2026-05-09 (P0 사전 작업 + P2 완료)
+
+- **목표**: 백엔드 답변 대기 중 차단 없는 작업 소화.
+- **변경 파일**:
+  - [`frontend/src/api/queries/useEssays.js`](../frontend/src/api/queries/useEssays.js): `useRecommendExperiences`, `useGenerateAnswer`, `useRegenerateAnswer` 3개 mutation hook 신규 추가. 헤더 주석 스웨거 검증 결과로 재작성, "백엔드 미구현" 잘못된 주장 제거, `recommand` 오타 정리.
+  - [`frontend/src/components/dashboard/SeniorRoadmapCard.jsx`](../frontend/src/components/dashboard/SeniorRoadmapCard.jsx): `SeniorMilestone` 카드 안 카테고리 라벨 (`<span>{label}</span>`) 제거 — 4/27 디자인의 "활동 카테고리 앞 표시 지우기" 반영. 좌측 컬러 보더만 유지. `CAT_LABELS` import 제거.
+- **확인 결과 (Dashboard 5축)**: 회의록 4/27의 "옛 5축 → 새 5축" 정정은 **이미 코드에 적용된 상태**였음. `PEER_AXES`도 (대내/대외/인턴/알바/자격증) 그대로, 로드맵 카테고리 매핑(parttime/internal/intern/activity/cert)도 정합. "마일스톤 달성 여부 표시"는 코드에 원래 없었음. 따라서 P2 작업 = SeniorMilestone 카테고리 라벨 1건만 처리. PROJECT_STATUS의 이전 가정("옛 5축 사용 중") 정정.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 611ms ✅.
+
+### Swagger 명세 직접 검증 — 2026-05-09 (Notion CSV 무효화)
+
+- **결론**: 백엔드 진실 원천은 **`https://logi.p-e.kr/api/swagger-ui/index.html`** (스펙 JSON `/api/v3/api-docs`). 노션 API CSV의 메서드/경로는 **부정확**. 프론트 `useEssays.js`가 가정한 PATCH/`/questions` 서브패스가 **실제로 맞음**.
+- **새 실서버 IP**: `3.239.83.170` (옛 `3.238.29.250` 폐기). 도메인 `logi.p-e.kr` 살아남.
+- **자소서 contract drift — 정정 결과**:
+  - ❌ ~~메서드 불일치(PATCH vs PUT)~~ — 스웨거가 PATCH 라 프론트 훅이 옳음.
+  - ❌ ~~경로 불일치(`/essays/:id/questions` vs `/essays/:id`)~~ — 스웨거가 `/questions` 서브패스 라 프론트 훅이 옳음.
+  - ✅ **잔존**: `useEssays.js` 주석의 "AI 3종 미구현" 주장 **틀림** — 스웨거에 모두 있음. 다만 **훅 자체는 미작성**이라 새로 만들어야 함. 그리고 **`recommand` → `recommend` 오타** (스웨거가 정).
+  - ✅ **잔존**: `EssayResponse` (목록 항목)에 **`essayId` 진짜 없음**. 목록→상세 라우팅 차단. 백엔드 추가 요청 필요.
+  - ✅ **잔존**: `EssayDetailResponse`가 `globalReq` 대신 **`requirement`**, `updatedAt` 대신 **`modifiedDate`** (목록은 `updatedAt`임 — 일관성 없음). 페이지에서 normalize 어댑터 필요.
+- **신규 필드 — 회의록 vs Swagger**:
+  - `ExperienceRequest`에 **희망 직무 필드 없음** (4/27 "추가되어야 함" 그대로 미반영).
+  - `CertificateRequest`에 **메모/증빙 파일 필드 없음**.
+  - `UserMeResponse`에 **포트폴리오 링크 / 자기소개 필드 없음**.
+  - `EssayQuestionCreateRequest`에 `maxLength` **이미 있음** (5/3 회의록 TODO 백엔드 반영 완료) — 프론트 UI에 노출만 하면 됨.
+  - `GET /certificates/{id}` 단건 조회 **없음** (PUT/DELETE만 있음). 자격증 수정 진입 시 목록 캐시 활용 필요.
+- **백엔드 미구현 (스웨거에 없음)**: `/users/me/stats`, `/users/me/dashboard`. 자격증 가중치(5/1)도 스웨거에 항목 없음.
+- **enum 정합 재확인**: 스웨거의 `state` enum (`FRESH_MAN/SOPHOMORE/JUNIOR/SENIOR/JOBSEEKER/WORKER`)과 `major` 풀네임 enum 모두 `lib/enums-data.js`와 일치 ✅.
+
+### Notion 회의록 동기화 — 2026-05-09 분석 (이전 — Swagger 검증으로 일부 정정됨)
+
+- **목적**: Notion export(2026-05-09 시점)와 PROJECT_STATUS 비교, 누락된 기능 요구사항 / 디자인 변경사항 / 백엔드 진행상황 차이 정리.
