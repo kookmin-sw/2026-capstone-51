@@ -422,3 +422,49 @@
   - [`src/components/certificate/CertificateForm.jsx`](../frontend/src/components/certificate/CertificateForm.jsx) — 취득일 native date input 도 같은 패턴 (자격증은 추정 제약). 만료일은 미래 허용 유지.
 - **백엔드팀 신규 질의 (5번째)**: springdoc 의 Bean Validation 노출 켜기 또는 검증 어노테이션 붙은 필드 목록 공유.
 - **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 643ms ✅.
+
+### 커스텀 캘린더 DatePicker + 경험 폼 적용 (2026-05-09)
+
+- **목표**: 경험 페이지의 시작일/종료일 입력에서 OS 기본 캘린더(`<input type="date">`) 대신 일관된 디자인의 커스텀 캘린더 사용.
+- **신규**:
+  - [`src/components/DatePicker.jsx`](../frontend/src/components/DatePicker.jsx) — 재사용 가능한 캘린더 popover. `'YYYY-MM-DD'` 입출력 (백엔드 호환), `min`/`max` 범위 + 범위 밖 disabled, `allowClear`, viewport 잔여 공간 기반 위/아래 자동 펼침(`forceDirection` 으로 강제 가능), 외부 클릭/Esc 닫기, ←/→ 월 이동, 오늘/지우기 버튼. 일·토 컬러 분기, 오늘 하이라이트.
+- **변경**:
+  - [`src/components/experience/ExperienceForm.jsx`](../frontend/src/components/experience/ExperienceForm.jsx) — 시작일/종료일 `<input type="date">` → `DatePicker`. 종료일에 `min={form.startDate}` 전달해 시작일 이전 날짜는 disabled.
+- **불변**: 자격증 폼(`CertificateForm.jsx`) 의 취득일/만료일은 그대로 native date input. 사용자가 경험 페이지에 한정해 요청. (필요 시 같은 패턴으로 즉시 교체 가능.)
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 737ms ✅. dev HMR 자동 반영.
+
+### P3 자격증 CRUD 페이지 구현 — 2026-05-09
+
+- **목표**: `/my-certificates*` 3개 라우트의 Placeholder 교체. swagger CertificateRequest/Response 매핑.
+- **신규 파일**:
+  - [`src/components/certificate/CertificateForm.jsx`](../frontend/src/components/certificate/CertificateForm.jsx) — 신규/수정 공용 폼. 자격증명/발급기관/취득일/자격증번호 + "유효기간 있음" 체크박스 → 만료일 노출. 인라인 검증(필수/순서). swagger 의 모든 필드는 optional 이지만 UX 상 자격증명·발급기관·취득일을 필수로 강제.
+  - [`src/pages/MyCertificates.jsx`](../frontend/src/pages/MyCertificates.jsx) — 목록. 클라이언트 검색(이름·기관·취득일), 카드(취득일/유효기간/발급번호). 인라인 삭제 2클릭 confirm + 5초 자동 취소.
+  - [`src/pages/NewCertificate.jsx`](../frontend/src/pages/NewCertificate.jsx) — `useCreateCertificate` + Form 래퍼.
+  - [`src/pages/EditCertificate.jsx`](../frontend/src/pages/EditCertificate.jsx) — 백엔드에 단건 GET 없으므로 `useCertificates()` 목록 캐시에서 ID 매칭 → `useUpdateCertificate`. URL 직접 진입 시 fetch 보장.
+- **변경 파일**:
+  - [`src/App.jsx`](../frontend/src/App.jsx) — 3개 Placeholder 라우트를 실 컴포넌트로 교체.
+- **삭제**:
+  - `frontend/src/data/certificates.js` — 어디에서도 import 안 됨 (rg 0건). 옛 자격증 mock.
+- **백엔드 제약 반영**:
+  - 검색 쿼리 파라미터 미지원 → 클라이언트 사이드 필터.
+  - 4/27 회의록의 "메모 / 증빙 파일" 필드는 swagger 스키마에 없음 → 폼에 "준비 중" 안내 placeholder 만 표시. 메모 보기 버튼은 미구현.
+  - 단건 GET `/certificates/:id` 없음 → 수정 페이지는 목록 캐시 활용 패턴.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 607ms ✅. dev HMR 자동 반영.
+
+### Sidebar 분리 — fixed 칼럼 + 본문 padding-left (2026-05-09)
+
+- **문제**: Layout 의 main 영역에 `pb-24 lg:pb-32` 를 추가하면서 본문이 viewport 보다 길어지면 `lg:static` 으로 정상 흐름에 들어가 있던 사이드바가 본문 끝까지 늘어나지 않아 하단 어두운 배경이 끊겨 보임.
+- **해결**: 사이드바를 lg 이상에서도 `fixed inset-y-0 left-0` 로 두고, 본문 wrapper 에 `lg:pl-[232px]` 로 사이드바 폭만큼 들여씀.
+- **변경**:
+  - [`src/components/Sidebar.jsx`](../frontend/src/components/Sidebar.jsx): `lg:static lg:translate-x-0 lg:min-h-screen` → `fixed inset-y-0 left-0 z-40 lg:translate-x-0` 단일 형태. 모바일 drawer 도 같은 fixed 스타일을 공유 (transform 만 토글).
+  - [`src/components/Layout.jsx`](../frontend/src/components/Layout.jsx): 외곽 `flex min-h-screen` → `min-h-screen` 으로 단순화. 본문 wrapper 에 `lg:pl-[232px] min-h-screen flex flex-col`. 사이드바와 본문이 더 이상 같은 flex row 안에서 서로 길이를 맞추지 않음.
+- **결과**: 본문 길이와 무관하게 사이드바가 항상 viewport 전체 높이 (`inset-y-0`) 를 차지해 끊김 없음. nav 내부 자체 스크롤(`overflow-y-auto`) 도 그대로 작동.
+- **검증**: `npx eslint src/` ✅ / `npx prettier --check src/` ✅ / `npm run build` 615ms ✅.
+
+### 학점 항상 필수 + 진로 관심사 드롭다운 단순화 (2026-05-09)
+
+- **변경 1: 학점 필수화** — 기존 "부전공 입력 시 필수" 조건부 → **항상 필수**.
+  - [`src/pages/Onboarding.jsx`](../frontend/src/pages/Onboarding.jsx): `validate()` 의 `minor` 의존성 제거, 학점 빈값이면 즉시 에러. 학점 Field UI에서 `minorRequiresGpa` 변수와 hint "부전공 입력 시 필수" 제거. 헤더 doc-comment 도 갱신.
+  - [`src/pages/Info.jsx`](../frontend/src/pages/Info.jsx): 동일 정책 적용 — `validate()` minor 의존 제거, Field 항상 `required={isEdit}`, hint 제거.
+- **변경 2: 진로 관심사 드롭다운에서 검색 제거 + 항상 아래로 펼침**.
+  - [`src/components/Combobox.jsx`](../frontend/src/components/Combobox.jsx): 새 props 추가
