@@ -18,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +32,8 @@ import static com.github.logi.domain.user.entity.GroupBy.STATE;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DashboardService {
+
+    private static final Pageable TOP_2 = PageRequest.of(0, 2);
 
     private final ExperienceRepository experienceRepository;
     private final CertificateRepository certificateRepository;
@@ -122,15 +127,15 @@ public class DashboardService {
 
     private List<User> findMatchingWorkers(User user) {
         if (user.getJobThird() != null) {
-            List<User> result = userRepository.findWorkersByMajorAndJobThird(user.getMajor(), user.getJobThird(), user);
+            List<User> result = userRepository.findWorkersByMajorAndJobThird(user.getMajor(), user.getJobThird(), user, TOP_2);
             if (!result.isEmpty()) return result;
         }
         if (user.getJobSecond() != null) {
-            List<User> result = userRepository.findWorkersByMajorAndJobSecond(user.getMajor(), user.getJobSecond(), user);
+            List<User> result = userRepository.findWorkersByMajorAndJobSecond(user.getMajor(), user.getJobSecond(), user, TOP_2);
             if (!result.isEmpty()) return result;
         }
         if (user.getJobFirst() != null) {
-            return userRepository.findWorkersByMajorAndJobFirst(user.getMajor(), user.getJobFirst(), user);
+            return userRepository.findWorkersByMajorAndJobFirst(user.getMajor(), user.getJobFirst(), user, TOP_2);
         }
         return List.of();
     }

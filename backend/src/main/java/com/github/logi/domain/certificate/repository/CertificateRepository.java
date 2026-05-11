@@ -133,4 +133,46 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
         String getName();
         Long getCnt();
     }
+
+    // 랭킹용: major + state 기준 유저별 자격증 수
+    @Query("""
+            SELECT c.user.id AS userId, c.user.userName AS userName, COUNT(c) AS cnt
+            FROM Certificate c
+            JOIN c.user u
+            WHERE u.major = :major AND u.state = :state
+            GROUP BY c.user.id, c.user.userName
+            """)
+    List<UserCertCountView> findCertCountPerUserByMajorAndState(
+            @Param("major") KookminDepartment major,
+            @Param("state") State state
+    );
+
+    @Query("""
+            SELECT c.user.id AS userId, c.user.userName AS userName, COUNT(c) AS cnt
+            FROM Certificate c
+            JOIN c.user u
+            WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
+            GROUP BY c.user.id, c.user.userName
+            """)
+    List<UserCertCountView> findCertCountPerUserByMajorAndSchoolNum(
+            @Param("major") KookminDepartment major,
+            @Param("schoolNumPrefix") String schoolNumPrefix
+    );
+
+    @Query("""
+            SELECT c.user.id AS userId, c.user.userName AS userName, COUNT(c) AS cnt
+            FROM Certificate c
+            JOIN c.user u
+            WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
+            GROUP BY c.user.id, c.user.userName
+            """)
+    List<UserCertCountView> findCertCountPerUserByMajorAndWorker(
+            @Param("major") KookminDepartment major
+    );
+
+    interface UserCertCountView {
+        java.util.UUID getUserId();
+        String getUserName();
+        Long getCnt();
+    }
 }

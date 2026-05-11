@@ -5,6 +5,7 @@ import com.github.logi.domain.user.entity.JobSecond;
 import com.github.logi.domain.user.entity.JobThird;
 import com.github.logi.domain.user.entity.KookminDepartment;
 import com.github.logi.domain.user.entity.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,7 +29,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findWorkersByMajorAndJobThird(
             @Param("major") KookminDepartment major,
             @Param("jobThird") JobThird jobThird,
-            @Param("me") User me
+            @Param("me") User me,
+            Pageable pageable
     );
 
     @Query("""
@@ -42,7 +44,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findWorkersByMajorAndJobSecond(
             @Param("major") KookminDepartment major,
             @Param("jobSecond") JobSecond jobSecond,
-            @Param("me") User me
+            @Param("me") User me,
+            Pageable pageable
     );
 
     @Query("""
@@ -56,6 +59,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findWorkersByMajorAndJobFirst(
             @Param("major") KookminDepartment major,
             @Param("jobFirst") JobFirst jobFirst,
-            @Param("me") User me
+            @Param("me") User me,
+            Pageable pageable
     );
 }
