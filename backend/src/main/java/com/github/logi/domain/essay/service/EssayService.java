@@ -83,7 +83,10 @@ public class EssayService {
             throw EssayExceptions.FORBIDDEN_ESSAY.toException();
         }
 
-        essayRepository.delete(essay);
+        // cascade + orphanRemoval 대신 일괄 삭제로 N+1 방지 (문항 수와 무관하게 3쿼리 고정)
+        essayQuestionRepository.deleteExperienceLinksByEssayId(essayId);
+        essayQuestionRepository.deleteAllByEssayIdNative(essayId);
+        essayRepository.deleteById(essayId);
     }
 
     @Transactional
