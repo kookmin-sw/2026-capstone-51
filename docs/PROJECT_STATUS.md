@@ -868,3 +868,33 @@ npm run build                  # ✅ 663ms, dist/ 생성.
 - **PeersOrb 선배 평균 + 색 커스텀 + nested prism** — 범례 swatch 클릭으로 native color picker (localStorage 영속화). axes 에 `seniors` 필드 추가 (백엔드 미구현이라 동기 평균 × 1.2 mock — 백엔드 senior 통계 나오면 한 줄 교체). 세 폴리곤 모두 같은 baseZ 에서 depth 단계화(0.07/0.10/0.13)로 stepped pyramid 중첩.
 - **백엔드 신규 엔드포인트 4종 흡수** — `useDashboard` / `useMyStats(groupBy)` hook 신규, `useEssay` 안에 `EssayDetailResponse` normalize 어댑터, `/essays/:id` 페이지(`EssayDetail.jsx`) 신규 작성. Dashboard 의 PEERS_MOCK_AVG / SENIOR_ROADMAPS / SEMESTERS / ymToSemIndex 모두 제거하고 백엔드 `/users/me/dashboard` 응답으로 교체. Stats 의 200줄 MOCK 통째로 제거하고 `/users/me/stats?groupBy=` 응답 사용. SeniorRoadmapCard 가 졸업생 props 기반으로 재작성, 학기 축 자동 계산. MyEssays / EssayListCard 를 essayId opportunistic 으로 변경. 스웨거 28/28 매핑.
 - **죽은 파일 정리** — `Placeholder.jsx` 제거 (모든 라우트가 실 컴포넌트). 5축 mock(`PEERS_MOCK_AVG`, `SEMESTERS`, `ymToSemIndex`, `SENIOR_ROADMAPS`) 도 `data/dashboard.js` 에서 제거.
+- **회원 탈퇴 (POST /auth/withdraw) 연결** — `useWithdraw` mutation + `useAuth.clearSession` action + `/info` 하단 위험 영역 카드 + "탈퇴" 두 글자 입력 확인 모달.
+- **대시보드 디자인 폴리싱** — PeersOrb 보라/Indigo 톤 전부 블루로 통일, SeniorRoadmapCard carousel → 텍스트 탭 + 마일스톤 인라인 dot, 강조색 전부 사이드바 톤(`#1B306F`)으로 통일.
+
+**최근 진척 (2026-05-09)**:
+
+- 로그인/dev proxy / 새 IP 적용 완료
+- **모든 페이지 라우트 1차 구현 완료** — Onboarding, Info, Dashboard(mock), MyExperience CRUD, MyCertificates CRUD, Write, MyEssays, Stats(mock). 남은 Placeholder 는 `/essays/:id` 단 하나 (essayId 차단).
+- DatePicker / Combobox / 학과 cascade / 진로 관심사 칩 / 글자수 카운터 등 UX 다듬기 완료
+- 백엔드팀에 질의 발송됨: essayId 추가 / 합격 시 WORKER 책임 / 응답 키 정합 / 신규 필드 4종 / springdoc Bean Validation / Elastic IP
+
+**다음 직접 작업 (백엔드 답변 도착 전)**:
+
+1. **라이브 검증 일괄** — 진짜 계정으로 `/dashboard` 진입(`useDashboard` 응답 형태 확인), `/stats` 3개 그룹 전환(`useMyStats` 응답), `/essays/:id` 진입(직접 URL 또는 essayId 가 응답에 들어왔을 때) 한 번씩 동작 확인.
+2. **시연 시드 데이터** — 본인 경험 5~10건, 자격증 2~3건, 자소서 1~2건 입력. 졸업생 데이터는 백엔드가 따로 생성해줘야 함 (없으면 SeniorRoadmapCard 가 안내 카드).
+3. **시연 리허설** — `/dashboard` → `/my-experience` → `/my-certificates` → `/write` 한 사이클 → `/essays` → `/stats` 흐름 점검.
+
+**백엔드 답변 받은 뒤**:
+
+- **`EssayResponse.essayId` 풀리면** — `MyEssays` / `EssayListCard` 의 disabled 상태 자동 활성화 (코드 변경 불요, opportunistic). 안내 박스 자동 숨김.
+- **EssayDetailResponse 키 통일** — 백엔드가 `globalReq`/`updatedAt` 으로 통일하면 `useEssay` 의 `normalizeEssayDetail` 한 줄만 제거.
+- **폼 보강** — 신규 필드(경험 희망 직무 / 자격증 메모·증빙·유효기간 / `/info` 포트폴리오·자기소개) 추가.
+- **GraduateUserExperiences 표시명/회사/시즌 추가되면** — `SeniorRoadmapCard` 의 `SeniorTabs` 라벨 + 우측 메타 영역에 끼움.
+
+### 작업 시 자동 처리 (별도 지시 불요)
+
+- 작업 완료 시 PROJECT_STATUS.md 모든 섹션 갱신 + 이 Handoff 섹션도 같이 갱신.
+- 죽은 파일 `rg`로 확인 후 정리 (`삭제한 파일` 섹션에 기록). 확실치 않으면 `삭제 후보`에만 기록.
+- `frontend/CLAUDE.md` 디렉토리 맵/정책 블록과의 일관성 점검.
+- 검증: `npx eslint src/` + `npx prettier --check src/` + `npm run build` (위 섹션에 결과 기록).
+- 보고는 5섹션 형식 (코드 변경 / 삭제 파일 / 업데이트 문서 / 검증 결과 / 다음 작업 추천).
