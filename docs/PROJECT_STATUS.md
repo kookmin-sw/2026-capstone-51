@@ -733,3 +733,43 @@
 | `GET /experiences/{experienceId}`              | ✅ 구현됨 (2026-05-10)             | ExperienceDetail 이미 hook 사용 중이라 영향 없음                                                                                                            |
 | 자격증 가중치 (5/1 회의)                       | 명세 자체 없음                     | 데모 필수 X                                                                                                                                                 |
 | `EssayResponse.essayId` 누락                   | 명세 누락 (스웨거 명시)            | **자소서 목록→상세 라우팅 opportunistic 비활성** — 백엔드 수정 필요                                                                                         |
+| `GET /certificates/{id}` 단건 조회             | 없음 (PUT/DELETE만)                | 목록 캐시로 우회 가능                                                                                                                                       |
+| `ExperienceRequest`에 "희망 직무" 필드         | 없음 (회의록 4/27 "추가되어야 함") | UI 자리 비활성화 후 백엔드 추가 시 활성                                                                                                                     |
+| `CertificateRequest`에 메모/증빙/유효기간 토글 | 없음                               | 유효기간 토글 + 메모는 미반영. **PDF 첨부 UI 는 클라 활성** (form 보관, 저장 시 미전송) — 백엔드 multipart 엔드포인트 추가 시 즉시 전송 코드만 추가하면 됨. |
+| `UserMeResponse`에 포트폴리오/자기소개         | 없음                               | /info 보강 항목                                                                                                                                             |
+| `GraduateUserExperiences`에 표시명/회사/시즌   | 없음                               | SeniorRoadmapCard 가 "선배 1·2·3" index 라벨 사용                                                                                                           |
+
+#### 동작 책임 — 백엔드팀 확인만 (스웨거로는 판단 불가)
+
+- 자소서 합격 시 사용자 상태 → WORKER 자동 전환: `PATCH /essays/{id}/result` 핸들러가 처리? 프론트가 `PUT /users/me` 별도 호출?
+- 자소서·자격증 검색: 백엔드가 쿼리 파라미터 지원 X (스웨거에 검색 query 없음) → **클라이언트 필터링으로 확정** (목록 GET 후 프론트에서 필터).
+- **Bean Validation 어노테이션 노출**: springdoc 의 bean-validation 통합을 켜면 `@PastOrPresent`, `@NotNull`, `@Size` 등이 swagger 에 자동 반영. 현재 꺼져있어 422 에러 나올 때마다 프론트가 사후 보정 중. (예: 경험 `endDate` 의 `@PastOrPresent` 는 실측으로 발견.)
+
+## 중요한 결정사항
+
+- **HashRouter 사용**: BrowserRouter 아님. URL이 `#/...`. `main.jsx` 어댑터가 OAuth callback의 pathname을 hash로 옮김.
+- **API base에 `/api` 포함**: 백엔드 `context-path: /api` 때문. `VITE_API_URL=http://localhost:8080/api`.
+- **토큰 저장 키**: `localStorage.accessToken` / `localStorage.refreshToken`. 옛 단일 `localStorage.token` 키 폐기.
+- **응답 unwrap 인터셉터**: axios가 `ApiResponse<T> = { statusCode, message, data }`의 `data`를 까서 호출부에 전달.
+- **OAuth 게이트**: 백엔드가 `@kookmin.ac.kr` 도메인만 허용. 데모용 일반 계정 사용 불가.
+- **enum 동기화**: 백엔드 enum은 `frontend/src/lib/enums-data.js`에 수동 동기화. 백엔드 변경 시 수동 갱신 필요(스크립트 도입 후보).
+- **dev 서버 포트 강제 3000**: `vite.config.js`의 `strictPort`. 백엔드 OAuth redirect_uri와 일치시키기 위함.
+- **Onboarding/Info 매핑 정책 통일**: 둘 다 enum 직접 사용. mock 매핑 레이어 없음.
+- **학점 필드**: Onboarding/Info 둘 다 **항상 필수** (0~4.5 범위). 부전공 의존성 없음.
+- **부전공 옵션 제외**: 부전공 select에서 전공과 동일한 학과는 옵션 자체에서 제거 (검증보다 강한 UI 가드).
+- **Dashboard 5축 지표 교체 결정** (4/27 디자인): (학업/경험다양성/자소서/합격률/지원량) → (대내활동/대외활동/인턴/아르바이트/자격증). 로드맵 카테고리도 학업→아르바이트, 프로젝트→대내활동.
+- **자소서 합격 시 사용자 상태 자동 WORKER 전환** (4/27 디자인) — `/essays/:id/result` 호출 시 백엔드가 처리하는지, 프론트가 `/users/me` PUT을 함께 호출해야 하는지는 백엔드 로직 확인 필요.
+- **자소서 작성 진입 화면**: 회사명·희망직무·글로벌 요구사항 입력 후 문항 작성 단계 진입 (`/essays/create` body 형태로 백엔드와 정합).
+- **날짜 필드 정책**: 백엔드 `@PastOrPresent` 가 걸린 날짜(경험 startDate/endDate, 자격증 getDate 등)는 프론트에서 `max=today` 로 미래 날짜를 입력 단계에서 차단. validate() 에서도 동일 메시지로 이중 안전망. 자격증 만료일처럼 미래가 의미 있는 필드는 max 미지정.
+- **경험 `relatedMajor` 필드 정책**: 4/27 디자인에 명시되지 않은 필드지만 swagger `ExperienceRequest` 의 `required` 에 포함. UX 는 칩 셀렉터로 — `useMe()` 의 `major`/`minor` 를 "내 전공 · ...", "내 부전공 · ..." 칩으로 빠른 선택 + "직접 입력" 칩으로 다른 전공 활동도 자유 입력 가능. 백엔드는 `string max 100` free text 라 어떤 값이든 OK (정합 깨짐 없음). 디자인의 "역할/간단 요약/희망 직무" 는 백엔드 스키마 미반영 — 추가되면 보강.
+
+## 남은 이슈 / 리스크
+
+- **CORS allowed-origins 불일치**: 백엔드 yml은 `http://localhost:3000`만 허용. 통합 테스트 시 백엔드 yml 갱신 또는 프론트 3000 사용 필수.
+- **`logi.p-e.kr` 도메인 DNS 갱신 안 됨**: DNS가 옛 IP 가리킴. 도메인으로 접속 시 connection timeout. **현재는 IP 직접 사용 (`https://3.238.28.206/api`, 2026-05-09 EC2 재재시작 후)** — 백엔드/인프라팀이 DNS 갱신할 때까지.
+- **자체 서명 인증서**: 실서버 `https://3.238.28.206/api`는 자체서명. 브라우저 첫 방문 시 해당 URL 직접 열어 "고급 → 진행" 한 번 통과해야 fetch 호출이 SSL 차단되지 않음.
+- **번들 크기 경고**: 프로덕션 빌드 결과 단일 청크 ~979 KB(gzip 274 KB). Three.js 등으로 부피 큼. 현재는 경고만; 배포 직전 코드 스플릿 검토.
+- **dynamic import 경고**: `src/store/useAuth.js`가 `axios.js`에서 dynamic import + 다른 곳에서 static import. 의도된 cycle 회피이지만 청크 분리 효과 없음 — 현 동작에 문제는 없음.
+- **테스트 부재**: 단위 테스트 없음. `npm test`는 lint+format 게이트. 실제 동작 검증은 dev 서버에서 수동.
+- **Dashboard 5축 spec mismatch**: 해소됨 (2026-05-10) — 백엔드 `/users/me/dashboard` 흡수 후 5축 정합 100%.
+- **자격증 가중치(5/1)는 백엔드 미반영**: API 명세 CSV에 항목 없음. 페이지 구현 전 백엔드 팀과 합의 필요.
