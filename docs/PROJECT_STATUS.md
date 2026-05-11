@@ -647,3 +647,49 @@
 - [ ] **백엔드 의존**: 역할 / 간단 요약 / 희망 직무 필드 추가 후 폼에 반영
 
 #### `/my-experience/:id` — 경험 열람/수정/삭제 (4/27)
+
+- [x] view: 카테고리·기간·관련 전공·STAR 4항목 (truncate 없음)
+- [x] edit 토글 → 같은 ExperienceForm 사용 → `PUT /experiences/:id`
+- [x] 삭제 (2클릭 confirm + 5초 timeout 자동 취소) → `DELETE /experiences/:id`
+- [x] 키워드 태그 등 회의록 제거 항목 미포함
+- [ ] **백엔드 의존**: 신규 필드 추가 후 view/edit 양쪽 보강
+
+### P2. Dashboard 5축 지표 교체 — ✅ 완료 (2026-05-09)
+
+- [x] `data/dashboard.js`의 `PEER_AXES` 5축 — 이미 정합 상태였음 (대내활동/대외활동/인턴/알바/자격증)
+- [x] `PeersOrb.jsx` 데이터 contract — 변경 불필요
+- [x] `MyRoadmapCard.jsx` 카테고리 매핑 — 이미 정합 (parttime/internal/intern/activity/cert)
+- [x] `SeniorRoadmapCard.jsx`: 상단 드롭다운 원래 없었음, 마일스톤 달성 표시 원래 없었음, **활동 카테고리 라벨 제거 완료** (2026-05-09)
+- [ ] 백엔드 `/users/me/dashboard` 완성 후 mock → 실 데이터 훅 교체 (백엔드 의존)
+
+### P2.5. `/info` 보강 (4/27 — baseline 누락 항목)
+
+- [ ] 포트폴리오/링크 탭: GitHub / Notion / LinkedIn / 기술 블로그 등 사용자가 직접 추가 가능. **백엔드 스키마에 해당 필드 있는지 확인 필요** (`/users/me` 응답 shape) — 없으면 백엔드 협의
+- [ ] 자기소개 한 줄 / 한 문단 입력 영역 — 수정 / 복사 버튼. 위와 동일하게 백엔드 필드 확인 필요
+
+### P3. 자격증 CRUD — ✅ 코어 완료 (2026-05-09)
+
+#### `/my-certificates` — 목록 (4/27)
+
+- [x] 검색창: 자격증명 / 발급 기관 / 취득일 (클라이언트 필터)
+- [x] 카드: 자격증명 / 취득 기관 / 취득일 / 유효기간(있음/없음) / 발급번호
+- [x] 카드의 "수정" 버튼 → `/my-certificates/:id/edit`
+- [x] "삭제" 버튼 → 2클릭 confirm → `DELETE /certificates/:id`
+- [x] "자격증 추가" 버튼 → `/my-certificates/new`
+- [ ] **백엔드 의존**: "팁 보기" 버튼 — 메모 필드 추가 후 구현
+
+#### `/my-certificates/new` — 추가 (4/27)
+
+- [x] 기본 정보: 자격증명 / 발급 기관 (분야·등급·점수 없음)
+- [x] 일자: 취득일 / 자격증 번호 / "유효기간 있음" 체크박스 → 만료일
+- [x] 상단 "상태" 섹션 없음
+- [x] 저장 → `POST /certificates` → 목록으로
+- [ ] **백엔드 의존**: 증빙 파일 첨부 / 학습 방법·교재 메모 — 폼에 "준비 중" placeholder 만 표시
+
+#### `/my-certificates/:id/edit` — 수정 (4/27)
+
+- [x] 백엔드 단건 GET 부재 → `useCertificates()` 목록 캐시에서 ID 매칭
+- [x] 자격증명 / 발급 기관 / 취득일 / 만료일 / 발급번호 수정 → `PUT /certificates/:id`
+- [x] 취소 → 변경 저장 안 함
+
+### P4. 통계 페이지 — ✅ mock UI 완료 (2026-05-09)
