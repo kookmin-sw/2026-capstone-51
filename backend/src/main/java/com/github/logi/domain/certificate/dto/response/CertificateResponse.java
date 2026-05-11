@@ -10,16 +10,18 @@ public record CertificateResponse(
         String getDate,
         String expirationDate,
         String certificateCode,
-        String issuingOrganization
+        String issuingOrganization,
+        String fileUrl
 ) {
-    public static CertificateResponse from(Certificate certificate) {
+    public static CertificateResponse from(Certificate certificate, String fileUrl) {
         return new CertificateResponse(
                 certificate.getId(),
                 certificate.getCertificateName(),
                 certificate.getGetDate(),
                 certificate.getExpirationDate(),
                 certificate.getCertificateCode(),
-                certificate.getIssuingOrganization()
+                certificate.getIssuingOrganization(),
+                fileUrl
         );
     }
 }

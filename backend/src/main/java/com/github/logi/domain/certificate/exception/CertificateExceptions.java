@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum CertificateExceptions implements ApiExceptions {
     CERTIFICATE_NOT_FOUND(HttpStatus.NOT_FOUND, "자격증을 찾을 수 없습니다."),
-    FORBIDDEN_CERTIFICATE(HttpStatus.FORBIDDEN, "본인의 자격증이 아닙니다.");
+    FORBIDDEN_CERTIFICATE(HttpStatus.FORBIDDEN, "본인의 자격증이 아닙니다."),
+    INVALID_FILE_KEY(HttpStatus.BAD_REQUEST, "유효하지 않은 파일 키입니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

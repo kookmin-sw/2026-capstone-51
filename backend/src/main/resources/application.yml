@@ -38,6 +38,11 @@ aws:
   region: us-east-1
   sqs:
     star-embedding-queue-url: ${SQS_STAR_EMBEDDING_QUEUE_URL}
+  s3:
+    bucket: ${S3_BUCKET:pj-kmucd1-01-s3}
+    region: ${S3_REGION:us-east-1}
+    upload-url-expiration-minutes: 5
+    download-url-expiration-minutes: 5
 
 google:
   client:

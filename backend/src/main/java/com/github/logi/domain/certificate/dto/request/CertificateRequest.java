@@ -5,6 +5,7 @@ public record CertificateRequest(
         String getDate,
         String expirationDate,
         String certificateCode,
-        String issuingOrganization
+        String issuingOrganization,
+        String fileKey
 ) {
 }
