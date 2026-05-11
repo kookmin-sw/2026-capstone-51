@@ -42,7 +42,10 @@ public class CertificateService {
     }
 
     public CertificateListResponse getCertificates(User user) {
-        return CertificateListResponse.from(certificateRepository.findAllByUser(user));
+        return CertificateListResponse.from(
+                certificateRepository.findAllByUser(user),
+                s3FileClient::generateDownloadUrl
+        );
     }
 
     @Transactional

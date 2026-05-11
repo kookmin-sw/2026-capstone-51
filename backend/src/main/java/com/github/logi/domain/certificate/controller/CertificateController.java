@@ -39,7 +39,8 @@ public class CertificateController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "자격증 목록 조회", description = "자격증 목록을 조회합니다.")
+    @Operation(summary = "자격증 목록 조회",
+            description = "자격증 목록을 조회합니다. 증빙 파일이 있는 항목은 fileUrl(presigned GET URL, 단기 만료)을 함께 반환합니다.")
     @GetMapping
     public ApiResponse<CertificateListResponse> getCertificates(
             @AuthenticationPrincipal User user) {
