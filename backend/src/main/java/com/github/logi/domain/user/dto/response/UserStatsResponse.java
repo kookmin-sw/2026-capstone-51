@@ -6,7 +6,8 @@ import java.util.List;
 
 public record UserStatsResponse(
         Statistics statistics,
-        List<WeakPoint> weakPoints
+        List<WeakPoint> weakPoints,
+        List<RankedUser> topRankers
 ) {
 
     public record Statistics(
@@ -47,5 +48,17 @@ public record UserStatsResponse(
         public static WeakPoint license(List<String> items) {
             return new WeakPoint("LICENSE", items);
         }
+    }
+
+    public record RankedUser(
+            int rank,
+            String userName,
+            int totalCount,
+            int partTimeCount,
+            int externalCount,
+            int internalCount,
+            int internCount,
+            int licenseCount
+    ) {
     }
 }

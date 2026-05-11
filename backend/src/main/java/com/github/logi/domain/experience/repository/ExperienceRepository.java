@@ -179,6 +179,49 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
         Long getCnt();
     }
 
+    // 랭킹용: major + state 기준 유저별 카테고리 경험 수
+    @Query("""
+            SELECT e.user.id AS userId, e.user.userName AS userName, e.experienceCategory AS category, COUNT(e) AS cnt
+            FROM Experience e
+            JOIN e.user u
+            WHERE u.major = :major AND u.state = :state
+            GROUP BY e.user.id, e.user.userName, e.experienceCategory
+            """)
+    List<UserCategoryCountView> findExpCountPerUserByMajorAndState(
+            @Param("major") KookminDepartment major,
+            @Param("state") State state
+    );
+
+    @Query("""
+            SELECT e.user.id AS userId, e.user.userName AS userName, e.experienceCategory AS category, COUNT(e) AS cnt
+            FROM Experience e
+            JOIN e.user u
+            WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
+            GROUP BY e.user.id, e.user.userName, e.experienceCategory
+            """)
+    List<UserCategoryCountView> findExpCountPerUserByMajorAndSchoolNum(
+            @Param("major") KookminDepartment major,
+            @Param("schoolNumPrefix") String schoolNumPrefix
+    );
+
+    @Query("""
+            SELECT e.user.id AS userId, e.user.userName AS userName, e.experienceCategory AS category, COUNT(e) AS cnt
+            FROM Experience e
+            JOIN e.user u
+            WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
+            GROUP BY e.user.id, e.user.userName, e.experienceCategory
+            """)
+    List<UserCategoryCountView> findExpCountPerUserByMajorAndWorker(
+            @Param("major") KookminDepartment major
+    );
+
+    interface UserCategoryCountView {
+        java.util.UUID getUserId();
+        String getUserName();
+        ExperienceCategory getCategory();
+        Long getCnt();
+    }
+
     @Modifying
     @Query(value = "DELETE FROM experiences WHERE user_id = :userId", nativeQuery = true)
     void hardDeleteAllByUserId(@Param("userId") UUID userId);

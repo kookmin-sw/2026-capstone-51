@@ -47,7 +47,8 @@ public class UserStatsService {
 
         Statistics statistics = buildStatistics(groupAvg, myCountMap, myLicenseCount);
         List<WeakPoint> weakPoints = buildWeakPoints(user, ctx, statistics);
-        return new UserStatsResponse(statistics, weakPoints);
+        List<UserStatsResponse.RankedUser> topRankers = buildTopRankers(user, ctx);
+        return new UserStatsResponse(statistics, weakPoints, topRankers);
     }
 
     private Statistics buildStatistics(GroupAvgResult groupAvg, Map<ExperienceCategory, Long> myCountMap, long myLicenseCount) {
@@ -123,6 +124,24 @@ public class UserStatsService {
                 .limit(RECOMMEND_TOP_N)
                 .map(CertificateRepository.CertNameCountView::getName)
                 .toList();
+    }
+
+    private List<UserStatsResponse.RankedUser> buildTopRankers(User user, GroupContext ctx) {
+        List<GroupStatsService.TopRankerData> rankers =
+                groupStatsService.fetchTopRankers(user.getMajor(), ctx.groupBy(), ctx.groupKey(), ctx.state());
+
+        List<UserStatsResponse.RankedUser> result = new ArrayList<>();
+        for (int i = 0; i < rankers.size(); i++) {
+            GroupStatsService.TopRankerData d = rankers.get(i);
+            long[] c = d.counts();
+            result.add(new UserStatsResponse.RankedUser(
+                    i + 1,
+                    d.userName(),
+                    (int) d.total(),
+                    (int) c[0], (int) c[1], (int) c[2], (int) c[3], (int) c[4]
+            ));
+        }
+        return result;
     }
 
     private GroupContext buildContext(User user, GroupBy groupBy) {
