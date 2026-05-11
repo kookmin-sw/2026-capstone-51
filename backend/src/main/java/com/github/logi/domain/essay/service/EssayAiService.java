@@ -27,6 +27,7 @@ import java.util.UUID;
 public class EssayAiService {
 
     private static final int RECOMMEND_LIMIT = 5;
+    private static final double SIMILARITY_SHARPNESS = 10.0;
 
     private final EssayQuestionRepository essayQuestionRepository;
     private final ExperienceRepository experienceRepository;
@@ -69,11 +70,16 @@ public class EssayAiService {
                 .map(view -> new EssayRecommendResponse.RelatedExperience(
                         view.getId(),
                         view.getExperienceTitle(),
-                        1.0 - view.getDistance()
+                        toSimilarityScore(view.getDistance())
                 ))
                 .toList();
 
         return new EssayRecommendResponse(related);
+    }
+
+    private double toSimilarityScore(double distance) {
+        double raw = Math.max(0.0, 1.0 - distance);
+        return 1.0 - Math.exp(-SIMILARITY_SHARPNESS * raw);
     }
 
     private EssayQuestion loadAndAuthorizeQuestion(UUID essayId, UUID questionId, UUID userId) {
