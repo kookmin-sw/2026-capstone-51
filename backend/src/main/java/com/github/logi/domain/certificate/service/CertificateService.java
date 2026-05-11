@@ -2,6 +2,7 @@ package com.github.logi.domain.certificate.service;
 
 import com.github.logi.domain.certificate.dto.request.CertificateRequest;
 import com.github.logi.domain.certificate.dto.response.CertificateListResponse;
+import com.github.logi.domain.certificate.dto.response.CertificateUploadUrlResponse;
 import com.github.logi.domain.certificate.entity.Certificate;
 import com.github.logi.domain.certificate.exception.CertificateExceptions;
 import com.github.logi.domain.certificate.repository.CertificateRepository;
@@ -21,10 +22,17 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class CertificateService {
 
+    private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final String CERTIFICATE_KEY_PREFIX = "certificates/";
 
     private final CertificateRepository certificateRepository;
     private final S3FileClient s3FileClient;
+
+    public CertificateUploadUrlResponse issueUploadUrl(User user) {
+        String fileKey = CERTIFICATE_KEY_PREFIX + user.getId() + "/" + UUID.randomUUID() + ".pdf";
+        String uploadUrl = s3FileClient.generateUploadUrl(fileKey, PDF_CONTENT_TYPE);
+        return new CertificateUploadUrlResponse(uploadUrl, fileKey, PDF_CONTENT_TYPE);
+    }
 
     @Transactional
     @CacheEvict(cacheNames = CacheConfig.USER_STATS_CACHE, allEntries = true)
