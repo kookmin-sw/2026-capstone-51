@@ -33,6 +33,9 @@ public class Certificate extends BaseEntity {
     @Column(name = "issuing_organization", length = 50)
     private String issuingOrganization;
 
+    @Column(name = "file_key", length = 255)
+    private String fileKey;
+
     public static Certificate create(User user, CertificateRequest request) {
         Certificate certificate = new Certificate();
         certificate.user = user;
@@ -41,15 +44,19 @@ public class Certificate extends BaseEntity {
         certificate.expirationDate = request.expirationDate();
         certificate.certificateCode = request.certificateCode();
         certificate.issuingOrganization = request.issuingOrganization();
+        certificate.fileKey = request.fileKey();
         return certificate;
     }
 
-    public void update(CertificateRequest request) {
+    public String update(CertificateRequest request) {
         this.certificateName = request.certificateName();
         this.getDate = request.getDate();
         this.expirationDate = request.expirationDate();
         this.certificateCode = request.certificateCode();
         this.issuingOrganization = request.issuingOrganization();
-    }
 
+        String previousFileKey = this.fileKey;
+        this.fileKey = request.fileKey();
+        return previousFileKey;
+    }
 }

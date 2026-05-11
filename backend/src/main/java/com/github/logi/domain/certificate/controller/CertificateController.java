@@ -21,7 +21,7 @@ public class CertificateController {
 
     private final CertificateService certificateService;
 
-    @Operation(summary = "자격증 등록", description = "자격증을 등록합니다.")
+    @Operation(summary = "자격증 등록", description = "자격증을 등록합니다. fileKey가 있으면 증빙 PDF가 함께 등록됩니다.")
     @PostMapping
     public ApiResponse<Void> createCertificate(
             @AuthenticationPrincipal User user,
@@ -37,7 +37,7 @@ public class CertificateController {
         return ApiResponse.ok(certificateService.getCertificates(user));
     }
 
-    @Operation(summary = "자격증 수정", description = "자격증을 수정합니다.")
+    @Operation(summary = "자격증 수정", description = "자격증을 수정합니다. fileKey가 바뀌면 이전 파일은 S3에서 삭제됩니다.")
     @PutMapping("/{certificateId}")
     public ApiResponse<Void> updateCertificate(
             @AuthenticationPrincipal User user,
@@ -47,7 +47,7 @@ public class CertificateController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "자격증 삭제", description = "자격증을 삭제합니다.")
+    @Operation(summary = "자격증 삭제", description = "자격증을 삭제하고 증빙 파일이 있으면 S3에서도 함께 삭제합니다.")
     @DeleteMapping("/{certificateId}")
     public ApiResponse<Void> deleteCertificate(
             @AuthenticationPrincipal User user,
@@ -56,4 +56,3 @@ public class CertificateController {
         return ApiResponse.ok();
     }
 }
-
