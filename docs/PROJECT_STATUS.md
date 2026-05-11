@@ -773,3 +773,42 @@
 - **테스트 부재**: 단위 테스트 없음. `npm test`는 lint+format 게이트. 실제 동작 검증은 dev 서버에서 수동.
 - **Dashboard 5축 spec mismatch**: 해소됨 (2026-05-10) — 백엔드 `/users/me/dashboard` 흡수 후 5축 정합 100%.
 - **자격증 가중치(5/1)는 백엔드 미반영**: API 명세 CSV에 항목 없음. 페이지 구현 전 백엔드 팀과 합의 필요.
+- **합격 시 WORKER 전환의 책임 분기**: `/essays/:id/result` 호출 후 백엔드가 사용자 상태도 갱신하는지, 프론트가 별도로 `/users/me` PUT 해야 하는지 백엔드 코드 확인 필요. 통합 테스트 시 검증.
+
+## 삭제한 파일 목록
+
+| 파일                                 | 삭제 일자  | 사유                                                                                                                                       |
+| ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `frontend/src/data/onboarding.js`    | 2026-05-09 | Onboarding.jsx가 `lib/enums.js` 직접 사용으로 전환되어 `MAJORS`/`JOB_TREE` mock이 더 이상 import 되지 않음.                                |
+| `frontend/src/data/profile.js`       | 2026-05-09 | `Info.jsx`가 `useMe` 훅으로 마이그레이션되어 하드코딩 PROFILE/INTRO_TEXTS/PROFILE_LINKS mock이 사용처 없음.                                |
+| `frontend/src/data/experiences.js`   | 2026-05-09 | P1 경험 CRUD 페이지가 `useExperiences*` 훅 직접 사용으로 전환되어 mock import 0건.                                                         |
+| `frontend/src/data/certificates.js`  | 2026-05-09 | P3 자격증 CRUD 페이지가 `useCertificates*` 훅 직접 사용으로 전환되어 mock import 0건.                                                      |
+| `frontend/src/data/essays.js`        | 2026-05-09 | `/write`, `/essays` 페이지가 `useEssays*` 훅 직접 사용으로 전환되어 mock import 0건.                                                       |
+| `frontend/src/components/Card.jsx`   | 2026-05-10 | `Card` / `CardHeader` 모두 외부 import 0건. `Info.jsx` 가 동명의 인라인 컴포넌트를 자체 정의해 사용 중이라 외부 컴포넌트는 잔여 dead code. |
+| `frontend/src/assets/react.svg`      | 2026-05-10 | Vite 템플릿 잔재, 참조 0건.                                                                                                                |
+| `frontend/src/assets/vite.svg`       | 2026-05-10 | Vite 템플릿 잔재, 참조 0건.                                                                                                                |
+| `frontend/src/assets/hero.png`       | 2026-05-10 | 참조 0건 (랜딩은 SVG 인라인 사용). assets/ 디렉토리 자체도 빈 채 제거.                                                                     |
+| `frontend/src/pages/Placeholder.jsx` | 2026-05-10 | `/essays/:id` 가 실 컴포넌트(`EssayDetail.jsx`)로 교체되어 모든 라우트가 실 페이지를 가짐. 외부 import 0건.                                |
+
+## 삭제 후보 (즉시 삭제 안 함)
+
+확실하지 않아 보존 — 현재 0건. 모든 옛 mock 은 구현 페이지 정착 시 정리 완료.
+
+## 보존 — 의도적 미사용 (2026-05-09 재검증)
+
+사용처 0건이지만 의도적으로 보존하는 항목들. rg 로 import 직접 검증함.
+
+### 디자인 시스템 컴포넌트 (미구현 페이지에서 사용 예정)
+
+- `components/Badge.jsx` — tone: gray|navy|green|red|amber. 카드 상태 뱃지에 사용 예정.
+- `components/Button.jsx` — variant: default|primary|ghost|danger. 현재 페이지들은 className 직접 조합 패턴.
+- (`components/Modal.jsx` 는 2026-05-10 시점 `Info.jsx` 회원 탈퇴 모달에서 실제 사용 중이라 본 섹션에서 제거.)
+
+### lib 표면 (사용처 0건이지만 라이브러리 헬퍼라 보존)
+
+- `lib/enums.js` 의 `KOOKMIN_DEPARTMENTS` / `JOB_TREE_BACKEND` re-export 라인 + `labelize` 함수. 외부에서 raw enum-data 직접 import 가 일어나지 않는 게 정상이라 표면 유지.
+- `store/useAuth.js` 의 `setUser` action. 미사용이지만 store API 표면.
+
+### useEssays.js 의 일부 훅 — 활성 (2026-05-10)
+
+- `useEssay` / `useUpdateEssayResult` / `useDeleteEssay` — `/essays/:id` 페이지에서 사용 중. 진입 경로(`/essays` 카드 클릭)는 `EssayResponse.essayId` 응답에 의존하므로 백엔드 fix 전엔 직접 URL 진입만 가능 (opportunistic).
