@@ -843,3 +843,28 @@ npm run build                  # ✅ 663ms, dist/ 생성.
 ### 먼저 읽어야 할 맥락 (5개)
 
 1. **역할**: 프론트엔드 담당. 백엔드 API 직접 구현 X. 백엔드가 만든 엔드포인트를 화면에 연결.
+2. **D-11 마감**: 2026-05-22 최종 발표 (오늘 2026-05-11 기준).
+3. **백엔드 진실 원천 = Swagger**: `https://3.238.28.206/api/swagger-ui/index.html` (현 IP, EC2 재시작마다 변동 — Elastic IP 미설정). **노션 API CSV 부정확** — 차이 있을 때 무조건 스웨거가 우선.
+4. **백엔드 ↔ 프론트 hook 매핑** (2026-05-10 swagger 재재검증, 백엔드 신규 4종 추가):
+   - 스웨거 엔드포인트 **28개** = 프론트 hook 28개 (1:1 매핑 완료, **미연결 0건**).
+   - 새로 흡수된 4종: `GET /users/me/dashboard`, `GET /users/me/stats?groupBy=`, `GET /essays/{id}`, `GET /experiences/{id}`. 백엔드 미구현 항목 **0개**.
+5. **현재 백엔드 차단 이슈** (구조적):
+   - `EssayResponse` 목록 항목에 **`essayId` 없음** — `MyEssays.jsx` / `EssayListCard.jsx` 카드 클릭이 opportunistic 이라 응답에 essayId 가 들어오기만 하면 자동 활성. 안 들어오면 disabled + 안내 박스. **이 한 필드만 풀리면 자소서 흐름 완성**.
+   - `EssayDetailResponse` 키 mismatch: `requirement`/`modifiedDate` — `useEssay` 안의 normalize 어댑터가 통일 키(`globalReq`/`updatedAt`)로 변환하므로 호출부 영향 없음.
+   - `EssayQuestionCreateRequest.response` 가 `minLength:1` (required) — Write 페이지의 "초안 생성" 흐름에서 placeholder `"(작성 예정)"` 로 우회. 통합 테스트 시 백엔드가 우회 받아주는지 확인 필요.
+   - `GraduateUserExperiences` 에 졸업생 표시명/회사/시즌 누락 — `SeniorRoadmapCard` 가 "선배 1·2·3" index 라벨로 노출. 메타 추가되면 같은 자리에 끼우면 됨.
+   - `EssayRecommendResponse.relatedExperience[]` swagger 정의가 `{experienceId}` 만이지만 노션 테스트 데이터엔 `experienceTitle`, `similarity` 도 있음. 둘 다 처리. swagger 보강 요청.
+
+### 바로 할 일 (다음 세션 시작 시 첫 행동)
+
+**최근 진척 (2026-05-11)**:
+
+- **경험·자격증 폼/목록 5종 폴리싱** — (1) 경험 폼 `관련 전공` 칩+직접입력 → 단일 Combobox(KOOKMIN_DEPT_OPTIONS, 필수). (2) 경험 목록 검색을 `experienceTitle` 만으로 좁힘. (3) 자격증 목록 검색 필터 통째로 제거. (4) 경험·자격증 삭제 confirm을 2클릭 인라인 → Modal 팝업으로 (취소/삭제 명시). (5) 자격증 폼의 "증빙·메모 준비 중" placeholder → 실제 PDF 파일 업로드 UI (.pdf, 10MB 제한, 클라 검증). 백엔드 multipart 엔드포인트 미연동이라 form state 보관만, 저장 시 미전송 — 캡션으로 안내.
+
+**최근 진척 (2026-05-10)**:
+
+- **PeersOrb 샌드위치 prism + 모달 확대 + mock 평균** — z=0 평면 가운데 두고 ±양쪽으로 솟는 양면 대칭 prism (회전 어느 각에서도 윤곽 또렷). 카드 우상단 Maximize 아이콘 → Modal 안에 chartMaxWidth=620 으로 큰 PeersOrb (Esc / X 닫기). 백엔드 동기/선배 평균이 비어 시연용 mock 5축 보강 (peer 3-5, senior 5-7).
+- **PeersOrb 본인 5축 클라 직접 카운트** — 백엔드 `/users/me/dashboard` 의 myCount 가 0 으로 비어 와서 (집계 미구현/버그), Dashboard.jsx 가 `useExperiences()` + `useCertificates()` 로 본인 카테고리 카운트를 직접 계산. peerAvg / seniorAvg(mock) 는 그대로. 백엔드 dashboard myCount 정상화 시 코드 변경 없이 자연 수렴.
+- **PeersOrb 선배 평균 + 색 커스텀 + nested prism** — 범례 swatch 클릭으로 native color picker (localStorage 영속화). axes 에 `seniors` 필드 추가 (백엔드 미구현이라 동기 평균 × 1.2 mock — 백엔드 senior 통계 나오면 한 줄 교체). 세 폴리곤 모두 같은 baseZ 에서 depth 단계화(0.07/0.10/0.13)로 stepped pyramid 중첩.
+- **백엔드 신규 엔드포인트 4종 흡수** — `useDashboard` / `useMyStats(groupBy)` hook 신규, `useEssay` 안에 `EssayDetailResponse` normalize 어댑터, `/essays/:id` 페이지(`EssayDetail.jsx`) 신규 작성. Dashboard 의 PEERS_MOCK_AVG / SENIOR_ROADMAPS / SEMESTERS / ymToSemIndex 모두 제거하고 백엔드 `/users/me/dashboard` 응답으로 교체. Stats 의 200줄 MOCK 통째로 제거하고 `/users/me/stats?groupBy=` 응답 사용. SeniorRoadmapCard 가 졸업생 props 기반으로 재작성, 학기 축 자동 계산. MyEssays / EssayListCard 를 essayId opportunistic 으로 변경. 스웨거 28/28 매핑.
+- **죽은 파일 정리** — `Placeholder.jsx` 제거 (모든 라우트가 실 컴포넌트). 5축 mock(`PEERS_MOCK_AVG`, `SEMESTERS`, `ymToSemIndex`, `SENIOR_ROADMAPS`) 도 `data/dashboard.js` 에서 제거.
