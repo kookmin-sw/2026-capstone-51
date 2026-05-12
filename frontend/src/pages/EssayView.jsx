@@ -144,4 +144,3 @@ function UsedExperiences({ ids = [], navigate }) {
     </div>
   );
 }
-정
