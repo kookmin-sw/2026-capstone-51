@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logi — AI 자기소개서 플랫폼</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #21262d;
+      --accent: #58a6ff;
+      --accent2: #79c0ff;
+      --green: #3fb950;
+      --purple: #bc8cff;
+      --orange: #ffa657;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --card: #1c2128;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Canvas 배경 ── */
+    #canvas-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 56px;
+      background: rgba(13,17,23,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-decoration: none;
+    }
+
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Main wrapper ── */
+    main { position: relative; z-index: 1; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 1.5rem 4rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(88,166,255,0.1);
+      border: 1px solid rgba(88,166,255,0.3);
+      color: var(--accent);
+      font-size: 0.78rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(135deg, #e6edf3 30%, #58a6ff 70%, #bc8cff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0d1117;
+    }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-2px); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+      margin-top: 4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .stat { text-align: center; }
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* ── Section commons ── */
+    section {
+      padding: 6rem 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+
+    .section-desc {
+      color: var(--muted);
+      max-width: 560px;
+      margin-bottom: 3rem;
+    }
+
+    /* ── Features ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.6rem;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(88,166,255,0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(88,166,255,0.08);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .feature-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-desc { font-size: 0.875rem; color: var(--muted); }
+
+    /* ── Flow ── */
+    .flow-section { background: var(--surface); padding: 6rem 1.5rem; }
+    .flow-inner { max-width: 1100px; margin: 0 auto; }
+
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .flow-step {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .flow-step-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .step-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+      z-index: 1;
+    }
+
+    .step-connector {
+      width: 2px;
+      flex: 1;
+      min-height: 40px;
+      background: linear-gradient(to bottom, var(--accent), rgba(88,166,255,0.1));
+      margin: 4px 0;
+    }
+
+    .flow-step:last-child .step-connector { display: none; }
+
+    .step-content {
+      padding-bottom: 2.5rem;
+      flex: 1;
+    }
+
+    .step-content h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .step-content p { font-size: 0.875rem; color: var(--muted); }
+
+    .step-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-top: 0.4rem;
+      font-weight: 600;
+    }
+
+    .tag-ai { background: rgba(188,140,255,0.15); color: var(--purple); }
+    .tag-db { background: rgba(63,185,80,0.15); color: var(--green); }
+    .tag-async { background: rgba(255,166,87,0.15); color: var(--orange); }
+
+    /* ── Stack ── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .stack-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem;
+    }
+
+    .stack-card-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .stack-items { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .stack-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.875rem;
+    }
+
+    .stack-item-name { color: var(--text); }
+
+    .stack-pill {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .pill-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+    .pill-green { background: rgba(63,185,80,0.15); color: var(--green); }
+    .pill-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+    .pill-orange { background: rgba(255,166,87,0.15); color: var(--orange); }
+
+    /* ── Team ── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.4rem;
+    }
+
+    .team-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .team-card:hover {
+      border-color: rgba(88,166,255,0.35);
+      transform: translateY(-6px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+    }
+
+    /* 상단 사진 영역 */
+    .team-photo-wrap {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .team-photo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s;
+    }
+
+    .team-card:hover .team-photo-wrap img { transform: scale(1.04); }
+
+    .team-photo-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: 900;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.05em;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      transition: transform 0.4s;
+    }
+
+    .team-card:hover .team-photo-placeholder { transform: scale(1.04); }
+
+    /* Team Lead 뱃지 */
+    .team-lead-badge {
+      position: absolute;
+      top: 0.8rem;
+      left: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(63,185,80,0.2);
+      border: 1px solid rgba(63,185,80,0.5);
+      color: var(--green);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+    }
+
+    /* 하단 정보 영역 */
+    .team-info {
+      padding: 1.2rem 1.4rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .team-info-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .team-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .team-role {
+      font-size: 0.78rem;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .team-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-top: 0.2rem;
+    }
+
+    .team-link {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .team-link:hover { color: var(--accent); }
+
+    .team-link-icon {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      opacity: 0.55;
+    }
+
+    @media (max-width: 640px) {
+      .team-grid { grid-template-columns: 1fr; }
+    }
+
+    code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.82em;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      color: var(--accent2);
+    }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Scroll reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* ── Why Section ── */
+    .why-section {
+      position: relative;
+      z-index: 1;
+      padding: 7rem 1.5rem;
+      overflow: hidden;
+    }
+
+    .why-inner { max-width: 1100px; margin: 0 auto; }
+
+    /* 문제 제기 — 타이핑 박스 */
+    .pain-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.4rem 2rem;
+      max-width: 740px;
+      margin: 0 auto 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pain-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 0%, rgba(88,166,255,0.06) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .pain-quote {
+      font-size: clamp(1.15rem, 3vw, 1.55rem);
+      font-weight: 700;
+      line-height: 1.55;
+      color: var(--text);
+      min-height: 2.2em;
+    }
+
+    .pain-quote .cursor {
+      display: inline-block;
+      width: 3px;
+      height: 1.1em;
+      background: var(--accent);
+      margin-left: 3px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .pain-caption {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* 문제 → 해결 3단 카드 */
+    .why-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.4rem;
+      margin-bottom: 5rem;
+    }
+
+    .why-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 1.8rem;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .why-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(88,166,255,0.35);
+      box-shadow: 0 12px 40px rgba(88,166,255,0.07);
+    }
+
+    .why-card-num {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, rgba(88,166,255,0.25), rgba(188,140,255,0.25));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      user-select: none;
+    }
+
+    .why-card-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0.2rem 0.65rem;
+      border-radius: 4px;
+      margin-bottom: 0.8rem;
+    }
+
+    .tag-problem { background: rgba(248,81,73,0.12); color: #f85149; }
+    .tag-limit   { background: rgba(255,166,87,0.12); color: var(--orange); }
+    .tag-solve   { background: rgba(63,185,80,0.12);  color: var(--green); }
+
+    .why-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.7rem;
+    }
+
+    .why-card p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* 해결책 상세 — 3단 탭 타임라인 */
+    .solution-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+      margin-bottom: 5rem;
+    }
+
+    .solution-row.reverse { direction: rtl; }
+    .solution-row.reverse > * { direction: ltr; }
+
+    .sol-text-side {}
+
+    .sol-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0.2rem 0.65rem;
+      border-radius: 4px;
+      margin-bottom: 0.8rem;
+    }
+
+    .sol-tag-blue   { background: rgba(88,166,255,0.12);  color: var(--accent); }
+    .sol-tag-purple { background: rgba(188,140,255,0.12); color: var(--purple); }
+    .sol-tag-green  { background: rgba(63,185,80,0.12);   color: var(--green); }
+
+    .sol-text-side h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      line-height: 1.35;
+    }
+
+    .sol-text-side p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .sol-visual {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.8rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sol-visual::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 80% 20%, rgba(88,166,255,0.05), transparent 60%);
+      pointer-events: none;
+    }
+
+    /* 경험 카드 시각화 */
+    .vis-exp-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .vis-exp-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.8rem;
+      opacity: 0;
+      transform: translateX(-12px);
+      transition: opacity 0.4s, transform 0.4s;
+    }
+
+    .vis-exp-item.show { opacity: 1; transform: none; }
+
+    .vis-exp-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* 벡터 유사도 시각화 */
+    .vis-vec { display: flex; flex-direction: column; gap: 0.55rem; }
+
+    .vis-vec-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 0.78rem;
+    }
+
+    .vis-vec-label { width: 80px; color: var(--muted); flex-shrink: 0; }
+
+    .vis-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .vis-bar {
+      height: 100%;
+      border-radius: 3px;
+      width: 0;
+      transition: width 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .vis-pct { font-size: 0.75rem; color: var(--muted); width: 36px; text-align: right; }
+
+    /* AI 생성 시각화 */
+    .vis-ai { display: flex; flex-direction: column; gap: 0.7rem; }
+
+    .vis-ai-prompt {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .vis-ai-arrow {
+      text-align: center;
+      font-size: 1rem;
+      color: var(--purple);
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(4px); }
+    }
+
+    .vis-ai-result {
+      background: var(--surface);
+      border: 1px solid rgba(188,140,255,0.3);
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.78rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .vis-ai-typing::after {
+      content: '|';
+      animation: blink 0.9s step-end infinite;
+      color: var(--purple);
+    }
+
+    /* 비교 통계 시각화 */
+    .vis-stat { display: flex; flex-direction: column; gap: 1rem; }
+
+    .vis-stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .vis-stat-me {
+      font-size: 0.72rem;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .vis-stat-row { display: flex; flex-direction: column; gap: 0.3rem; }
+
+    .vis-stat-label {
+      font-size: 0.78rem;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .vis-stat-track {
+      height: 22px;
+      background: var(--border);
+      border-radius: 4px;
+      position: relative;
+      overflow: visible;
+    }
+
+    .vis-stat-avg {
+      height: 100%;
+      border-radius: 4px;
+      width: 0;
+      transition: width 1.3s cubic-bezier(0.23, 1, 0.32, 1);
+      background: rgba(88,166,255,0.25);
+      position: relative;
+    }
+
+    .vis-stat-me-marker {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 3px;
+      background: var(--green);
+      border-radius: 2px;
+      left: 0;
+      transition: left 1.3s cubic-bezier(0.23, 1, 0.32, 1);
+      box-shadow: 0 0 6px rgba(63,185,80,0.6);
+    }
+
+    .vis-stat-me-marker::after {
+      content: attr(data-label);
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      color: var(--green);
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .vis-stat-legend {
+      display: flex;
+      gap: 1.2rem;
+      margin-top: 0.4rem;
+    }
+
+    .vis-stat-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+    }
+
+    .tag-info { background: rgba(88,166,255,0.12); color: var(--accent); }
+
+    /* 기대 효과 배너 */
+    .effect-banner {
+      background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08));
+      border: 1px solid rgba(88,166,255,0.2);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      text-align: center;
+    }
+
+    .effect-banner h3 {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .effect-banner p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 560px;
+      margin: 0 auto 2rem;
+    }
+
+    .effect-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      justify-content: center;
+    }
+
+    .effect-pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.45rem 1.1rem;
+      font-size: 0.82rem;
+      color: var(--text);
+      transition: all 0.2s;
+    }
+
+    .effect-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .solution-row { grid-template-columns: 1fr; gap: 1.5rem; }
+      .solution-row.reverse { direction: ltr; }
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      .hero-stats { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="#">LOGI</a>
+  <ul class="nav-links">
+    <li><a href="#why">배경</a></li>
+    <li><a href="#features">기능</a></li>
+    <li><a href="#flow">흐름</a></li>
+    <li><a href="#stack">기술</a></li>
+    <li><a href="#team">팀</a></li>
+  </ul>
+  <a class="btn btn-outline" href="https://github.com/kookmin-sw/2026-capstone-2026-51" target="_blank">GitHub →</a>
+</nav>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">✦ 2026 Kookmin Univ. Capstone 51</div>
+    <h1>나의 경험이<br/>자소서가 되다</h1>
+    <p class="hero-sub">
+      경험을 기록하면 AI가 자소서로 만들어드립니다.<br/>
+      벡터 검색 + Claude AI로 나만의 맞춤 자소서를.
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/kookmin-sw/2026-capstone-2026-51" target="_blank">
+        GitHub 보러가기
+      </a>
+      <a class="btn btn-outline" href="#features">기능 살펴보기 ↓</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num" data-count="5">0</div>
+        <div class="stat-label">Core Domains</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-count="1536">0</div>
+        <div class="stat-label">Embedding Dimensions</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-count="4">0</div>
+        <div class="stat-label">Team Members</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== WHY Section ====== -->
+  <div class="why-section" id="why">
+    <div class="why-inner">
+
+      <p class="section-label reveal" style="text-align:center;">✦ Why LogI</p>
+      <h2 class="section-title reveal" style="text-align:center; max-width:100%;">왜 만들었을까요?</h2>
+      <p class="section-desc reveal" style="text-align:center; max-width:640px; margin-left:auto; margin-right:auto; margin-bottom:3rem;">
+        취업 시즌, 분명히 열심히 살았는데 막상 자소서를 쓰려 하면 막막했던 경험.<br/>그 문제를 해결하기 위해 LogI를 만들었습니다.
+      </p>
+
+      <!-- 타이핑 공감 박스 -->
+      <div class="pain-box reveal">
+        <p class="pain-quote" id="pain-quote"><span class="cursor"></span></p>
+        <p class="pain-caption">— 취업 준비생들이 자소서를 쓸 때 가장 많이 하는 말</p>
+      </div>
+
+      <!-- 3단 문제 카드 -->
+      <div class="why-cards">
+        <div class="why-card reveal">
+          <div class="why-card-num">01</div>
+          <span class="why-card-tag tag-problem">Problem</span>
+          <h3>경험은 많지만, 기억이 없다</h3>
+          <p>4년 동안 프로젝트, 인턴십, 동아리, 공모전 등 정말 많은 경험을 했지만, 막상 자소서를 쓰려 하면 "내가 그때 정확히 뭘 했더라?" 하는 막막함에 부딪힙니다.</p>
+        </div>
+        <div class="why-card reveal">
+          <div class="why-card-num">02</div>
+          <span class="why-card-tag tag-limit">Limitation</span>
+          <h3>기록은 있지만, 활용이 어렵다</h3>
+          <p>메모장, 블로그, 카카오톡 등 여러 곳에 흩어진 기록들. 자소서 문항이 요구하는 역량에 맞는 소재를 골라 문장으로 다듬는 것은 여전히 고통스러운 작업입니다.</p>
+        </div>
+        <div class="why-card reveal">
+          <div class="why-card-num">03</div>
+          <span class="why-card-tag tag-solve">Solution</span>
+          <h3>경험을 자산으로, AI가 자소서로</h3>
+          <p>경험을 체계적으로 쌓고, 자소서 질문을 입력하면 AI가 가장 잘 맞는 경험을 찾아 답변 초안까지 만들어줍니다. 당신의 경험이 낭비되지 않도록.</p>
+        </div>
+        <div class="why-card reveal">
+          <div class="why-card-num">04</div>
+          <span class="why-card-tag tag-info">Information</span>
+          <h3>비교 데이터의 부재와 막연한 불안</h3>
+          <p>비슷한 환경의 동료들이 어느 정도 준비하는지 궁금하지만 직접 묻기는 어렵습니다. 에브리타임 익명 커뮤니티에 의존하지만 파편화된 정보로는 객관적인 비교가 불가능합니다.</p>
+        </div>
+      </div>
+
+      <!-- 해결책 상세 1: 경험 저장 -->
+      <div class="solution-row reveal">
+        <div class="sol-text-side">
+          <span class="sol-tag sol-tag-blue">STEP 1 · 경험 관리</span>
+          <h3>그때그때 기록하면<br/>잊지 않습니다</h3>
+          <p>
+            인턴십에서 맡은 역할, 프로젝트에서 해결한 문제, 동아리 활동에서 느낀 성장.<br/><br/>
+            STAR 방식(Situation · Task · Action · Result)으로 경험을 구조화하여 저장하면, 4년 뒤에도 생생하게 꺼내 쓸 수 있는 나만의 경험 데이터베이스가 됩니다.
+          </p>
+        </div>
+        <div class="sol-visual" id="vis-exp">
+          <div class="vis-exp-list">
+            <div class="vis-exp-item" style="transition-delay:0.1s">
+              <div class="vis-exp-dot" style="background:#58a6ff"></div>
+              <span>삼성 SDS 인턴 — API 성능 개선 (40% 향상)</span>
+            </div>
+            <div class="vis-exp-item" style="transition-delay:0.25s">
+              <div class="vis-exp-dot" style="background:#3fb950"></div>
+              <span>캡스톤디자인 — AI 자소서 플랫폼 개발 (팀장)</span>
+            </div>
+            <div class="vis-exp-item" style="transition-delay:0.4s">
+              <div class="vis-exp-dot" style="background:#bc8cff"></div>
+              <span>교내 공모전 — 최우수상, 아이디어 기획 주도</span>
+            </div>
+            <div class="vis-exp-item" style="transition-delay:0.55s">
+              <div class="vis-exp-dot" style="background:#ffa657"></div>
+              <span>오픈소스 기여 — Spring Boot PR 3건 머지</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 해결책 상세 2: 벡터 검색 -->
+      <div class="solution-row reverse reveal">
+        <div class="sol-text-side">
+          <span class="sol-tag sol-tag-purple">STEP 2 · 스마트 매칭</span>
+          <h3>질문을 입력하면<br/>AI가 딱 맞는 경험을 찾아줍니다</h3>
+          <p>
+            "협업 과정에서 갈등을 해결한 경험을 써주세요."<br/><br/>
+            이 질문을 입력하는 순간, 벡터 검색 엔진이 내 모든 경험 중 이 문항과 가장 유사도가 높은 경험을 찾아냅니다. 더 이상 어떤 경험을 써야 할지 고민하지 않아도 됩니다.
+          </p>
+        </div>
+        <div class="sol-visual" id="vis-vec">
+          <div class="vis-vec">
+            <div class="vis-vec-row">
+              <span class="vis-vec-label">캡스톤 팀장</span>
+              <div class="vis-bar-wrap"><div class="vis-bar" data-pct="92" style="background: linear-gradient(90deg, #58a6ff, #bc8cff)"></div></div>
+              <span class="vis-pct" id="vp0">0%</span>
+            </div>
+            <div class="vis-vec-row">
+              <span class="vis-vec-label">동아리 활동</span>
+              <div class="vis-bar-wrap"><div class="vis-bar" data-pct="74" style="background: linear-gradient(90deg, #3fb950, #58a6ff)"></div></div>
+              <span class="vis-pct" id="vp1">0%</span>
+            </div>
+            <div class="vis-vec-row">
+              <span class="vis-vec-label">삼성 인턴</span>
+              <div class="vis-bar-wrap"><div class="vis-bar" data-pct="58" style="background: linear-gradient(90deg, #ffa657, #3fb950)"></div></div>
+              <span class="vis-pct" id="vp2">0%</span>
+            </div>
+            <div class="vis-vec-row">
+              <span class="vis-vec-label">공모전 기획</span>
+              <div class="vis-bar-wrap"><div class="vis-bar" data-pct="41" style="background: linear-gradient(90deg, #8b949e, #ffa657)"></div></div>
+              <span class="vis-pct" id="vp3">0%</span>
+            </div>
+          </div>
+          <p style="font-size:0.72rem; color:var(--muted); margin-top:0.6rem;">cosine similarity — 질문과의 경험 유사도</p>
+        </div>
+      </div>
+
+      <!-- 해결책 상세 3: AI 생성 -->
+      <div class="solution-row reveal">
+        <div class="sol-text-side">
+          <span class="sol-tag sol-tag-green">STEP 3 · AI 작성</span>
+          <h3>Claude AI가<br/>나의 언어로 답변을 씁니다</h3>
+          <p>
+            추천된 경험과 나의 프로필을 기반으로 Claude Sonnet이 자소서 답변 초안을 작성합니다.<br/><br/>
+            마음에 들지 않으면 재생성. 일부만 고치고 싶으면 직접 편집. 완성된 답변을 시작점으로 나만의 자소서를 완성하세요.
+          </p>
+        </div>
+        <div class="sol-visual">
+          <div class="vis-ai">
+            <div class="vis-ai-prompt">
+              💬 &nbsp;"팀 협업에서 갈등을 해결한 경험을 바탕으로 캡스톤 프로젝트에 대해 서술하시오."
+            </div>
+            <div class="vis-ai-arrow">↓ Claude Sonnet</div>
+            <div class="vis-ai-result">
+              <span class="vis-ai-typing" id="ai-typing"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 해결책 상세 4: 비교 통계 -->
+      <div class="solution-row reverse reveal">
+        <div class="sol-text-side">
+          <span class="sol-tag sol-tag-green">STEP 4 · 비교 통계</span>
+          <h3>익명 통계로<br/>내 위치를 객관적으로 파악합니다</h3>
+          <p>
+            직접 묻기 어렵고, 커뮤니티 정보는 파편적이고, 신뢰할 수 없는 불안.<br/><br/>
+            LogI는 개인 정보를 철저히 보호하면서, 같은 학번·전공·목표 직무를 가진 동료들의 익명 집계 데이터를 통해 <strong style="color:var(--text)">내가 어느 위치에 있는지</strong>를 객관적으로 보여줍니다. 막연한 불안 대신 명확한 방향을.
+          </p>
+        </div>
+        <div class="sol-visual" id="vis-stat-box">
+          <div class="vis-stat">
+            <div class="vis-stat-header">
+              <span>같은 학번 · SW전공 · 백엔드 지원자 평균과 비교</span>
+              <span class="vis-stat-me">● 나</span>
+            </div>
+            <div class="vis-stat-row">
+              <div class="vis-stat-label">
+                <span>프로젝트 경험 수</span>
+                <span style="color:var(--muted); font-size:0.72rem;">평균 3.2개</span>
+              </div>
+              <div class="vis-stat-track">
+                <div class="vis-stat-avg" data-avg="64" data-me="78"></div>
+                <div class="vis-stat-me-marker" data-label="나 (5개)" style="left:0"></div>
+              </div>
+            </div>
+            <div class="vis-stat-row">
+              <div class="vis-stat-label">
+                <span>자격증 보유 수</span>
+                <span style="color:var(--muted); font-size:0.72rem;">평균 1.8개</span>
+              </div>
+              <div class="vis-stat-track">
+                <div class="vis-stat-avg" data-avg="45" data-me="32"></div>
+                <div class="vis-stat-me-marker" data-label="나 (1개)" style="left:0"></div>
+              </div>
+            </div>
+            <div class="vis-stat-row">
+              <div class="vis-stat-label">
+                <span>인턴 경험</span>
+                <span style="color:var(--muted); font-size:0.72rem;">보유율 38%</span>
+              </div>
+              <div class="vis-stat-track">
+                <div class="vis-stat-avg" data-avg="38" data-me="60"></div>
+                <div class="vis-stat-me-marker" data-label="나 (보유)" style="left:0"></div>
+              </div>
+            </div>
+            <div class="vis-stat-legend">
+              <div class="vis-stat-legend-item">
+                <div class="legend-dot" style="background:rgba(88,166,255,0.4)"></div>
+                <span>동료 평균</span>
+              </div>
+              <div class="vis-stat-legend-item">
+                <div class="legend-dot" style="background:var(--green)"></div>
+                <span>나의 현황</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 기대 효과 배너 -->
+      <div class="effect-banner reveal">
+        <h3>LogI와 함께라면</h3>
+        <p>경험이 데이터로 쌓이고, AI가 자소서로 만들어줍니다.<br/>더 이상 "뭘 써야 하지?" 고민하지 마세요.</p>
+        <div class="effect-pills">
+          <span class="effect-pill">소재 고갈 해소</span>
+          <span class="effect-pill">경험 자산화</span>
+          <span class="effect-pill">작성 시간 단축</span>
+          <span class="effect-pill">맞춤형 AI 초안</span>
+          <span class="effect-pill">익명 비교 통계</span>
+          <span class="effect-pill">객관적 위치 파악</span>
+          <span class="effect-pill">전략적 커리어 관리</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <!-- ====== / WHY Section ====== -->
+
+  <!-- Features -->
+  <section id="features">
+    <p class="section-label reveal">✦ Features</p>
+    <h2 class="section-title reveal">핵심 기능</h2>
+    <p class="section-desc reveal">경험 관리부터 AI 기반 자소서 생성까지, 취업 준비의 모든 과정을 지원합니다.</p>
+
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">📝</div>
+        <div class="feature-title">경험 STAR 구조화</div>
+        <div class="feature-desc">인턴십, 프로젝트, 동아리 등 모든 경험을 Situation · Task · Action · Result 형식으로 체계적으로 저장합니다.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">벡터 기반 경험 추천</div>
+        <div class="feature-desc">자소서 질문을 입력하면 pgvector cosine similarity로 가장 관련 높은 경험을 자동으로 추천합니다.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI 자소서 자동 생성</div>
+        <div class="feature-desc">AWS Bedrock의 Claude Sonnet이 추천된 경험을 바탕으로 질문에 맞는 자소서 답변을 생성합니다.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🏅</div>
+        <div class="feature-title">자격증 관리</div>
+        <div class="feature-desc">보유 자격증, 취득일, 만료일 등을 한 곳에서 관리하고 자소서 작성 시 활용합니다.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">♻️</div>
+        <div class="feature-title">재생성 & 반복 수정</div>
+        <div class="feature-desc">생성된 자소서가 마음에 들지 않으면 재생성 요청으로 새로운 버전을 즉시 만들 수 있습니다.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">대시보드</div>
+        <div class="feature-desc">Three.js 3D 시각화와 함께 경험, 자소서, 약점 분석 등 전체 현황을 한눈에 확인합니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Flow -->
+  <div class="flow-section" id="flow">
+    <div class="flow-inner">
+      <p class="section-label reveal">✦ How it works</p>
+      <h2 class="section-title reveal">자소서 생성 흐름</h2>
+      <p class="section-desc reveal">경험 등록부터 최종 자소서 완성까지 5단계로 이루어집니다.</p>
+
+      <div class="flow-steps">
+        <div class="flow-step reveal">
+          <div class="flow-step-line">
+            <div class="step-dot">1</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>경험 등록</h3>
+            <p>사용자가 경험을 STAR 방식으로 입력합니다. 인턴십, 프로젝트, 동아리 활동 등 모든 경험이 대상입니다.</p>
+          </div>
+        </div>
+        <div class="flow-step reveal">
+          <div class="flow-step-line">
+            <div class="step-dot">2</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>임베딩 처리</h3>
+            <p>Amazon Titan Embed Text V2가 경험 텍스트를 1536차원 벡터로 변환하여 PostgreSQL pgvector에 저장합니다.</p>
+            <span class="step-tag tag-async">AWS SQS 비동기</span>
+            <span class="step-tag tag-ai">Amazon Titan</span>
+          </div>
+        </div>
+        <div class="flow-step reveal">
+          <div class="flow-step-line">
+            <div class="step-dot">3</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>자소서 질문 입력</h3>
+            <p>회사명, 직무, 자소서 질문을 입력합니다. 하나의 자소서에 여러 질문을 추가할 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="flow-step reveal">
+          <div class="flow-step-line">
+            <div class="step-dot">4</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>유사 경험 추천</h3>
+            <p>질문 텍스트를 임베딩하여 pgvector cosine similarity로 가장 관련 높은 경험들을 자동 추천합니다.</p>
+            <span class="step-tag tag-db">pgvector</span>
+          </div>
+        </div>
+        <div class="flow-step reveal">
+          <div class="flow-step-line">
+            <div class="step-dot">5</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>AI 자소서 생성</h3>
+            <p>AWS Bedrock의 Claude Sonnet이 추천 경험과 사용자 프로필을 바탕으로 맞춤형 자소서 답변을 생성합니다.</p>
+            <span class="step-tag tag-ai">Claude Sonnet</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack -->
+  <section id="stack">
+    <p class="section-label reveal">✦ Tech Stack</p>
+    <h2 class="section-title reveal">기술 스택</h2>
+    <p class="section-desc reveal">최신 AI 인프라와 현대적인 웹 기술을 조합하여 구축했습니다.</p>
+
+    <div class="stack-grid">
+      <div class="stack-card reveal">
+        <div class="stack-card-title">Backend</div>
+        <div class="stack-items">
+          <div class="stack-item"><span class="stack-item-name">Spring Boot 3.5</span><span class="stack-pill pill-blue">Java 21</span></div>
+          <div class="stack-item"><span class="stack-item-name">PostgreSQL + pgvector</span><span class="stack-pill pill-green">Vector DB</span></div>
+          <div class="stack-item"><span class="stack-item-name">Spring Data JPA</span><span class="stack-pill pill-blue">ORM</span></div>
+          <div class="stack-item"><span class="stack-item-name">Google OAuth 2.0 + JWT</span><span class="stack-pill pill-orange">Auth</span></div>
+          <div class="stack-item"><span class="stack-item-name">Caffeine Cache</span><span class="stack-pill pill-green">Cache</span></div>
+        </div>
+      </div>
+      <div class="stack-card reveal">
+        <div class="stack-card-title">AI / Cloud</div>
+        <div class="stack-items">
+          <div class="stack-item"><span class="stack-item-name">Claude Sonnet (Bedrock)</span><span class="stack-pill pill-purple">LLM</span></div>
+          <div class="stack-item"><span class="stack-item-name">Amazon Titan Embed V2</span><span class="stack-pill pill-purple">Embedding</span></div>
+          <div class="stack-item"><span class="stack-item-name">AWS SQS</span><span class="stack-pill pill-orange">Async</span></div>
+          <div class="stack-item"><span class="stack-item-name">AWS Bedrock Runtime</span><span class="stack-pill pill-purple">AI Gateway</span></div>
+        </div>
+      </div>
+      <div class="stack-card reveal">
+        <div class="stack-card-title">Frontend</div>
+        <div class="stack-items">
+          <div class="stack-item"><span class="stack-item-name">React 19 + Vite</span><span class="stack-pill pill-blue">Framework</span></div>
+          <div class="stack-item"><span class="stack-item-name">TanStack Query + Axios</span><span class="stack-pill pill-green">Data</span></div>
+          <div class="stack-item"><span class="stack-item-name">Zustand</span><span class="stack-pill pill-orange">State</span></div>
+          <div class="stack-item"><span class="stack-item-name">Tailwind CSS</span><span class="stack-pill pill-blue">Style</span></div>
+          <div class="stack-item"><span class="stack-item-name">Three.js</span><span class="stack-pill pill-purple">3D</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team -->
+  <section id="team" style="background: var(--surface); max-width: 100%; padding: 6rem 1.5rem;">
+    <div style="max-width: 1100px; margin: 0 auto;">
+      <p class="section-label reveal">✦ Team</p>
+      <h2 class="section-title reveal">팀 소개</h2>
+      <p class="section-desc reveal">국민대학교 2026 캡스톤디자인 51조</p>
+
+      <!-- SVG 아이콘 재사용 정의 -->
+      <svg style="display:none">
+        <symbol id="icon-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="m2 7 10 7 10-7"/>
+        </symbol>
+        <symbol id="icon-github" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+        </symbol>
+      </svg>
+
+      <div class="team-grid">
+
+        <!-- 김문기 -->
+        <div class="team-card reveal">
+          <div class="team-photo-wrap">
+            <!-- <img src="images/team1.jpg" alt="김문기"> -->
+            <div class="team-photo-placeholder" style="background: linear-gradient(160deg, #1a3a5c 0%, #58a6ff 60%, #bc8cff 100%);">KMG</div>
+            <div class="team-lead-badge">★ Team Lead</div>
+          </div>
+          <div class="team-info">
+            <div class="team-info-top">
+              <div class="team-name">김문기</div>
+              <div class="team-role">Backend · Team Lead</div>
+            </div>
+            <div class="team-links">
+              <a class="team-link" href="mailto:moongi010320@gmail.com">
+                <svg class="team-link-icon"><use href="#icon-mail"/></svg>
+                moongi010320@gmail.com
+              </a>
+              <a class="team-link" href="https://github.com/Kimmoongi0320" target="_blank">
+                <svg class="team-link-icon"><use href="#icon-github"/></svg>
+                github.com/Kimmoongi0320
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 김민재 -->
+        <div class="team-card reveal">
+          <div class="team-photo-wrap">
+            <!-- <img src="images/team2.jpg" alt="김민재"> -->
+            <div class="team-photo-placeholder" style="background: linear-gradient(160deg, #0d2b1a 0%, #3fb950 60%, #58a6ff 100%);">KMJ</div>
+          </div>
+          <div class="team-info">
+            <div class="team-info-top">
+              <div class="team-name">김민재</div>
+              <div class="team-role">Backend</div>
+            </div>
+            <div class="team-links">
+              <a class="team-link" href="mailto:example@kookmin.ac.kr">
+                <svg class="team-link-icon"><use href="#icon-mail"/></svg>
+                example@kookmin.ac.kr
+              </a>
+              <a class="team-link" href="https://github.com/" target="_blank">
+                <svg class="team-link-icon"><use href="#icon-github"/></svg>
+                github.com/...
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 도승준 -->
+        <div class="team-card reveal">
+          <div class="team-photo-wrap">
+            <!-- <img src="images/team3.jpg" alt="도승준"> -->
+            <div class="team-photo-placeholder" style="background: linear-gradient(160deg, #1e1040 0%, #bc8cff 60%, #58a6ff 100%);">DSJ</div>
+          </div>
+          <div class="team-info">
+            <div class="team-info-top">
+              <div class="team-name">도승준</div>
+              <div class="team-role">Frontend</div>
+            </div>
+            <div class="team-links">
+              <a class="team-link" href="mailto:example@kookmin.ac.kr">
+                <svg class="team-link-icon"><use href="#icon-mail"/></svg>
+                example@kookmin.ac.kr
+              </a>
+              <a class="team-link" href="https://github.com/" target="_blank">
+                <svg class="team-link-icon"><use href="#icon-github"/></svg>
+                github.com/...
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 한혜민 -->
+        <div class="team-card reveal">
+          <div class="team-photo-wrap">
+            <!-- <img src="images/team4.jpg" alt="한혜민"> -->
+            <div class="team-photo-placeholder" style="background: linear-gradient(160deg, #2b1500 0%, #ffa657 60%, #bc8cff 100%);">HHM</div>
+          </div>
+          <div class="team-info">
+            <div class="team-info-top">
+              <div class="team-name">한혜민</div>
+              <div class="team-role">Frontend</div>
+            </div>
+            <div class="team-links">
+              <a class="team-link" href="mailto:example@kookmin.ac.kr">
+                <svg class="team-link-icon"><use href="#icon-mail"/></svg>
+                example@kookmin.ac.kr
+              </a>
+              <a class="team-link" href="https://github.com/" target="_blank">
+                <svg class="team-link-icon"><use href="#icon-github"/></svg>
+                github.com/...
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    <a href="https://github.com/kookmin-sw/2026-capstone-2026-51" target="_blank">GitHub</a>
+    &nbsp;·&nbsp;
+    국민대학교 2026 캡스톤디자인 51조
+    &nbsp;·&nbsp;
+    Logi
+  </p>
+</footer>
+
+<script>
+  // ── 파티클 캔버스 ──
+  const canvas = document.getElementById('canvas-bg');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function Particle() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.4;
+    this.vy = (Math.random() - 0.5) * 0.4;
+    this.r = Math.random() * 1.5 + 0.5;
+    this.alpha = Math.random() * 0.5 + 0.1;
+  }
+
+  Particle.prototype.update = function() {
+    this.x += this.vx;
+    this.y += this.vy;
+    if (this.x < 0) this.x = W;
+    if (this.x > W) this.x = 0;
+    if (this.y < 0) this.y = H;
+    if (this.y > H) this.y = 0;
+  };
+
+  function initParticles() {
+    particles = [];
+    const count = Math.floor((W * H) / 14000);
+    for (let i = 0; i < count; i++) particles.push(new Particle());
+  }
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, W, H);
+
+    // draw connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(88,166,255,${(1 - dist / 120) * 0.12})`;
+          ctx.lineWidth = 0.8;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // draw dots
+    particles.forEach(p => {
+      p.update();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(88,166,255,${p.alpha})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(drawParticles);
+  }
+
+  resize();
+  initParticles();
+  drawParticles();
+  window.addEventListener('resize', () => { resize(); initParticles(); });
+
+  // ── 공감 타이핑 ──
+  const painLines = [
+    '"내가 그때 정확히 뭘 했었지?"',
+    '"이 문항엔 어떤 경험을 써야 하지?"',
+    '"분명히 열심히 살았는데... 왜 쓸 게 없지?"',
+    '"경험은 많은데 자소서는 왜 이렇게 어렵지?"',
+    '"다른 애들은 스펙이 얼마나 되는지 알 수가 없어..."',
+    '"에브리타임 봐도 파편적인 정보뿐... 내가 뒤처진 건지 모르겠어."',
+  ];
+  let painIdx = 0, painChar = 0, painDeleting = false;
+  const painEl = document.getElementById('pain-quote');
+
+  function typePain() {
+    const line = painLines[painIdx];
+    if (!painDeleting) {
+      painChar++;
+      painEl.innerHTML = line.slice(0, painChar) + '<span class="cursor"></span>';
+      if (painChar === line.length) {
+        painDeleting = true;
+        setTimeout(typePain, 2200);
+        return;
+      }
+      setTimeout(typePain, 55);
+    } else {
+      painChar--;
+      painEl.innerHTML = line.slice(0, painChar) + '<span class="cursor"></span>';
+      if (painChar === 0) {
+        painDeleting = false;
+        painIdx = (painIdx + 1) % painLines.length;
+        setTimeout(typePain, 400);
+        return;
+      }
+      setTimeout(typePain, 28);
+    }
+  }
+  setTimeout(typePain, 800);
+
+  // ── AI 타이핑 ──
+  const aiText = '캡스톤디자인 프로젝트 팀장으로서, 백엔드와 프론트엔드 간 방향성 갈등이 발생했을 때 저는 먼저 각 팀원의 의견을 개별 면담으로 경청하였습니다. 이후 공통 목표를 재정립하는 회의를 주도하여 모든 구성원이 동의하는 기술 방향을 도출, 프로젝트를 성공적으로 완수할 수 있었습니다.';
+  let aiChar = 0;
+  const aiEl = document.getElementById('ai-typing');
+  let aiStarted = false;
+
+  function typeAI() {
+    if (aiChar < aiText.length) {
+      aiChar++;
+      aiEl.textContent = aiText.slice(0, aiChar);
+      setTimeout(typeAI, 28);
+    }
+  }
+
+  // ── 벡터 바 애니메이션 ──
+  function animateBars() {
+    document.querySelectorAll('.vis-bar').forEach((bar, i) => {
+      const pct = bar.dataset.pct;
+      const pctEl = document.getElementById('vp' + i);
+      setTimeout(() => {
+        bar.style.width = pct + '%';
+        if (pctEl) {
+          let cur = 0;
+          const target = parseInt(pct);
+          const step = () => {
+            cur = Math.min(cur + 2, target);
+            pctEl.textContent = cur + '%';
+            if (cur < target) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      }, i * 150);
+    });
+  }
+
+  // ── 경험 카드 등장 ──
+  function animateExpCards() {
+    document.querySelectorAll('#vis-exp .vis-exp-item').forEach(el => {
+      el.classList.add('show');
+    });
+  }
+
+  // ── 통계 바 애니메이션 ──
+  function animateStatBars() {
+    document.querySelectorAll('.vis-stat-avg').forEach(avg => {
+      const avgPct  = parseInt(avg.dataset.avg);
+      const mePct   = parseInt(avg.dataset.me);
+      const marker  = avg.nextElementSibling;
+      setTimeout(() => {
+        avg.style.width = avgPct + '%';
+        if (marker) marker.style.left = mePct + '%';
+      }, 100);
+    });
+  }
+
+  // ── IntersectionObserver로 시각화 트리거 ──
+  const visVec     = document.getElementById('vis-vec');
+  const visExp     = document.getElementById('vis-exp');
+  const aiResult   = document.querySelector('.vis-ai-result');
+  const visStatBox = document.getElementById('vis-stat-box');
+
+  if (visVec) {
+    new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) { animateBars(); }
+    }, { threshold: 0.4 }).observe(visVec);
+  }
+
+  if (visExp) {
+    new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) { animateExpCards(); }
+    }, { threshold: 0.4 }).observe(visExp);
+  }
+
+  if (aiResult) {
+    new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !aiStarted) {
+        aiStarted = true;
+        typeAI();
+      }
+    }, { threshold: 0.5 }).observe(aiResult);
+  }
+
+  if (visStatBox) {
+    new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) { animateStatBars(); }
+    }, { threshold: 0.4 }).observe(visStatBox);
+  }
+
+  // ── 숫자 카운트업 ──
+  function animateCount(el, target) {
+    const duration = 1800;
+    const start = performance.now();
+    const suffix = el.dataset.suffix || '';
+    function step(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.floor(ease * target).toLocaleString() + suffix;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const statObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        animateCount(el, parseInt(el.dataset.count));
+        statObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('[data-count]').forEach(el => statObserver.observe(el));
+
+  // ── Scroll reveal ──
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        revealObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+</script>
+
+</body>
+</html>
