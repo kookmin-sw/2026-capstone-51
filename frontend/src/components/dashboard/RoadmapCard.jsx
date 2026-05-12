@@ -1,4 +1,4 @@
-현import React from 'react';
+import React from 'react';
 import CategoryLegend from './CategoryLegend';
 import Roadmap from './Roadmap';
 
