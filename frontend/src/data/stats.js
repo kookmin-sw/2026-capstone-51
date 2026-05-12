@@ -1,4 +1,4 @@
-현// 통계 페이지 데이터
+// 통계 페이지 데이터
 
 export const COMPARE_SCOPES = [
   { id: 'major', label: '같은 학과', detail: '소프트웨어학부 · 472명' },
