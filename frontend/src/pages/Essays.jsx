@@ -1,4 +1,4 @@
-터import React from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
