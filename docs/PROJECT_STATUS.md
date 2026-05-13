@@ -16,6 +16,16 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### `useUpdateEssayResult` optimistic update — 결과 입력 즉시 반영 (2026-05-13)
+
+- **목표**: 사용자 보고 — 자소서 상세에서 결과(작성 중/합격/불합격) 누르고 잠시 후에야 active 버튼이 바뀜. "결과 반영이 즉시 안 된다" 는 인상.
+- **원인**: 옛 mutation 은 `onSuccess` 에서 invalidate → refetch 트리거 → 응답 도착 후에야 UI 갱신. 네트워크 + 서버 왕복 동안 사용자는 "안 바뀐 것 같다" 고 느낌.
+- **변경**:
+  - [`src/api/queries/useEssays.js`](../frontend/src/api/queries/useEssays.js) — `useUpdateEssayResult` 에 optimistic update 적용. `onMutate` 에서 캐시에 새 `progress` 즉시 반영(`setQueryData`) → UI 깜빡임 없이 active 버튼·뱃지 곧바로 변경. `onError` 시 이전 값 rollback. `onSettled` 에서 invalidate 해 서버 최종 값으로 sync (정합성 확보).
+- **건드리지 않은 항목**: EssayDetail 의 `handleResult` (`q.refetch()` 호출은 invalidate 후 어차피 일어나므로 중복이지만 별도 정리 대상), 다른 mutation 들(메타/문항/생성/삭제 — optimistic 적용 가치 낮음).
+- **검증**: `npx eslint ...` ✅ / `npx prettier --check` ✅ / `npm run build` ✅ 482ms.
+- **이유**: 결과 입력은 단일 enum 값 변경이라 optimistic 적용 비용이 거의 없고, 사용자가 "선택 즉시 반영" 을 기대하는 인터랙션이라 ROI 높음.
+
 ### 자소서 상세 카드 통합 + 진행상태 태그 디자인 정리 (2026-05-13)
 
 - **목표**: 사용자 보고 — `EssayDetail` 에 카드가 4 개(메타 / 결과 입력 / 문항 / 위험 영역)로 흩어져있고, 진행상태 태그 표시가 어색함(회사명을 뱃지로 표시하던 옛 디자인).

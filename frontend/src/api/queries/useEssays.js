@@ -79,7 +79,24 @@ export const useUpdateEssayResult = () => {
   return useMutation({
     mutationFn: ({ id, progress }) =>
       api.patch(`/essays/${id}/result`, { progress }),
-    onSuccess: (_d, vars) => {
+    // Optimistic update — 네트워크 응답 기다리지 않고 캐시에 즉시 새 progress
+    // 반영해 EssayDetail 의 진행상태 뱃지·active 버튼이 곧바로 갱신됨.
+    // 실패 시 onError 에서 이전 값으로 rollback. 완료 후 onSettled 가 invalidate
+    // 해 서버의 최종 값으로 sync.
+    onMutate: async ({ id, progress }) => {
+      await qc.cancelQueries({ queryKey: qk.essays.one(id) });
+      const previous = qc.getQueryData(qk.essays.one(id));
+      if (previous) {
+        qc.setQueryData(qk.essays.one(id), { ...previous, progress });
+      }
+      return { previous };
+    },
+    onError: (_e, vars, ctx) => {
+      if (ctx?.previous) {
+        qc.setQueryData(qk.essays.one(vars.id), ctx.previous);
+      }
+    },
+    onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: qk.essays.all() });
       qc.invalidateQueries({ queryKey: qk.essays.one(vars.id) });
     },
