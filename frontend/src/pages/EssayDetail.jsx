@@ -62,9 +62,12 @@ export default function EssayDetail() {
     updateResult.mutate(
       { id, progress },
       {
-        onSuccess: () => {
+        // optimistic update 가 같은 mutation 의 정의-시 onMutate 에서 setQueryData
+        // 로 즉시 cache 갱신 → 다음 렌더에 active 버튼이 즉시 바뀜.
+        // 토스트도 같은 시점에 띄워 "변경 → 알림" 이 같은 frame 에 적용되도록.
+        // (옛 onSuccess 위치는 서버 응답 후라 토스트가 변경보다 늦게 보였음.)
+        onMutate: () => {
           toast.success('결과가 반영되었습니다.');
-          q.refetch();
         },
         onError: (e) =>
           toast.error(e?.apiMessage || '결과 반영에 실패했습니다.'),

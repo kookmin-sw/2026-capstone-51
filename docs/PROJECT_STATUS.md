@@ -16,6 +16,14 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자소서 결과 토스트를 변경과 같은 시점으로 (2026-05-13)
+
+- **목표**: 사용자 보고 — "결과 반영 알림 뜨고 이후에 변경되는 느낌". 옛 흐름은 토스트가 `onSuccess`(서버 응답 후) 라 optimistic UI 변경(`onMutate`, 클릭 즉시) 보다 늦게 떠야 하는데, 사용자 perception 상 반대로 보였음.
+- **변경**:
+  - [`src/pages/EssayDetail.jsx`](../frontend/src/pages/EssayDetail.jsx) — `handleResult` 의 `toast.success` 호출을 `onSuccess` → 호출-시 `onMutate` 로 이동. optimistic update 의 정의-시 `onMutate`(`setQueryData`) 와 같은 시점에 트리거 → UI 변경과 토스트가 같은 렌더 frame 에 적용. `q.refetch()` 도 제거 — `onSettled` 의 invalidate 가 background refetch 처리, 중복 제거.
+- **건드리지 않은 항목**: `useUpdateEssayResult` 의 optimistic update 로직, `onError` rollback, mutation 실패 시 toast.error 흐름.
+- **검증**: `npx eslint ...` ✅ / `npx prettier --check` ✅ / `npm run build` ✅ 633ms.
+
 ### 자소서 결과 토글 active 색 진행상태별로 구분 (2026-05-13)
 
 - **목표**: 사용자 보고 — "불합격이 이상하다". 결과 토글 버튼이 active 일 때 전부 같은 primary(파랑) 색으로 표시되어 불합격을 골랐는데도 파란색 active 상태가 의미와 어긋남.
