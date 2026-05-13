@@ -1,4 +1,3 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
@@ -7,6 +6,7 @@ import Layout from './components/Layout';
 import Placeholder from './pages/Placeholder';
 import Onboarding from './pages/Onboarding';
 import Landing from './pages/Landing';
+import SplashScreen from './pages/SplashScreen';
 import Dashboard from './pages/Dashboard';
 import Write from './pages/Write';
 import Essays from './pages/Essays';
@@ -27,6 +27,7 @@ function App() {
 
         {/* 사이드바 없는 단독 화면 */}
         <Route path="/landing" element={<Landing />} />
+        <Route path="/auth/callback" element={<SplashScreen />} />
         <Route path="/onboarding" element={<Onboarding />} />
 
         {/* 메인 앱 — 사이드바 레이아웃 */}
@@ -96,6 +97,17 @@ function App() {
       </Routes>
     </HashRouter>
   );
+}
+
+// Google OAuth가 redirect_uri(`/auth/callback?code=...`)로 돌려보내는 시점엔
+// 해시가 비어 있어 HashRouter가 index로 빠진다. SPA 로드 직후 server-path를
+// 해시 경로로 재작성해 `/auth/callback` 라우트가 받도록 한다.
+if (
+  window.location.pathname === '/auth/callback' &&
+  window.location.hash === ''
+) {
+  const search = window.location.search;
+  window.history.replaceState({}, '', `/#/auth/callback${search}`);
 }
 
 const root = createRoot(document.getElementById('root'));

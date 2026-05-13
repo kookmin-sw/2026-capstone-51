@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { exchangeGoogleCode, logApiError } from '../api/auth';
 
 /*
  * 좌표 계산 메모
@@ -106,6 +108,8 @@ const animationStyles = `
 
 export default function LogiSplashScreen() {
   const [dots, setDots] = useState(0);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -113,6 +117,66 @@ export default function LogiSplashScreen() {
     }, 500);
     return () => clearInterval(interval);
   }, []);
+
+  // Google redirect_uri(`/auth/callback`)로 돌아온 직후: ?code를 백엔드와 교환
+  // → 최초 로그인이면 온보딩, 아니면 랜딩으로 이동.
+  useEffect(() => {
+    const code = searchParams.get('code');
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+    const errorUri = searchParams.get('error_uri');
+
+    if (error) {
+      // Google이 동의 화면에서 직접 돌려보낸 OAuth 에러(예: access_denied)
+      console.groupCollapsed(
+        `[Google OAuth] 동의 단계 에러 — ${error}${
+          errorDescription ? `: ${errorDescription}` : ''
+        }`,
+      );
+      console.error('error             :', error);
+      console.error('error_description :', errorDescription ?? '(none)');
+      console.error('error_uri         :', errorUri ?? '(none)');
+      console.error(
+        '전체 쿼리        :',
+        Object.fromEntries(searchParams.entries()),
+      );
+      console.groupEnd();
+      navigate('/landing', { replace: true });
+      return;
+    }
+    if (!code) {
+      console.warn(
+        '[Google OAuth] code가 없는 채로 /auth/callback 진입 — 쿼리:',
+        Object.fromEntries(searchParams.entries()),
+      );
+      navigate('/landing', { replace: true });
+      return;
+    }
+
+    let cancelled = false;
+    exchangeGoogleCode(code)
+      .then((token) => {
+        if (cancelled) return;
+        if (token?.accessToken) {
+          localStorage.setItem('token', token.accessToken);
+        }
+        if (token?.refreshToken) {
+          localStorage.setItem('refreshToken', token.refreshToken);
+        }
+        navigate(token?.firstLogin ? '/onboarding' : '/dashboard', {
+          replace: true,
+        });
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        logApiError('Google 로그인 교환 실패 (POST /auth/login)', e);
+        navigate('/landing', { replace: true });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, searchParams]);
 
   const dotsText = '.'.repeat(dots);
 
