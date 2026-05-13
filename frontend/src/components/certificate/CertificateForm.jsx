@@ -216,13 +216,6 @@ export default function CertificateForm({
             </div>
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="btn-default btn-sm"
-            >
-              교체
-            </button>
-            <button
-              type="button"
               onClick={handlePdfRemove}
               aria-label="첨부 파일 제거"
               className="grid place-items-center w-7 h-7 rounded-md text-ink-500 hover:text-red-600 hover:bg-red-50 transition-colors"

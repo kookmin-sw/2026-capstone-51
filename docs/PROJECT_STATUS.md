@@ -16,6 +16,15 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자격증 폼 첨부 박스의 "교체" 버튼 제거 (2026-05-13)
+
+- **목표**: 사용자 요청 — 자격증 PDF 첨부 후 박스에 [교체] / [X] 두 버튼이 있는데 [교체] 는 불필요.
+- **변경**:
+  - [`src/components/certificate/CertificateForm.jsx`](../frontend/src/components/certificate/CertificateForm.jsx) — 채워진 파일 박스의 [교체] 버튼 1개 제거. [X] 만 남음. 교체하려면 X로 제거 후 다시 첨부.
+- **건드리지 않은 항목**: 빈 dropzone 의 클릭/드래그&드롭, 채워진 박스의 드래그&드롭(여전히 새 파일을 떨어뜨리면 교체됨 — drop 이벤트가 acceptFile 호출), 검증 / 에러 메시지.
+- **검증**: `npx eslint ... CertificateForm.jsx` ✅ / `npx prettier --check` ✅ / `npm run build` ✅ 454ms.
+- **이유**: 사용자가 명시 — 교체 UX 불필요. X 로 제거하거나 박스에 새 파일 드래그&드롭하는 두 방법 만 남기는 게 깔끔.
+
 ### 자격증 YmdInput 입력 불가 버그 수정 — uncontrolled 패턴으로 전환 (2026-05-13)
 
 - **목표**: 사용자 보고 — 자격증 폼 년월일 칸에 숫자가 한 글자도 안 박힘.
