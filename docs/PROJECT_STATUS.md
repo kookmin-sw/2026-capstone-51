@@ -16,6 +16,21 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자격증 폼 — 캘린더 → 년월일 숫자 입력 + PDF 드래그&드롭 (2026-05-13)
+
+- **목표**: 사용자 요청 2 건.
+  - (1) 자격증 취득일·만료일은 요일 정보가 의미 없어서 캘린더 UI(브라우저 native `<input type="date">`) 를 사용하지 않고 **년/월/일 숫자만 입력** 받게.
+  - (2) 증빙 PDF 박스가 클릭으로만 첨부 가능하고 드래그&드롭이 안 됨 — `<button>` 에 drag 핸들러가 없어서. 드래그&드롭 활성화.
+- **변경**:
+  - [`src/components/certificate/CertificateForm.jsx`](../frontend/src/components/certificate/CertificateForm.jsx) —
+    - **YmdInput 헬퍼**: 한 줄 안에 `YYYY 년 / MM 월 / DD 일` 텍스트 input 3 칸. 입력값에서 숫자만 추출, 각각 maxLength 4/2/2. 한 칸이라도 비면 `onChange('')`, 모두 채워지면 `onChange('YYYY-MM-DD')` (자동 zero-pad). 취득일 / 만료일 두 곳에서 사용.
+    - `isValidYmd` 검증 추가 — 형식 외에 실제 존재하는 날짜인지(예: `2026-02-31` 거부) 확인.
+    - **PDF 드래그&드롭**: 빈 dropzone(`<button>`) + 채워진 파일 박스(`<div>`) 둘 다 `onDragOver/Enter/Leave/Drop` 핸들러 부착. `isDragOver` state 로 hover 시 primary 톤 border/bg 강조. 검증 로직(`acceptFile`)을 file picker 와 공통화.
+    - 사용 안 하는 헬퍼 제거 (`fmtBytes` 등은 유지, 진행 중인 작업과 무관한 제거 안 함).
+- **건드리지 않은 항목**: 자격증 외 도메인 폼 (경험 폼은 캘린더 UI 그대로 — 시작/종료 기간은 요일 의미가 약하지만 사용자 요청 범위 밖), `useCertificates` 훅, swagger 페이로드 형식 (`getDate` / `expirationDate` 'YYYY-MM-DD' 그대로).
+- **검증**: `npx eslint src/...` ✅ / `npx prettier --check ...` ✅ / `npm run build` ✅ 676ms.
+- **이유**: 자격증의 일자는 사용자가 시험 응시증/자격증 사본에서 그대로 옮겨 적는 작업이라 캘린더보다 숫자 직접 입력이 빠름. PDF 드롭은 macOS Finder 등에서 끌어다 놓기 자연스러움.
+
 ### 경험 카테고리 뱃지 색 카테고리별 분리 (2026-05-13)
 
 - **목표**: 사용자 보고 — 경험 목록·상세 페이지의 카테고리 뱃지(인턴/대외활동/대내활동/알바)가 전부 navy 한 가지 색이라 한 눈에 구분이 안 됨.

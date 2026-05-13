@@ -35,32 +35,56 @@ export default function CertificateForm({
   const [submitted, setSubmitted] = useState(false);
   const [pdfFile, setPdfFile] = useState(null); // File | null
   const [pdfError, setPdfError] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
   const errors = submitted ? validate(form) : {};
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handlePdfPick = (e) => {
-    const f = e.target.files?.[0];
+  // 파일 검증 + state 반영. <input> 픽 / drop 양쪽에서 공통 사용.
+  const acceptFile = (f) => {
     if (!f) return;
     if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') {
       setPdfError('PDF 파일만 업로드할 수 있어요.');
-      e.target.value = '';
       return;
     }
     if (f.size > FILE_MAX_BYTES) {
       setPdfError('파일 크기는 10MB 이하여야 해요.');
-      e.target.value = '';
       return;
     }
     setPdfError('');
     setPdfFile(f);
   };
 
+  const handlePdfPick = (e) => {
+    acceptFile(e.target.files?.[0]);
+    // 같은 파일 다시 픽해도 onChange 가 호출되도록 reset.
+    e.target.value = '';
+  };
+
   const handlePdfRemove = () => {
     setPdfFile(null);
     setPdfError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+  const handleDragLeave = (e) => {
+    // children 위로 옮겨갈 때 깜빡임 방지.
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragOver(false);
+  };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    acceptFile(e.dataTransfer.files?.[0]);
   };
 
   const onToggleExpiration = (checked) => {
@@ -115,15 +139,10 @@ export default function CertificateForm({
       <Section title="일자">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="취득일" required error={errors.getDate}>
-            <input
-              type="date"
-              max={todayIso()}
-              className={cn(
-                'field text-[14px] py-2.5',
-                errors.getDate && 'border-red-500 focus:border-red-500'
-              )}
+            <YmdInput
               value={form.getDate}
-              onChange={(e) => update('getDate', e.target.value)}
+              onChange={(v) => update('getDate', v)}
+              hasError={!!errors.getDate}
             />
           </Field>
           <Field label="자격증 번호" error={errors.certificateCode}>
@@ -147,14 +166,10 @@ export default function CertificateForm({
           </label>
           {form.hasExpiration && (
             <Field label="만료일" required error={errors.expirationDate}>
-              <input
-                type="date"
-                className={cn(
-                  'field text-[14px] py-2.5 max-w-[280px]',
-                  errors.expirationDate && 'border-red-500 focus:border-red-500'
-                )}
+              <YmdInput
                 value={form.expirationDate}
-                onChange={(e) => update('expirationDate', e.target.value)}
+                onChange={(v) => update('expirationDate', v)}
+                hasError={!!errors.expirationDate}
               />
             </Field>
           )}
@@ -174,7 +189,18 @@ export default function CertificateForm({
           onChange={handlePdfPick}
         />
         {pdfFile ? (
-          <div className="rounded-md border border-ink-200 bg-paper p-3 flex items-center gap-3">
+          <div
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              'rounded-md border bg-paper p-3 flex items-center gap-3 transition-colors',
+              isDragOver
+                ? 'border-primary-500 bg-primary-50/40'
+                : 'border-ink-200'
+            )}
+          >
             <FileText
               size={22}
               strokeWidth={1.6}
@@ -208,7 +234,16 @@ export default function CertificateForm({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-md border border-dashed border-ink-300 bg-ink-50/40 hover:bg-ink-50 hover:border-ink-400 px-4 py-5 flex flex-col items-center justify-center gap-1.5 text-ink-600 transition-colors"
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              'w-full rounded-md border border-dashed px-4 py-5 flex flex-col items-center justify-center gap-1.5 transition-colors',
+              isDragOver
+                ? 'border-primary-500 bg-primary-50/60 text-primary-700'
+                : 'border-ink-300 bg-ink-50/40 hover:bg-ink-50 hover:border-ink-400 text-ink-600'
+            )}
           >
             <Paperclip size={18} strokeWidth={1.8} />
             <div className="text-[13px] font-semibold">
@@ -279,11 +314,15 @@ function validate(form) {
     e.certificateName = '자격증명을 입력해주세요.';
   if (!form.issuingOrganization.trim())
     e.issuingOrganization = '발급 기관을 입력해주세요.';
-  if (!form.getDate) e.getDate = '취득일을 선택해주세요.';
+  if (!form.getDate) e.getDate = '취득일을 입력해주세요.';
+  else if (!isValidYmd(form.getDate))
+    e.getDate = '올바른 날짜 형식이 아니에요.';
   else if (form.getDate > today) e.getDate = '취득일은 오늘 이전이어야 합니다.';
   if (form.hasExpiration) {
     if (!form.expirationDate) {
-      e.expirationDate = '만료일을 선택해주세요.';
+      e.expirationDate = '만료일을 입력해주세요.';
+    } else if (!isValidYmd(form.expirationDate)) {
+      e.expirationDate = '올바른 날짜 형식이 아니에요.';
     } else if (form.getDate && form.expirationDate < form.getDate) {
       e.expirationDate = '만료일은 취득일 이후여야 합니다.';
     }
@@ -295,6 +334,19 @@ function validate(form) {
 function todayIso() {
   const t = new Date();
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+/** 'YYYY-MM-DD' 형식 + 실제 존재하는 날짜인지 검사 (예: 2026-02-31 거부). */
+function isValidYmd(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const [, y, mo, d] = m;
+  const dt = new Date(`${y}-${mo}-${d}T00:00:00`);
+  return (
+    dt.getFullYear() === Number(y) &&
+    dt.getMonth() + 1 === Number(mo) &&
+    dt.getDate() === Number(d)
+  );
 }
 
 /** 사용자 가독 바이트 단위. */
@@ -337,4 +389,66 @@ function Field({ label, required, hint, error, children }) {
       ) : null}
     </div>
   );
+}
+
+/**
+ * 년/월/일 숫자 3칸. 자격증 일자는 요일 정보가 의미 없어서 캘린더 대신 숫자 입력.
+ * value 는 'YYYY-MM-DD' 또는 '' 만 받음 — 한 칸이라도 비면 onChange('') 로 보고.
+ */
+function YmdInput({ value, onChange, hasError }) {
+  const parts = parseYmd(value);
+  const setPart = (k, raw, maxLen) => {
+    const cleaned = raw.replace(/\D/g, '').slice(0, maxLen);
+    onChange(joinYmd({ ...parts, [k]: cleaned }));
+  };
+  const baseCell = cn(
+    'field text-[14px] py-2.5 text-center tabular-nums',
+    hasError && 'border-red-500 focus:border-red-500'
+  );
+  return (
+    <div className="flex items-center gap-1.5">
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="YYYY"
+        value={parts.y}
+        onChange={(e) => setPart('y', e.target.value, 4)}
+        className={cn(baseCell, 'w-[88px]')}
+      />
+      <span className="text-[12.5px] text-ink-500">년</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="MM"
+        value={parts.m}
+        onChange={(e) => setPart('m', e.target.value, 2)}
+        className={cn(baseCell, 'w-[60px]')}
+      />
+      <span className="text-[12.5px] text-ink-500">월</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="DD"
+        value={parts.d}
+        onChange={(e) => setPart('d', e.target.value, 2)}
+        className={cn(baseCell, 'w-[60px]')}
+      />
+      <span className="text-[12.5px] text-ink-500">일</span>
+    </div>
+  );
+}
+
+function parseYmd(s) {
+  if (!s) return { y: '', m: '', d: '' };
+  const [y = '', m = '', d = ''] = s.split('-');
+  return { y, m, d };
+}
+
+function joinYmd({ y, m, d }) {
+  if (!y && !m && !d) return '';
+  if (!y || !m || !d) return '';
+  return `${y.padStart(4, '0')}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
 }
