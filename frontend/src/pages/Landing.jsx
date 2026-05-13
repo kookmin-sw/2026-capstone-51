@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { redirectToGoogleLogin } from '../api/auth';
 
 /**
  * 랜딩 / 로그인 페이지 — 풀-블리드 split-screen.
@@ -35,13 +35,12 @@ function GoogleIcon() {
 }
 
 export default function Landing() {
-  const navigate = useNavigate();
   const leftRef = useRef(null);
   const [hover, setHover] = useState(false);
   const [pos, setPos] = useState({ x: 50, y: 40 });
 
-  const handleSignIn = (firstLogin) => {
-    navigate(firstLogin ? '/onboarding' : '/dashboard');
+  const handleGoogleLogin = () => {
+    redirectToGoogleLogin();
   };
 
   const handleMouseMove = (e) => {
@@ -197,7 +196,7 @@ export default function Landing() {
           </p>
 
           <button
-            onClick={() => handleSignIn(true)}
+            onClick={handleGoogleLogin}
             className="flex items-center justify-center gap-3 w-full px-6 py-[18px] bg-white border border-[#DADCE0] rounded-[14px] text-[16px] font-semibold text-[#3C4043] hover:bg-[#F8FAFE] hover:border-[#C8CDD3] hover:shadow-lg transition-all"
           >
             <GoogleIcon />
