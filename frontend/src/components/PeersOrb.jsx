@@ -3,18 +3,20 @@
  * Three.js (window.THREE) 사용. 마우스 드래그로 회전, 자동 회전.
  *
  * props:
- *   axes  — [{ label, me, peers }] (값 0~100)
+ *   axes    — [{ label, me, peers }] (값 0~100)
  *   title, sub
+ *   warning — 그래프 하단에 빨간 글씨로 표시할 안내 (예: 임시 데이터 사용 중)
  *
  * 5축 파라미터(label/me/peers)는 절대 변경하지 않고, 시각화만 입체로 바꿉니다.
  */
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 export default function PeersOrb({
   axes,
   title = '내 동기들은 뭐하고 있을까?',
-  sub = '소프트웨어학부 22학번 · 익명 집계 · 214명 기준',
+  sub = '익명 집계',
+  warning,
 }) {
   const wrapRef = useRef(null);
 
@@ -439,6 +441,11 @@ export default function PeersOrb({
           동기 평균
         </span>
       </div>
+      {warning && (
+        <p className="mt-3 text-center text-[12.5px] text-red-600 leading-relaxed">
+          {warning}
+        </p>
+      )}
     </section>
   );
 }

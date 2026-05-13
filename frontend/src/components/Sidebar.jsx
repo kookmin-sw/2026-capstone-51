@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home,
@@ -9,7 +8,8 @@ import {
   LogOut,
 } from 'lucide-react';
 import { cn } from '../lib/cn';
-import { NAV, RELATED_SITES, CURRENT_USER } from '../data/sidebar';
+import { NAV, RELATED_SITES } from '../data/sidebar';
+import { useCurrentUser } from '../lib/useCurrentUser';
 
 const ICONS = { Home, PencilLine, BarChart3, User };
 
@@ -19,6 +19,10 @@ const ICONS = { Home, PencilLine, BarChart3, User };
  * - group: true → 라벨 + 자식 링크 리스트
  */
 export default function Sidebar() {
+  const user = useCurrentUser();
+  const name = user?.userName ?? '';
+  const initial = name ? name.slice(0, 1) : '·';
+  const sub = user?.major ?? '';
   return (
     <aside className="flex flex-col w-[232px] shrink-0 bg-sidebar-bg text-white/80 min-h-screen">
       {/* Brand */}
@@ -114,32 +118,17 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Dev preview links — 라우트 밖 페이지 미리보기 */}
-      <div className="px-3.5 py-2 border-t border-white/10 text-[10.5px]">
-        <div className="text-white/40 mb-1 uppercase tracking-wider">
-          미리보기
-        </div>
-        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          <NavLink to="/landing" className="text-white/60 hover:text-white">
-            랜딩
-          </NavLink>
-          <NavLink to="/onboarding" className="text-white/60 hover:text-white">
-            온보딩
-          </NavLink>
-        </div>
-      </div>
-
       {/* User footer */}
       <div className="flex items-center gap-2.5 px-3.5 py-3 border-t border-white/10">
         <span className="grid place-items-center w-8 h-8 rounded-full bg-white/15 text-white text-[12px] font-bold">
-          {CURRENT_USER.initial}
+          {initial}
         </span>
         <div className="flex-1 min-w-0 leading-tight">
           <div className="text-white text-[12.5px] font-semibold truncate">
-            {CURRENT_USER.name}
+            {name || ' '}
           </div>
           <div className="text-white/55 text-[10.5px] truncate">
-            {CURRENT_USER.sub}
+            {sub || ' '}
           </div>
         </div>
         <button

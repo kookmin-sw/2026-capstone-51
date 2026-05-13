@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Plus } from 'lucide-react';
 
@@ -6,11 +5,7 @@ import { Pencil, Plus } from 'lucide-react';
  * 대시보드 상단 — 사용자 인사 + 우측 액션.
  * KMU 포털 톤: 흰 카드 + 좌측 navy 액센트.
  */
-export default function HeroBanner({
-  name = '한혜민',
-  hasProfile = true,
-  onToggle,
-}) {
+export default function HeroBanner({ name, hasProfile = true }) {
   const nav = useNavigate();
   return (
     <div
@@ -19,7 +14,7 @@ export default function HeroBanner({
     >
       <div>
         <h1 className="m-0 text-[18px] font-semibold tracking-tight text-ink-900">
-          {name}님의 취업 준비 현황
+          {name ? `${name}님의 취업 준비 현황` : '취업 준비 현황'}
         </h1>
         <p className="mt-1.5 text-[13px] text-ink-500 leading-snug">
           {hasProfile
