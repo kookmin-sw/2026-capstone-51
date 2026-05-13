@@ -25,3 +25,14 @@ export async function getMyDashboard() {
   const res = await api.get('/users/me/dashboard');
   return res.data?.data ?? res.data;
 }
+
+/**
+ * 통계 페이지 데이터 조회.
+ *  - groupBy: 'STATE' | 'SCHOOL_NUM' | 'WORKER'
+ *  - 응답: { my, average, max, weakPoints, topRankers }
+ *  - 프론트에서 groupBy별로 캐싱하므로 재선택해도 추가 호출 없음.
+ */
+export async function getMyStats(groupBy) {
+  const res = await api.get('/users/me/stats', { params: { groupBy } });
+  return res.data?.data ?? res.data;
+}
