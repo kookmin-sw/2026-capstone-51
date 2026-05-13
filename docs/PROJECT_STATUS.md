@@ -16,6 +16,18 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자소서 결과 토글 active 색 진행상태별로 구분 (2026-05-13)
+
+- **목표**: 사용자 보고 — "불합격이 이상하다". 결과 토글 버튼이 active 일 때 전부 같은 primary(파랑) 색으로 표시되어 불합격을 골랐는데도 파란색 active 상태가 의미와 어긋남.
+- **변경**:
+  - [`src/pages/EssayDetail.jsx`](../frontend/src/pages/EssayDetail.jsx) — `RESULT_ACTIVE_CLASS` 매핑 추가. active 버튼 색을 진행상태별로 다르게:
+    - `IN_PROGRESS` → ink(회색) 톤 active
+    - `PASS` → emerald(녹색) 톤 active
+    - `FAIL` → red 톤 active
+  - 헤더 진행상태 뱃지(`.badge-{tone}`) 와 같은 색 계열이라 헤더 ↔ 토글 둘 다 한 화면에서 일관.
+- **건드리지 않은 항목**: `PROGRESS_LABEL` / `PROGRESS_TONE` (이미 합리적 매핑), 라벨 텍스트.
+- **검증**: `npx eslint ...` ✅ / `npx prettier --check` ✅ / `npm run build` ✅ 703ms.
+
 ### `useUpdateEssayResult` optimistic update — 결과 입력 즉시 반영 (2026-05-13)
 
 - **목표**: 사용자 보고 — 자소서 상세에서 결과(작성 중/합격/불합격) 누르고 잠시 후에야 active 버튼이 바뀜. "결과 반영이 즉시 안 된다" 는 인상.

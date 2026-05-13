@@ -186,9 +186,7 @@ export default function EssayDetail() {
                       onClick={() => handleResult(p)}
                       className={
                         'btn-default btn-sm ' +
-                        (isActive
-                          ? '!border-primary-600 !text-primary-800 !bg-primary-50'
-                          : '')
+                        (isActive ? RESULT_ACTIVE_CLASS[p] : '')
                       }
                     >
                       {isActive && <Check size={11} strokeWidth={2.2} />}
@@ -328,3 +326,11 @@ function fmtDate(d) {
   if (!d) return '';
   return d.slice(0, 10).replaceAll('-', '.');
 }
+
+// 결과 토글 active 색을 진행상태별로 매핑 — 의미와 색이 일치하도록.
+// 헤더 진행상태 뱃지(.badge-{tone}) 와 같은 톤 계열.
+const RESULT_ACTIVE_CLASS = {
+  IN_PROGRESS: '!border-ink-400 !text-ink-800 !bg-ink-100',
+  PASS: '!border-emerald-600 !text-emerald-700 !bg-emerald-50',
+  FAIL: '!border-red-400 !text-red-700 !bg-red-50',
+};
