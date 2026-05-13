@@ -16,6 +16,24 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### Crumbs 항목 클릭 시 해당 라우트로 이동 (2026-05-13)
+
+- **목표**: 사용자 보고 — 페이지 상단 breadcrumb 의 "내 경험" 같은 항목을 눌러도 이동이 안 됨. 라우트가 있는 항목은 전부 클릭으로 이동되도록.
+- **변경**:
+  - [`src/components/Crumbs.jsx`](../frontend/src/components/Crumbs.jsx) — `to` 가 있는 항목은 `react-router` `<Link>` 로 렌더링 (hover 시 색 강조 + underline). 마지막 항목은 `to` 가 있어도 무시 (현재 페이지를 다시 누르는 건 무의미). `to` 없는 항목(예: 그룹 헤더 "MyPage" / "자소서")은 기존처럼 단순 텍스트.
+  - 사용처 5 파일에서 `items` 의 중간 항목에 `to` 부여:
+    - [`src/pages/ExperienceDetail.jsx`](../frontend/src/pages/ExperienceDetail.jsx) (4 회 호출) — `'내 경험' → /my-experience`
+    - [`src/pages/NewExperience.jsx`](../frontend/src/pages/NewExperience.jsx) — `'내 경험' → /my-experience`
+    - [`src/pages/NewCertificate.jsx`](../frontend/src/pages/NewCertificate.jsx) — `'내 자격증' → /my-certificates`
+    - [`src/pages/EditCertificate.jsx`](../frontend/src/pages/EditCertificate.jsx) (4 회 호출) — `'내 자격증' → /my-certificates`
+    - [`src/pages/EssayDetail.jsx`](../frontend/src/pages/EssayDetail.jsx) — `'관리' → /essays`
+- **건드리지 않은 항목**:
+  - 그룹 헤더 라벨 (`'MyPage'`, `'자소서'`) — 라우트가 없는 사이드바 그룹이라 클릭 비활성 유지. 클릭 시 같은 페이지(/info, /essays)로 보내봐야 같은 위치라 의미가 없거나, 다른 자식 페이지(/my-experience 등)에서 보내면 그룹의 어떤 자식인지 모호.
+  - 마지막 항목 (현재 페이지) — 강조 + 클릭 비활성 그대로.
+  - `Dashboard` / `Stats` / `MyExperience` / `MyCertificates` / `Info` / `Write` / `MyEssays` 의 breadcrumb — 클릭 가능 중간 항목이 없는 구조 (`[그룹헤더, 마지막]`) 라 코드 수정 불필요.
+- **검증**: `npx eslint src/...` ✅ / `npx prettier --check ...` ✅ / `npm run build` ✅ 679ms.
+- **이유**: 사용자가 breadcrumb 으로 한 단계 위로 빠르게 돌아가고 싶을 때 해당 라우트로 점프. `react-router` 의 `<Link>` 사용해 풀 페이지 리로드 없이 SPA 내비.
+
 ### 경험 폼에 `stateAtCreation` (경험 당시 학년) 필드 추가 + 전공/학년 2열 배치 (2026-05-13)
 
 - **목표**: EC2 백엔드가 `POST /experiences` 요청 검증을 7개 필드(추가된 `@NotNull State stateAtCreation`) 기준으로 바꿔서, 프론트가 6개만 보내면 `400 Bad Request — stateAtCreation: 널이어서는 안됩니다` 로 막힘. 백엔드 변경은 `backend/refacor/experience` 브랜치 `3937cc0` 에 있고 master 미머지 — 하지만 EC2 가 진실 원천이라 그대로 맞춰감.

@@ -37,7 +37,9 @@ export default function ExperienceDetail() {
   if (exp.isLoading) {
     return (
       <>
-        <Crumbs items={['MyPage', '내 경험', '열람']} />
+        <Crumbs
+          items={['MyPage', { label: '내 경험', to: '/my-experience' }, '열람']}
+        />
         <div className="card animate-pulse">
           <div className="h-4 w-32 bg-ink-100 rounded mb-3" />
           <div className="h-6 w-2/3 bg-ink-100 rounded mb-4" />
@@ -50,7 +52,9 @@ export default function ExperienceDetail() {
   if (exp.isError) {
     return (
       <>
-        <Crumbs items={['MyPage', '내 경험', '열람']} />
+        <Crumbs
+          items={['MyPage', { label: '내 경험', to: '/my-experience' }, '열람']}
+        />
         <div className="card text-center py-8">
           <p className="text-[13px] text-ink-700 mb-3">
             {exp.error?.apiMessage || '경험을 불러오지 못했습니다.'}
@@ -71,7 +75,9 @@ export default function ExperienceDetail() {
   if (!data) {
     return (
       <>
-        <Crumbs items={['MyPage', '내 경험', '열람']} />
+        <Crumbs
+          items={['MyPage', { label: '내 경험', to: '/my-experience' }, '열람']}
+        />
         <div className="card text-center py-8 text-[13px] text-ink-500">
           응답이 비어있습니다.
         </div>
@@ -116,7 +122,9 @@ export default function ExperienceDetail() {
 
   return (
     <>
-      <Crumbs items={['MyPage', '내 경험', '열람']} />
+      <Crumbs
+        items={['MyPage', { label: '내 경험', to: '/my-experience' }, '열람']}
+      />
 
       <header className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div className="min-w-0">

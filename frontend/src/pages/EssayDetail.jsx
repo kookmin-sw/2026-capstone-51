@@ -109,7 +109,7 @@ export default function EssayDetail() {
 
   return (
     <>
-      <Crumbs items={['자소서', '관리', '열람']} />
+      <Crumbs items={['자소서', { label: '관리', to: '/essays' }, '열람']} />
 
       {/* 메타 영역 */}
       <section className="card mb-4">

@@ -28,7 +28,9 @@ export default function NewExperience() {
 
   return (
     <>
-      <Crumbs items={['MyPage', '내 경험', '추가']} />
+      <Crumbs
+        items={['MyPage', { label: '내 경험', to: '/my-experience' }, '추가']}
+      />
 
       <header className="mb-5">
         <h1 className="text-[22px] font-bold tracking-tight text-ink-900">

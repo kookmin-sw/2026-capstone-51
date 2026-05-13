@@ -45,7 +45,13 @@ export default function EditCertificate() {
   if (list.isLoading) {
     return (
       <>
-        <Crumbs items={['MyPage', '내 자격증', '수정']} />
+        <Crumbs
+          items={[
+            'MyPage',
+            { label: '내 자격증', to: '/my-certificates' },
+            '수정',
+          ]}
+        />
         <div className="card animate-pulse">
           <div className="h-5 w-1/3 bg-ink-100 rounded mb-4" />
           <div className="grid gap-3">
@@ -61,7 +67,13 @@ export default function EditCertificate() {
   if (list.isError) {
     return (
       <>
-        <Crumbs items={['MyPage', '내 자격증', '수정']} />
+        <Crumbs
+          items={[
+            'MyPage',
+            { label: '내 자격증', to: '/my-certificates' },
+            '수정',
+          ]}
+        />
         <div className="card text-center py-8">
           <p className="text-[13px] text-ink-700 mb-3">
             {list.error?.apiMessage || '자격증을 불러오지 못했습니다.'}
@@ -81,7 +93,13 @@ export default function EditCertificate() {
   if (!item) {
     return (
       <>
-        <Crumbs items={['MyPage', '내 자격증', '수정']} />
+        <Crumbs
+          items={[
+            'MyPage',
+            { label: '내 자격증', to: '/my-certificates' },
+            '수정',
+          ]}
+        />
         <div className="card text-center py-8">
           <p className="text-[13px] text-ink-700 mb-3 break-keep">
             해당 자격증을 찾을 수 없어요. 목록에서 다시 선택해주세요.
@@ -100,7 +118,13 @@ export default function EditCertificate() {
 
   return (
     <>
-      <Crumbs items={['MyPage', '내 자격증', '수정']} />
+      <Crumbs
+        items={[
+          'MyPage',
+          { label: '내 자격증', to: '/my-certificates' },
+          '수정',
+        ]}
+      />
 
       <header className="mb-5">
         <h1 className="text-[22px] font-bold tracking-tight text-ink-900 break-keep">

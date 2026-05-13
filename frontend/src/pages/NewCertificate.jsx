@@ -28,7 +28,13 @@ export default function NewCertificate() {
 
   return (
     <>
-      <Crumbs items={['MyPage', '내 자격증', '추가']} />
+      <Crumbs
+        items={[
+          'MyPage',
+          { label: '내 자격증', to: '/my-certificates' },
+          '추가',
+        ]}
+      />
 
       <header className="mb-5">
         <h1 className="text-[22px] font-bold tracking-tight text-ink-900">
