@@ -16,6 +16,15 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 경험 폼에 `stateAtCreation` (경험 당시 학년) 필드 추가 + 전공/학년 2열 배치 (2026-05-13)
+
+- **목표**: EC2 백엔드가 `POST /experiences` 요청 검증을 7개 필드(추가된 `@NotNull State stateAtCreation`) 기준으로 바꿔서, 프론트가 6개만 보내면 `400 Bad Request — stateAtCreation: 널이어서는 안됩니다` 로 막힘. 백엔드 변경은 `backend/refacor/experience` 브랜치 `3937cc0` 에 있고 master 미머지 — 하지만 EC2 가 진실 원천이라 그대로 맞춰감.
+- **변경**:
+  - [`src/components/experience/ExperienceForm.jsx`](../frontend/src/components/experience/ExperienceForm.jsx) — `STATE_OPTIONS` (`lib/enums.js` 이미 존재, 6개: FRESH_MAN/SOPHOMORE/JUNIOR/SENIOR/JOBSEEKER/WORKER) import. "관련 전공" + "경험 당시 학년" 두 필드를 `grid-cols-1 sm:grid-cols-2` 한 줄에 묶음 (학년은 `searchable={false}` Combobox). `toDraft` (수정 모드 prefill — 백엔드 `ExperienceResponse` 에도 같은 이름으로 동봉됨) / `toBody` (POST/PUT 페이로드) / `validate` (필수 검증) 모두 갱신. 헤더 주석에 stateAtCreation 의미·자동 추정 안 하는 이유 명시.
+- **건드리지 않은 항목**: `useExperiences` 훅, `ExperienceController` 외 다른 도메인 폼, 카테고리/제목/관련전공/시작일/종료일/STAR 4칸 등 기존 필드.
+- **검증**: `npx prettier --check ... ExperienceForm.jsx` ✅ / `npx eslint ... ExperienceForm.jsx` ✅ EXIT 0.
+- **이유**: `stateAtCreation` 은 "경험을 시작했을 때의 학년" — 백엔드 약점 추천 쿼리가 "같은 학년이었을 때의 평균"과 비교하기 위해 사용. 사용자 입학년도/휴학 이력 미보유라 startDate 만으로는 자동 추정 불가 → 명시 입력 필드로. 전공·학년 2열 배치는 시작일/종료일 줄과 시각 리듬 맞추기.
+
 ### 경험·자격증 폼/목록 5종 폴리싱 (2026-05-11)
 
 - **목표**: 사용자 요청 5건 — (1) 경험 폼 관련전공을 칩+직접입력 → 단일 Combobox(필수), (2) 경험 목록 검색을 제목만으로, (3) 자격증 목록 검색 필터 제거, (4) 경험·자격증 삭제 confirm을 2클릭 → 모달 팝업으로, (5) 자격증 폼의 "증빙·메모 준비 중" placeholder를 PDF 업로드 UI로 활성화.

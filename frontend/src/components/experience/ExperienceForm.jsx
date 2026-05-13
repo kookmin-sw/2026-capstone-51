@@ -7,13 +7,15 @@ import {
   EXPERIENCE_CATEGORY_TO_FRONT,
   EXPERIENCE_CATEGORY_TO_BACK,
   KOOKMIN_DEPT_OPTIONS,
+  STATE_OPTIONS,
 } from '../../lib/enums';
 
 /**
  * 경험 작성/수정 공용 폼.
  *
  * Props:
- *   - initialValue?: { experienceCategory(BE enum), relatedMajor, experienceTitle,
+ *   - initialValue?: { experienceCategory(BE enum), stateAtCreation(BE State enum),
+ *                     relatedMajor, experienceTitle,
  *                     startDate(YYYY-MM-DD), endDate, starStructure: {s,t,a,r} }
  *   - onSubmit(body): 백엔드 ExperienceRequest 형식으로 호출.
  *   - onCancel()
@@ -21,12 +23,15 @@ import {
  *   - submitLabel: 버튼 텍스트
  *
  * 검증 (4/27 디자인 + swagger 제약):
- *   - 카테고리 / 관련 전공 / 제목 / 시작일 / 종료일 / STAR 4항목 모두 필수
+ *   - 카테고리 / 경험 당시 학년 / 관련 전공 / 제목 / 시작일 / 종료일 / STAR 4항목 모두 필수
  *   - 제목 200자
  *   - 시작일 ≤ 종료일
  *   - 시작일·종료일 모두 오늘까지만 (백엔드 @PastOrPresent 제약 — DatePicker max 로도 차단)
  *
  * 관련 전공은 Combobox 로 KookminDepartment 54 개 중 단일 선택. null/빈값 비허용 (필수).
+ *
+ * stateAtCreation 은 "경험 당시" 학년/상태 (지금 학년이 아님). 백엔드 약점 추천이
+ * 같은 학년 시점 기준으로 비교하기 위해 명시 필드로 받음 (자동 추정 X — 사용자 입학년도·휴학 이력 미보유).
  *
  * 4/27 회의록의 "역할 / 간단 요약 / 희망 직무" 필드는 백엔드 스키마 미반영 →
  * 추가 시점까지 폼에 포함하지 않음 (PROJECT_STATUS.md 백엔드 의존 항목 참조).
@@ -95,21 +100,38 @@ export default function ExperienceForm({
               onChange={(e) => update('title', e.target.value)}
             />
           </Field>
-          <Field
-            label="관련 전공"
-            required
-            error={errors.relatedMajor}
-            hint="이 경험과 가장 관련 있는 전공을 선택하세요."
-          >
-            <Combobox
-              value={form.relatedMajor}
-              onChange={(v) => update('relatedMajor', v)}
-              options={KOOKMIN_DEPT_OPTIONS}
-              placeholder="전공 선택"
-              searchPlaceholder="단과대 / 학과 검색"
-              hasError={!!errors.relatedMajor}
-            />
-          </Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="관련 전공"
+              required
+              error={errors.relatedMajor}
+              hint="이 경험과 가장 관련 있는 전공을 선택하세요."
+            >
+              <Combobox
+                value={form.relatedMajor}
+                onChange={(v) => update('relatedMajor', v)}
+                options={KOOKMIN_DEPT_OPTIONS}
+                placeholder="전공 선택"
+                searchPlaceholder="단과대 / 학과 검색"
+                hasError={!!errors.relatedMajor}
+              />
+            </Field>
+            <Field
+              label="경험 당시 학년"
+              required
+              error={errors.stateAtCreation}
+              hint="지금 학년이 아니라, 이 경험을 시작했을 때의 학년/상태를 선택하세요."
+            >
+              <Combobox
+                value={form.stateAtCreation}
+                onChange={(v) => update('stateAtCreation', v)}
+                options={STATE_OPTIONS}
+                placeholder="선택"
+                searchable={false}
+                hasError={!!errors.stateAtCreation}
+              />
+            </Field>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="시작일" required error={errors.startDate}>
               <DatePicker
@@ -195,6 +217,7 @@ function toDraft(d) {
     category: d?.experienceCategory
       ? EXPERIENCE_CATEGORY_TO_FRONT[d.experienceCategory] || ''
       : '',
+    stateAtCreation: d?.stateAtCreation ?? '',
     relatedMajor: d?.relatedMajor ?? '',
     title: d?.experienceTitle ?? '',
     startDate: d?.startDate ?? '',
@@ -211,6 +234,7 @@ function toDraft(d) {
 function toBody(form) {
   return {
     experienceCategory: EXPERIENCE_CATEGORY_TO_BACK[form.category],
+    stateAtCreation: form.stateAtCreation,
     relatedMajor: form.relatedMajor,
     experienceTitle: form.title.trim(),
     startDate: form.startDate,
@@ -230,6 +254,8 @@ function validate(form) {
   const e = {};
   const today = todayIso();
   if (!form.category) e.category = '카테고리를 선택해주세요.';
+  if (!form.stateAtCreation)
+    e.stateAtCreation = '경험 당시 학년을 선택해주세요.';
   if (!form.relatedMajor) e.relatedMajor = '관련 전공을 선택해주세요.';
   if (!form.title.trim()) e.title = '제목을 입력해주세요.';
   else if (form.title.length > 200) e.title = '200자 이내로 입력해주세요.';
