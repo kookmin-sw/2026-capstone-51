@@ -22,13 +22,15 @@ function App() {
   return (
     <HashRouter>
       <Routes>
+        {/* 최초 진입 시 랜딩 페이지 */}
+        <Route index element={<Navigate to="/landing" replace />} />
+
         {/* 사이드바 없는 단독 화면 */}
         <Route path="/landing" element={<Landing />} />
         <Route path="/onboarding" element={<Onboarding />} />
 
         {/* 메인 앱 — 사이드바 레이아웃 */}
         <Route element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/write" element={<Write />} />
           <Route path="/essays" element={<Essays />} />
