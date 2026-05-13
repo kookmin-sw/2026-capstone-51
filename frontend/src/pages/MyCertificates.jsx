@@ -1,13 +1,8 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
-import Modal from '../components/Modal';
-import {
-  useCertificates,
-  useDeleteCertificate,
-} from '../api/queries/useCertificates';
-import { toast } from '../store/useToast';
+import { useCertificates } from '../api/queries/useCertificates';
 
 /**
  * /my-certificates — 내 자격증 목록.
@@ -15,31 +10,13 @@ import { toast } from '../store/useToast';
  * 디자인:
  *  - 단일 .card !p-0 셸 안에 <ol> 번호 매긴 row 리스트 (검색 필터 없음).
  *  - 각 row 는 두 줄(번호 + 자격증명 / 발급기관·취득일·유효기간·발급번호) 콤팩트.
- *  - 수정/삭제는 우측 ghost 아이콘 버튼.
- *  - 삭제는 모달 확인 — "삭제하시겠습니까?" 팝업에서 [취소 / 삭제] 선택.
+ *  - row 전체를 Link 로 감싸 클릭 시 /my-certificates/:id 상세로 진입 — 수정·삭제는
+ *    상세 페이지에서 처리 (MyExperience / ExperienceDetail 패턴과 일관).
  */
 export default function MyCertificates() {
-  const [pendingDel, setPendingDel] = useState(null); // null | certificate item
   const list = useCertificates();
-  const del = useDeleteCertificate();
-  const nav = useNavigate();
 
   const items = useMemo(() => list.data || [], [list.data]);
-
-  const handleConfirmDelete = () => {
-    if (!pendingDel) return;
-    del.mutate(pendingDel.certificateId, {
-      onSuccess: () => {
-        toast.success('자격증을 삭제했어요.');
-        setPendingDel(null);
-      },
-      onError: (e) => {
-        toast.error(
-          e?.apiMessage || '삭제 중 오류가 발생했습니다. 다시 시도해주세요.'
-        );
-      },
-    });
-  };
 
   return (
     <>
@@ -75,60 +52,18 @@ export default function MyCertificates() {
         ) : (
           <ol className="divide-y divide-ink-150">
             {items.map((c, i) => (
-              <CertRow
-                key={c.certificateId}
-                index={i + 1}
-                item={c}
-                onEdit={() => nav(`/my-certificates/${c.certificateId}/edit`)}
-                onDelete={() => setPendingDel(c)}
-              />
+              <CertRow key={c.certificateId} index={i + 1} item={c} />
             ))}
           </ol>
         )}
       </section>
-
-      {/* 삭제 확인 모달 */}
-      <Modal
-        open={!!pendingDel}
-        onClose={() => (del.isPending ? null : setPendingDel(null))}
-        title="삭제하시겠습니까?"
-        sub={
-          pendingDel
-            ? `'${pendingDel.certificateName || '이 자격증'}' 항목이 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`
-            : ''
-        }
-        width={420}
-        footer={
-          <>
-            <button
-              type="button"
-              className="btn-default"
-              disabled={del.isPending}
-              onClick={() => setPendingDel(null)}
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              className="btn-default !text-red-600 !border-red-200 hover:!bg-red-50"
-              disabled={del.isPending}
-              onClick={handleConfirmDelete}
-            >
-              <Trash2 size={13} strokeWidth={2} />
-              {del.isPending ? '삭제 중…' : '삭제'}
-            </button>
-          </>
-        }
-      >
-        <></>
-      </Modal>
     </>
   );
 }
 
 /* ---------- 행 ---------- */
 
-function CertRow({ index, item, onEdit, onDelete }) {
+function CertRow({ index, item }) {
   const meta = [
     item.issuingOrganization,
     item.getDate && `취득 ${fmtDate(item.getDate)}`,
@@ -139,39 +74,32 @@ function CertRow({ index, item, onEdit, onDelete }) {
   ].filter(Boolean);
 
   return (
-    <li className="px-4 sm:px-5 py-2.5 hover:bg-ink-50/60 transition-colors">
-      <div className="flex items-start gap-3">
-        <span className="text-[12.5px] font-semibold text-ink-400 tabular-nums shrink-0 w-6 pt-[3px] text-right">
-          {index}.
-        </span>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-[14px] font-semibold text-ink-900 tracking-tight break-keep">
-            {item.certificateName || '(이름 없음)'}
-          </h3>
-          {meta.length > 0 && (
-            <div className="text-[12px] text-ink-500 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 tabular-nums">
-              {meta.map((m, i) => (
-                <span key={i} className="inline-flex items-center gap-1.5">
-                  {i > 0 && <span className="text-ink-300">·</span>}
-                  <span>{m}</span>
-                </span>
-              ))}
-            </div>
-          )}
+    <li>
+      <Link
+        to={`/my-certificates/${item.certificateId}`}
+        className="block px-4 sm:px-5 py-2.5 hover:bg-ink-50/60 transition-colors"
+      >
+        <div className="flex items-start gap-3">
+          <span className="text-[12.5px] font-semibold text-ink-400 tabular-nums shrink-0 w-6 pt-[3px] text-right">
+            {index}.
+          </span>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[14px] font-semibold text-ink-900 tracking-tight break-keep">
+              {item.certificateName || '(이름 없음)'}
+            </h3>
+            {meta.length > 0 && (
+              <div className="text-[12px] text-ink-500 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 tabular-nums">
+                {meta.map((m, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5">
+                    {i > 0 && <span className="text-ink-300">·</span>}
+                    <span>{m}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex gap-1 shrink-0">
-          <button type="button" onClick={onEdit} className="btn-ghost btn-sm">
-            <Pencil size={12} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="btn-ghost btn-sm !text-red-600 hover:!bg-red-50"
-          >
-            <Trash2 size={12} strokeWidth={2} />
-          </button>
-        </div>
-      </div>
+      </Link>
     </li>
   );
 }

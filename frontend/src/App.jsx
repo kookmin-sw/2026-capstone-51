@@ -14,6 +14,7 @@ import NewExperience from './pages/NewExperience';
 import ExperienceDetail from './pages/ExperienceDetail';
 import MyCertificates from './pages/MyCertificates';
 import NewCertificate from './pages/NewCertificate';
+import CertificateDetail from './pages/CertificateDetail';
 import EditCertificate from './pages/EditCertificate';
 import Write from './pages/Write';
 import MyEssays from './pages/MyEssays';
@@ -50,6 +51,10 @@ export default function App() {
               <Route path="/my-experience/:id" element={<ExperienceDetail />} />
               <Route path="/my-certificates" element={<MyCertificates />} />
               <Route path="/my-certificates/new" element={<NewCertificate />} />
+              <Route
+                path="/my-certificates/:id"
+                element={<CertificateDetail />}
+              />
               <Route
                 path="/my-certificates/:id/edit"
                 element={<EditCertificate />}

@@ -16,6 +16,17 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자격증 row 클릭 시 상세 페이지 진입 (2026-05-13)
+
+- **목표**: 사용자 보고 — `MyCertificates` row 를 눌러도 반응이 없음(클릭 핸들러 부재). 또한 자세히보기 페이지 자체가 없어 첨부 파일 표시할 곳도 없음.
+- **변경**:
+  - [`src/pages/CertificateDetail.jsx`](../frontend/src/pages/CertificateDetail.jsx) (신규) — `/my-certificates/:id` 라우트. view + edit 모드 토글 (ExperienceDetail 패턴 일관). view 는 자격증명·발급기관·취득일·유효기간·자격증번호 + 증빙 자료 섹션, edit 은 `CertificateForm` 그대로. 백엔드 단건 GET 없어 목록 캐시에서 ID 매칭(`EditCertificate` 패턴 차용). 삭제는 모달.
+  - [`src/App.jsx`](../frontend/src/App.jsx) — `/my-certificates/:id` 라우트 추가 (`CertificateDetail`). `/my-certificates/:id/edit` 는 일단 유지(다음 커밋에서 정리).
+  - [`src/pages/MyCertificates.jsx`](../frontend/src/pages/MyCertificates.jsx) — `CertRow` 를 `<Link to=/my-certificates/:id>` 로 감쌈. 우측 [수정][삭제] 아이콘 버튼, 삭제 모달, `handleConfirmDelete`, `useDeleteCertificate` 모두 제거 (상세 페이지로 이전). `useState`/`useNavigate` 등 사용 안 하게 된 import 정리. ExperienceList 패턴과 일관.
+- **건드리지 않은 항목**: 자격증 도메인 훅(`useCertificates` 등), 자격증 폼(`CertificateForm`), 자격증 신규 페이지(`NewCertificate`), 옛 `EditCertificate` 페이지·라우트(다음 정리 커밋 대상).
+- **검증**: `npx eslint src/pages/CertificateDetail.jsx src/pages/MyCertificates.jsx src/App.jsx` ✅ EXIT 0 / `npx prettier --check` ✅ / `npm run build` ✅ 506ms.
+- **백엔드 미연동으로 남는 부분**: 자격증 응답에 첨부 PDF 정보가 없어 (multipart 업로드 엔드포인트 자체 미연동) 증빙 자료 섹션은 안내 캡션만. 백엔드 업로드 API 추가 후 자격증 응답에 파일 URL/이름이 들어오면 그때 실제 파일 정보 렌더로 교체.
+
 ### 자격증 폼 첨부 박스의 "교체" 버튼 제거 (2026-05-13)
 
 - **목표**: 사용자 요청 — 자격증 PDF 첨부 후 박스에 [교체] / [X] 두 버튼이 있는데 [교체] 는 불필요.
