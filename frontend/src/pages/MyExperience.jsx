@@ -105,6 +105,7 @@ export default function MyExperience() {
                 onClick={() => setFilter(opt.value)}
                 label={opt.label}
                 count={c}
+                tone={EXPERIENCE_CATEGORY_TONE[opt.value]}
               />
             );
           })}
@@ -186,22 +187,35 @@ function ExpRow({ index, item }) {
 
 /* ---------- 필터 칩 / 상태 ---------- */
 
-function FilterChip({ active, onClick, label, count }) {
+// 카테고리 톤 → 점 배경 색. .badge-* primitive 의 text 색에 맞춤.
+const DOT_BG = {
+  navy: 'bg-primary-700',
+  green: 'bg-[#1F7A4E]',
+  amber: 'bg-amber-600',
+  gray: 'bg-ink-400',
+  red: 'bg-red-500',
+};
+
+function FilterChip({ active, onClick, label, count, tone }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'px-3 py-1.5 rounded-full text-[12.5px] font-semibold border transition-colors',
+        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-semibold border transition-colors',
         active
           ? 'bg-primary-50 border-primary-600 text-primary-800'
           : 'bg-paper border-ink-200 text-ink-600 hover:bg-ink-50'
       )}
     >
+      {tone && (
+        <span
+          aria-hidden="true"
+          className={cn('w-1.5 h-1.5 rounded-full shrink-0', DOT_BG[tone])}
+        />
+      )}
       {label}
-      <span className="ml-1.5 text-ink-400 font-normal tabular-nums">
-        {count}
-      </span>
+      <span className="text-ink-400 font-normal tabular-nums">{count}</span>
     </button>
   );
 }

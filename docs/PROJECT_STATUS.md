@@ -16,6 +16,15 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 경험 필터 칩에 카테고리 색 점 표시 (2026-05-13)
+
+- **목표**: 사용자 후속 요청 — 카테고리 뱃지 색 분리 작업의 연장. 목록 상단 필터 칩에도 같은 색을 점(dot) 으로 표시해 한 화면에서 색·라벨 매핑을 즉시 학습할 수 있게.
+- **변경**:
+  - [`src/pages/MyExperience.jsx`](../frontend/src/pages/MyExperience.jsx) — `FilterChip` 에 `tone` prop 추가. tone 있으면 라벨 앞에 1.5px 원형 dot 렌더 (`bg-primary-700 / [#1F7A4E] / amber-600 / ink-400 / red-500`). "모두" 칩은 tone 없음 → dot 없음. `EXPERIENCE_CATEGORY_OPTIONS.map` 시 `EXPERIENCE_CATEGORY_TONE[opt.value]` lookup 으로 주입.
+- **건드리지 않은 항목**: 자격증 페이지 필터(현재 필터 자체가 없음), 자소서 페이지 필터(진행 상태 뱃지는 별도 톤).
+- **검증**: `npx eslint ... MyExperience.jsx` ✅ / `npx prettier --check` ✅ / `npm run build` ✅ 618ms.
+- **이유**: 뱃지 색이 카테고리별로 다르지만 처음 보는 사용자는 "어떤 색이 어떤 카테고리"인지 즉시 매핑 못 함. 필터 칩에 dot 을 같이 노출해 라벨+색 학습을 1 회 동시에 시킴.
+
 ### 자격증 폼 — 캘린더 → 년월일 숫자 입력 + PDF 드래그&드롭 (2026-05-13)
 
 - **목표**: 사용자 요청 2 건.
