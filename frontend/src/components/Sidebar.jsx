@@ -11,6 +11,7 @@ import {
 import { cn } from '../lib/cn';
 import { NAV, RELATED_SITES, CURRENT_USER } from '../data/sidebar';
 import { useAuth } from '../store/useAuth';
+import logoUrl from '../assets/logo.png';
 
 const ICONS = { Home, PencilLine, BarChart3, User };
 
@@ -76,17 +77,12 @@ export default function Sidebar({ open = false, onClose }) {
       >
         {/* Brand + 모바일 닫기 버튼 */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
-          <span className="grid place-items-center w-8 h-8 rounded-md bg-white/10 text-white">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 4v16M5 20h12"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="18" cy="7" r="2" fill="currentColor" />
-            </svg>
+          <span className="grid place-items-center w-8 h-8">
+            <img
+              src={logoUrl}
+              alt="Logi"
+              className="w-8 h-8 object-contain"
+            />
           </span>
           <div className="leading-tight flex-1 min-w-0">
             <div className="text-white font-bold text-[15px]">Logi</div>
