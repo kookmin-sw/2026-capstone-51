@@ -41,24 +41,6 @@ export const useWithdraw = () =>
   });
 
 /**
- * GET /users/me/dashboard — 메인 대시보드 데이터.
- *
- * 응답: {
- *   statistics: { partTime, external, internal, license, intern } × { avg, userCount, myCount },
- *   userExperiences: { partTimeHistory, internHistory, licenseHistory, internalHistory, externalHistory } — 각 ExperienceItem[]
- *   graduateUserExperiences: [{ userId, ...History[] }, ...]  // 졸업생 N명
- * }
- *
- * 본인 마일스톤(MyRoadmapCard)은 여전히 useExperiences/useCertificates 의 STAR/getDate 디테일을 쓰므로
- * 본 훅은 PeersOrb(평균) + SeniorRoadmapCard(졸업생) 데이터에 사용.
- */
-export const useDashboard = () =>
-  useQuery({
-    queryKey: qk.dashboard(),
-    queryFn: () => api.get('/users/me/dashboard').then((r) => r.data),
-  });
-
-/**
  * GET /users/me/stats?groupBy= — 통계 페이지 데이터.
  *
  * groupBy: 'STATE' | 'SCHOOL_NUM' | 'WORKER' (lib/enums.js STATS_GROUP_LABEL 와 일치)
