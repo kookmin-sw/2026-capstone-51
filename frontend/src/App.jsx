@@ -6,7 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Toaster from './components/Toaster';
 import Onboarding from './pages/Onboarding';
 import Landing from './pages/Landing';
-import AuthCallback from './pages/AuthCallback';
+import SplashScreen from './pages/SplashScreen';
 import Dashboard from './pages/Dashboard';
 import Info from './pages/Info';
 import MyExperience from './pages/MyExperience';
@@ -32,7 +32,7 @@ export default function App() {
       <HashRouter>
         <Routes>
           <Route path="/landing" element={<Landing />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/callback" element={<SplashScreen />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/onboarding" element={<Onboarding />} />
           </Route>
