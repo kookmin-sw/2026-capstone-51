@@ -21,11 +21,11 @@ public record UserStatsResponse(
 
     public record CategoryStat(
             float avg,
-            int userCount,
+            int maxCount,
             int myCount
     ) {
-        public static CategoryStat of(double avg, long userCount, long myCount) {
-            return new CategoryStat(round1(avg), (int) userCount, (int) myCount);
+        public static CategoryStat of(double avg, long maxCount, long myCount) {
+            return new CategoryStat(round1(avg), (int) maxCount, (int) myCount);
         }
 
         public static CategoryStat empty(long myCount) {
