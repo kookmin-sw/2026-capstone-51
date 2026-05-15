@@ -35,10 +35,9 @@ export const NAV = [
 
 // 관련 사이트
 export const RELATED_SITES = [
-  { label: '국민대 경력개발지원단', href: '#' },
-  { label: 'KMU 잡포털', href: '#' },
-  { label: 'ON국민시스템', href: '#' },
-  { label: 'K-Startrack', href: '#' },
+  { label: '경력개발지원단', href: 'https://career.kookmin.ac.kr/' },
+  { label: 'ON국민시스템', href: 'https://portal.kookmin.ac.kr/por/ln' },
+  { label: 'K-Startrack', href: 'https://k-startrack.kookmin.ac.kr/' },
 ];
 
 // 현재 로그인 mock — 페이지 분리 후에도 같은 사용자 정보 표시

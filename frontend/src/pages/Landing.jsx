@@ -1,10 +1,13 @@
-import React, { useRef, useState } from 'react';
-import { redirectToGoogleLogin } from '../api/auth';
+import { useRef, useState } from 'react';
+import { toast } from '../store/useToast';
 
 /**
  * 랜딩 / 로그인 페이지 — 풀-블리드 split-screen.
- * 좌(브랜드) 1.1fr / 우(로그인) 1fr.
- * 좌측 패널 hover: 마우스 따라가는 스포트라이트 + glow blob + feature stagger.
+ *  - lg(1024px) 이상: 좌(브랜드) 1.1fr / 우(로그인) 1fr 가로 분할.
+ *  - lg 미만: 단일 컬럼. 브랜드 패널은 위, 로그인 패널은 아래.
+ *  - 좌측 패널 hover (포인터 디바이스): 마우스 따라가는 스포트라이트 + glow blob + feature stagger.
+ *  - "Google 계정으로 로그인" → 구글 OAuth 페이지로 풀페이지 리다이렉트.
+ *    구글이 처리 후 redirect_uri (/auth/callback) 로 돌아오고, 그곳에서 grant code 교환.
  */
 function GoogleIcon() {
   return (
@@ -39,8 +42,24 @@ export default function Landing() {
   const [hover, setHover] = useState(false);
   const [pos, setPos] = useState({ x: 50, y: 40 });
 
-  const handleGoogleLogin = () => {
-    redirectToGoogleLogin();
+  const handleSignIn = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
+    if (!clientId || !redirectUri) {
+      toast.error(
+        'Google OAuth 설정이 누락되었습니다. .env 의 VITE_GOOGLE_CLIENT_ID 를 확인해주세요.'
+      );
+      return;
+    }
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      // 매번 계정 선택 화면을 띄움 — 시연 환경에서 다른 계정 전환 편의.
+      prompt: 'select_account',
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
   const handleMouseMove = (e) => {
@@ -59,18 +78,17 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen w-full grid grid-cols-[1.1fr_1fr]">
-      {/* Left — brand pane (full bleed) */}
+    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
+      {/* Left — brand pane */}
       <div
         ref={leftRef}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         onMouseMove={handleMouseMove}
-        className="relative flex flex-col justify-between text-white overflow-hidden px-20 py-20"
+        className="relative flex flex-col justify-between text-white overflow-hidden px-6 sm:px-10 lg:px-20 py-12 sm:py-16 lg:py-20"
         style={{
           background:
             'linear-gradient(155deg, #0E2752 0%, #183B73 55%, #2F5FBC 100%)',
-          minHeight: '100vh',
         }}
       >
         {/* Spotlight overlay — 마우스 위치 추적 */}
@@ -100,7 +118,7 @@ export default function Landing() {
         {/* Top block — emblem + tagline */}
         <div className="relative max-w-[560px]">
           <div
-            className="grid place-items-center w-14 h-14 rounded-[14px] mb-9 transition-transform duration-500"
+            className="grid place-items-center w-12 h-12 sm:w-14 sm:h-14 rounded-[14px] mb-7 sm:mb-9 transition-transform duration-500"
             style={{
               background: 'rgba(255,255,255,0.14)',
               border: '1px solid rgba(255,255,255,0.26)',
@@ -122,38 +140,40 @@ export default function Landing() {
             </svg>
           </div>
           <div
-            className="text-[14px] uppercase tracking-[0.1em] font-medium mb-7"
+            className="text-[12px] sm:text-[14px] uppercase tracking-[0.1em] font-medium mb-5 sm:mb-7"
             style={{ color: 'rgba(255,255,255,0.70)' }}
           >
             Kookmin University
           </div>
           <h1
-            className="text-[88px] font-bold leading-[0.95] tracking-[-0.03em] m-0 mb-6"
+            className="text-[56px] sm:text-[72px] lg:text-[88px] font-bold leading-[0.95] tracking-[-0.03em] m-0 mb-4 sm:mb-6"
             style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}
           >
             Logi
           </h1>
           <p
-            className="text-[19px] leading-[1.65] max-w-[460px]"
+            className="text-[15px] sm:text-[17px] lg:text-[19px] leading-[1.65] max-w-[460px] break-keep"
             style={{ color: 'rgba(255,255,255,0.86)' }}
           >
             내가 쌓아온 경험을 기록하고,
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             자소서 한 문항씩 함께 정리해 주는
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             국민대 학생을 위한 자소서 도우미.
           </p>
         </div>
 
         {/* Bottom block — feature list */}
         <ul
-          className="relative list-none p-0 m-0 flex flex-col gap-4 text-[16px] max-w-[440px]"
+          className="relative list-none p-0 mt-10 sm:mt-14 lg:mt-0 flex flex-col gap-3 sm:gap-4 text-[14px] sm:text-[16px] max-w-[440px]"
           style={{ color: 'rgba(255,255,255,0.88)' }}
         >
           {features.map((t, i) => (
             <li
               key={t}
-              className="flex items-center gap-3.5 transition-all duration-500 ease-out"
+              className="flex items-center gap-3 sm:gap-3.5 transition-all duration-500 ease-out break-keep"
               style={{
                 transform: hover ? 'translateX(10px)' : 'translateX(0)',
                 transitionDelay: hover ? `${i * 80}ms` : '0ms',
@@ -176,46 +196,39 @@ export default function Landing() {
         </ul>
       </div>
 
-      {/* Right — login pane (full bleed) */}
+      {/* Right — login pane */}
       <div
-        className="flex flex-col justify-center px-20 py-20 min-h-screen"
+        className="flex flex-col justify-center px-6 sm:px-10 lg:px-20 py-12 sm:py-16 lg:py-20"
         style={{
           background: 'linear-gradient(180deg, #FBFCFE 0%, #EEF2F8 100%)',
         }}
       >
-        <div className="max-w-[440px] w-full">
-          <h2 className="text-[34px] font-bold text-[#1F2937] m-0 mb-4 tracking-[-0.02em] leading-[1.2]">
+        <div className="max-w-[440px] w-full mx-auto lg:mx-0">
+          <h2 className="text-[26px] sm:text-[30px] lg:text-[34px] font-bold text-[#1F2937] m-0 mb-3 sm:mb-4 tracking-[-0.02em] leading-[1.2]">
             로그인하고
             <br />
             시작하기
           </h2>
-          <p className="text-[15px] text-[#6B7280] leading-[1.75] mb-12">
+          <p className="text-[14px] sm:text-[15px] text-[#6B7280] leading-[1.75] mb-8 sm:mb-12 break-keep">
             국민대 구글 계정으로 로그인하세요.
             <br />
             처음 방문하시면 간단한 정보 입력 후 바로 시작할 수 있어요.
           </p>
 
           <button
-            onClick={handleGoogleLogin}
-            className="flex items-center justify-center gap-3 w-full px-6 py-[18px] bg-white border border-[#DADCE0] rounded-[14px] text-[16px] font-semibold text-[#3C4043] hover:bg-[#F8FAFE] hover:border-[#C8CDD3] hover:shadow-lg transition-all"
+            type="button"
+            onClick={handleSignIn}
+            className="flex items-center justify-center gap-3 w-full px-6 py-[16px] sm:py-[18px] bg-white border border-[#DADCE0] rounded-[14px] text-[15px] sm:text-[16px] font-semibold text-[#3C4043] hover:bg-[#F8FAFE] hover:border-[#C8CDD3] hover:shadow-lg transition-all"
           >
             <GoogleIcon />
             <span>Google 계정으로 로그인</span>
           </button>
 
-          <div className="mt-12 text-[12.5px] text-[#6B7280] leading-[1.85]">
+          <div className="mt-8 sm:mt-12 text-[12px] sm:text-[12.5px] text-[#6B7280] leading-[1.85] break-keep">
             본 서비스는 국민대학교 소프트웨어융합대학 캡스톤디자인 51팀이
             운영합니다.
             <br />
-            로그인 시{' '}
-            <a href="#" className="text-[#2F5FBC] hover:underline">
-              서비스 이용약관
-            </a>
-            과{' '}
-            <a href="#" className="text-[#2F5FBC] hover:underline">
-              개인정보 처리방침
-            </a>
-            에 동의하게 됩니다.
+            로그인 시 서비스 이용약관과 개인정보 처리방침에 동의하게 됩니다.
           </div>
         </div>
       </div>

@@ -1,0 +1,9 @@
+# SSH / TLS 비공개 키 — 절대 커밋 금지
+*.pem
+*.key
+*.p12
+
+# OS / 에디터
+.DS_Store
+.idea/
+.vscode/

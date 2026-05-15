@@ -6,28 +6,48 @@
 
 /* === 글로벌 base === */
 @layer base {
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
   }
   body {
     @apply font-sans bg-page text-ink-900 antialiased;
     font-feature-settings: 'cv11';
   }
-  /* Pretendard — preview/Vite 모두에서 사용 */
+  /* Pretendard — preview/Vite 모두에서 사용.
+     이전엔 gh/orioncactus/pretendard 경로였는데 jsdelivr 가 GitHub 직링크를
+     deprecate 해서 npm 패키지 경로로 마이그레이션. 버전 명시 고정으로 캐시
+     안정성 확보. latest 갱신 시 https://www.npmjs.com/package/pretendard 와 비교. */
   @font-face {
     font-family: 'Pretendard';
     font-weight: 45 920;
     font-style: normal;
     font-display: swap;
-    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/PretendardVariable.woff2') format('woff2-variations');
+    src: url('https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/woff2/PretendardVariable.woff2')
+      format('woff2-variations');
   }
 }
 
 /* === 공통 컴포넌트 클래스 === */
 @layer components {
-  /* 카드 */
+  /* 카드 — 모더나이즈 (rounded-xl + 부드러운 ambient shadow + 더 generous padding) */
   .card {
-    @apply bg-paper border border-border rounded-md shadow-sm p-4;
+    @apply bg-paper border border-border/70 rounded-xl p-5;
+    box-shadow:
+      0 1px 2px 0 rgb(15 23 42 / 0.04),
+      0 4px 12px -2px rgb(15 23 42 / 0.06);
+  }
+  /* 클릭 가능한 카드 — Link 등으로 감싼 카드에 적용 */
+  .card-link {
+    @apply card transition-all duration-200;
+  }
+  .card-link:hover {
+    border-color: rgb(59 130 246 / 0.4);
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 2px 0 rgb(15 23 42 / 0.04),
+      0 10px 24px -6px rgb(37 99 235 / 0.18);
   }
 
   /* 페이지 헤더 (h1 + sub) */
@@ -45,8 +65,33 @@
   .btn-default {
     @apply btn-base bg-paper border border-ink-200 text-ink-700 hover:bg-ink-50;
   }
+  /* primary CTA — 사이드바 톤(#1B306F)으로 통일. hover 는 한 단계 밝게(primary-800). */
   .btn-primary {
-    @apply btn-base bg-primary-900 border border-primary-900 text-white hover:bg-primary-800;
+    @apply btn-base bg-sidebar-bg border border-sidebar-bg text-white;
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      0 1px 2px 0 rgb(27 48 111 / 0.32),
+      0 4px 8px -2px rgb(27 48 111 / 0.24);
+    transition:
+      background-color 150ms ease-out,
+      box-shadow 150ms ease-out,
+      transform 150ms ease-out;
+  }
+  .btn-primary:hover {
+    @apply bg-primary-800 border-primary-800;
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      0 4px 12px -2px rgb(27 48 111 / 0.42),
+      0 8px 24px -4px rgb(27 48 111 / 0.28);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  .btn-primary:disabled {
+    transform: none;
+    opacity: 0.6;
+    cursor: not-allowed;
   }
   .btn-ghost {
     @apply btn-base bg-transparent border border-transparent text-ink-700 hover:bg-ink-100;
