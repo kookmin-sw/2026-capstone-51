@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { redirectToGoogleLogin } from '../api/auth';
 
 /**
@@ -100,26 +100,23 @@ export default function Landing() {
         {/* Top block — emblem + tagline */}
         <div className="relative max-w-[560px]">
           <div
-            className="grid place-items-center w-14 h-14 rounded-[14px] mb-9 transition-transform duration-500"
+            className="mb-9 transition-transform duration-500"
             style={{
-              background: 'rgba(255,255,255,0.14)',
-              border: '1px solid rgba(255,255,255,0.26)',
+              width: 64,
+              height: 64,
               transform: hover
                 ? 'rotate(-6deg) scale(1.05)'
                 : 'rotate(0) scale(1)',
-              boxShadow: hover ? '0 16px 36px rgba(120,170,255,0.4)' : 'none',
+              filter: hover
+                ? 'drop-shadow(0 16px 36px rgba(120,170,255,0.45))'
+                : 'none',
             }}
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 4v16M5 20h12"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="18" cy="7" r="2" fill="currentColor" />
-            </svg>
+            <img
+              src="/logo2.svg"
+              alt="Logi 로고"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div
             className="text-[14px] uppercase tracking-[0.1em] font-medium mb-7"
