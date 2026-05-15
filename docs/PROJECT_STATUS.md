@@ -16,6 +16,131 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자소서 4개 페이지 mock → 실 API 전환 (Essays / EssayView / EssayEdit / Write) (2026-05-16)
+
+- **계기**: 시연 D-6 (5/22). 백엔드 9개 essay 엔드포인트 + react-query hook 모두 준비된 상태에서 자소서 4개 페이지가 친구 mock 그대로였음. 사용자 결정으로 시연 전 전환 진행 (작업 방식: "하나씩 → 자동 진행").
+- **백엔드 차단 이슈 해소 확인**: PROJECT_STATUS 에 적혀있던 "EssayResponse.essayId 누락" 이 스웨거 재검증 결과 **해소됨** — 목록 응답에 essayId 정상 포함. opportunistic 처리 → 정식 라우팅으로 전환.
+- **단계별 진행**:
+  - **Essays.jsx**: mock `ESSAYS` 제거 → `useEssays()`. 필드 매핑 `e.id`→`essayId` / `e.co`→`companyName` / `e.job`→`wishJob` / `e.status+result`→`progress` enum (`IN_PROGRESS|PASS|FAIL`). 결과 변경 드롭다운 → `useUpdateEssayResult` (optimistic). 친구 mock 의 `prog/total/dday` 컬럼은 백엔드 미제공이라 4컬럼이 "기업·직무 / 진행상태 / 마지막수정 / 액션" 으로 단순화. loading/error/empty 상태 추가.
+  - **EssayView.jsx**: mock find → `useEssay(id)` (normalize 어댑터로 `globalReq`/`updatedAt` 통일). 친구 mock 의 `UsedExperiences` 섹션은 백엔드 `QuestionResponse` 가 `relatedExperience` 필드를 안 줘서 제거.
+  - **EssayEdit.jsx**: mock 의존 통째 제거. 지원 정보 카드 = `useUpdateEssayMeta` (PATCH /essays/:id). 문항 카드 = `useUpdateEssayQuestion`. 새 문항 추가 = `useCreateEssayQuestion`. AI 재생성 = `useRegenerateAnswer` 후 별도 텍스트폼에 노출 → "이 답변 적용하기" 누르면 update 호출. 친구 mock 의 "이 문항에 쓸 경험" 선택 섹션은 시연용으로 제거.
+  - **Write.jsx**: 친구의 N개 문항 한꺼번에 저장 흐름을 → 한 카드씩 즉시 POST 패턴으로 변경. Step1 = `useCreateEssay` → essayId state. Step2 = "직접 입력 추가" 버튼 / "AI 초안 생성 + 추가" 버튼 (placeholder POST → `useGenerateAnswer` → 응답으로 카드 채워짐). 저장된 문항 미리보기 누적 → "작성 완료" 시 `/essays/:essayId` 로 이동. 백엔드 `EssayQuestionCreateRequest.response` 가 `minLength: 1` (required) 라 빈 답변 금지 → AI 흐름은 `(작성 예정)` placeholder 로 우회.
+- **dead 정리**: `frontend/src/data/essays.js` 삭제 (`ESSAYS`/`RECOMMENDED`/`mockGenerateDraft` 모두 사용처 0).
+- **검증**: `eslint src/` exit 0 (set-state-in-effect 친구 패턴 disable 주석 2건 추가), `prettier --write` 정렬, `npm run build` 672ms 성공.
+- **시연 영향**:
+  - dev 토큰 사용자의 GET /essays 응답이 빈 배열 → Essays 목록 빈 화면. Write 흐름으로 새로 작성하면 채워짐.
+  - 시연 시 자소서 작성 데모: Write → AI 초안 생성 흐름이 백엔드 LLM 응답 시간에 의존 (mock 600ms 대비 실 응답 시간 더 길 수 있음).
+- **남은 mock — 시연 후 보강 권장**:
+  - Stats `MOCK_AVERAGE/MAX/TOP_RANKERS`, Dashboard `PEER_AXES` — fallback 패턴 (백엔드 통계 채워지면 자동 회피).
+  - 친구 인프라 `api/auth.js` / `api/users.js` / `lib/useCurrentUser.js` 와 본인 react-query 인프라 양립 — Dashboard / Stats / SplashScreen 가 친구 인프라 의존 중.
+  - 자소서 페이지의 "경험 선택" 섹션 부활 — 백엔드 `recommend` 응답에 매칭% / 카테고리 / 기간 같은 친구 디자인 필드 보강 시.
+
+### 자격증 PDF 증빙 — `/certificates/upload-url` presigned 연동 + dead mock 정리 (2026-05-16)
+
+- **계기**: 스웨거 28→30 endpoint 재검증에서 `POST /certificates/upload-url` 신규 발견 — 자격증 PDF 증빙 업로드용 S3 presigned PUT URL 발급 엔드포인트. 그동안 CertificateForm 의 PDF UI 는 form state 에 File 만 보관하고 저장 시 미전송이라 새로고침/저장 후 모두 휘발하던 게 정식 연동됨.
+- **백엔드 동작 검증 (실서버 호출, dev 토큰)**:
+  - `POST /certificates/upload-url` → 200 + `{ uploadUrl, fileKey, contentType: 'application/pdf' }` (S3 `pj-kmucd1-01-s3` 버킷, `certificates/<userId>/<uuid>.pdf` 경로)
+  - 받은 uploadUrl 에 더미 PDF raw PUT (`Content-Type: application/pdf`) → 200, 0.8s. S3 정상 수락.
+  - 단 브라우저 CORS preflight 는 dev 서버에서 한 번 더 확인 필요 (curl 환경엔 무관).
+- **연동 흐름 (CertificateForm 의 handleSubmit 안에서 자동)**:
+  ```
+  사용자가 PDF 첨부 → 저장 클릭
+    ① POST /certificates/upload-url            → uploadUrl, fileKey 받음
+    ② PUT uploadUrl (Content-Type: application/pdf) + body=PDF binary → S3 직접
+    ③ POST/PUT /certificates  body 에 fileKey 포함
+  사용자가 PDF 미첨부 → fileKey 미포함 (백엔드의 기존 첨부 처리 정책은 통합 테스트로 확정)
+  ```
+- **변경 파일**:
+  - [`frontend/src/api/queries/useCertificates.js`](../frontend/src/api/queries/useCertificates.js): `useUploadCertificateUrl` mutation + `putPdfToS3()` helper (raw fetch — axios 인터셉터의 Authorization/unwrap 우회).
+  - [`frontend/src/components/certificate/CertificateForm.jsx`](../frontend/src/components/certificate/CertificateForm.jsx): `handleSubmit` async 화. `pdfFile` 있으면 ①②③ 순서로. `uploading` state 로 버튼에 "PDF 업로드 중…" 표시. 수정 모드에서 기존 `initialValue.fileUrl` 있으면 폼 안에 "기존 첨부 PDF 보기 (새로 첨부하면 교체)" 링크. 옛 "백엔드 미연동" 캡션 제거.
+  - [`frontend/src/pages/CertificateDetail.jsx`](../frontend/src/pages/CertificateDetail.jsx): view 모드의 "증빙 자료" 섹션을 `item.fileUrl` 기반으로 변경 — 있으면 hover-able 카드 클릭 시 새 탭으로 PDF 열기, 없으면 빈 상태 안내.
+- **dead mock 파일 정리**:
+  - [`frontend/src/data/onboarding.js`](../frontend/src/data/onboarding.js) 삭제 (`MAJORS`, `JOB_TREE` mock — `lib/enums.js` 로 이전 후 import 0건. PROJECT_STATUS 는 "삭제됨"으로 적혀있었지만 실제 파일은 살아있었음, 친구 PR 통합 시 재유입 추정).
+  - [`frontend/src/data/stats.js`](../frontend/src/data/stats.js) 삭제 (`COMPARE_SCOPES` 의 `소프트웨어학부 · 472명` 등 가짜 숫자 + `ACTIVITY_BARS` 등. 사용처 0).
+- **검증**: `eslint src/` exit 0, `prettier --write` 정렬 (useCertificates.js / CertificateForm.jsx), `npm run build` 678ms 성공.
+- **여전히 mock — 미해결 (의도된 보류)**:
+  - 자소서 4개 페이지 (Essays / EssayView / EssayEdit / Write) — 백엔드 9개 엔드포인트 + react-query hook 다 있는데 친구 mock 사용. 시연 후 전환 권장.
+  - Stats `MOCK_AVERAGE/MAX/TOP_RANKERS`, Dashboard `PEER_AXES` — fallback 패턴, 백엔드 통계 채워지면 자동 회피. 의도된 안전망.
+
+### chip 디자인 파스텔 + dot 컬러 보더 (2026-05-16)
+
+- **요구**: 사용자가 풀 컬러 chip 대신 "반투명 파스텔톤, 선만 dot 컬러랑 통일" 요청.
+- **변경 파일**:
+  - [`frontend/src/index.css`](../frontend/src/index.css): `.badge` primitive 에 `border` 1px 추가. 각 톤별 `.badge-${tone}` 을 `bg-{옅은톤} border-{dot컬러} text-{진한톤}` 3색 조합으로 — `gray: ink-100/ink-400/ink-600`, `navy: blue-50/primary-700/primary-700`, `green: #E8F4EE/#1F7A4E/#1F7A4E`, `red: red-50/red-500/red-600`, `amber: amber-50/amber-600/amber-700`. 보더·텍스트 색은 FilterChip 의 `DOT_BG` 와 일치 → row chip ↔ 필터 dot 시각 통일.
+  - [`frontend/CLAUDE.md`](../frontend/CLAUDE.md): MyExperience.jsx 줄에 chip 디자인 패턴 갱신.
+
+### `.badge-${tone}` Tailwind purge 함정 — safelist 추가 (2026-05-16)
+
+- **문제**: `.badge-amber` 등 chip 클래스를 `bg-amber-600 text-white` 로 강화해도 화면이 그대로. 빌드된 `dist/assets/*.css` 에서 grep 해보니 `.badge*` 클래스 자체가 **0건 — Tailwind JIT 가 통째로 purge**.
+- **원인**: `<span className={\`badge-${tone}\`}>` 처럼 동적으로 만든 클래스명은 Tailwind 정적 스캔이 못 잡음. `@layer components` 안에 직접 정의해도 source 코드에서 사용 검출 안 되면 출력에서 제외. 옛 `bg-amber-50 text-amber-700` 시절에도 같은 이유로 chip 정의가 빌드 CSS 에 없었던 것 — 사용자가 봤던 옅은 amber 컬러는 .badge 가 아닌 다른 요인이었음 (아마 cache 된 옛 dev CSS).
+- **변경 파일**:
+  - [`frontend/tailwind.config.js`](../frontend/tailwind.config.js): `safelist: ['badge', 'badge-gray', 'badge-navy', 'badge-green', 'badge-red', 'badge-amber']` 추가. JIT 가 무조건 출력에 포함하도록 강제.
+  - [`frontend/CLAUDE.md`](../frontend/CLAUDE.md): CSS/Tailwind 섹션에 dynamic className 함정 + safelist 정책 명시 메모.
+- **검증**: `rm -rf node_modules/.vite dist && npm run build` 후 `dist/assets/*.css` 에서 `.badge-amber{background-color:rgb(217 119 6) ...color:rgb(255 255 255)...}` 등 5종 모두 정상 포함 확인.
+- **사용자 액션**: dev 서버 재시작 (Vite 가 tailwind.config 변경을 잡아 자동 reload 하지만 안 잡힐 경우 `Ctrl+C` 후 `npm run dev`) + 브라우저 hard refresh (`Cmd+Shift+R`).
+
+### 내 경험 row 디자인 — 번호/태그/제목 한 줄 정렬 + 태그 chip 풀 컬러화 (2026-05-16)
+
+- **문제**: `/my-experience` 행에서 (1) 옛 구조의 `1.` 번호가 `items-start` + `pt-[3px]` 수동 보정에 의지해서 배지·제목과 baseline 안 맞음, (2) `.badge-${tone}` chip 의 배경이 너무 옅어 (`bg-amber-50` → `bg-amber-100` 까지 단계적으로 진하게 해봐도) 사용자가 보기엔 컬러 텍스트일 뿐 "태그" 로 인식 안 됨. 최종적으로 사용자가 "배경이 닷 컬러로 풀 채워진 진짜 태그" 를 요구.
+- **변경 파일**:
+  - [`frontend/src/pages/MyExperience.jsx`](../frontend/src/pages/MyExperience.jsx): `<ol>` + `index` 유지. 첫 줄을 `<div className="flex items-center gap-2 flex-wrap">` 안에 `번호 → chip → 제목` 순으로 한 row 에 묶음 — `items-center` 하나로 세 요소 모두 같은 라인 베이스 정렬 (옛 `items-start gap-3` + `pt-[3px]` 수동 보정 제거). 번호: `text-[13px] font-medium text-ink-400 tabular-nums shrink-0`. chip: `.badge-${tone}` 단독(배경이 카테고리 컬러로 풀 채움이라 dot 불필요 — dot 제거). Loading skeleton 도 동일 구조.
+  - [`frontend/src/index.css`](../frontend/src/index.css): `.badge-*` primitive 를 **풀 컬러 chip + 흰 글자** 로 전환 — `gray: bg-ink-500`, `navy: bg-primary-700`, `green: bg-[#1F7A4E]`, `red: bg-red-500`, `amber: bg-amber-600`, 모두 `text-white`. 색 자체는 FilterChip 의 `DOT_BG` 와 같은 톤이라 row chip ↔ 필터 dot 이 한눈에 같은 카테고리로 식별됨.
+- **사용처**: `.badge-${tone}` 은 MyExperience + ExperienceDetail 두 곳에서 사용 — ExperienceDetail 헤더 chip 도 자동 풀 컬러화.
+- **필터 chip 은 별도 패턴 유지**: `FilterChip` 은 `bg-paper border-ink-200` + `DOT_BG[tone]` 작은 dot — 사용자가 "필터는 닷이 맞다" 고 명시. row 의 풀 컬러 chip 과 시각적으로 구분.
+- **유지**: 카테고리 톤 매핑(`EXPERIENCE_CATEGORY_TONE`, `DOT_BG`) 그대로 — intern=navy / activity=green / internal=amber / parttime=gray / cert=red.
+
+### 사이드바 사용자 footer 실 데이터화 — `CURRENT_USER` mock 폐기 (2026-05-16)
+
+- **문제**: 좌측 사이드바 푸터의 이름·학과·이니셜이 모든 로그인 유저에게 동일하게 "한혜민 / 소프트웨어학부 / 한"으로 표시됨. `src/data/sidebar.js` 의 `CURRENT_USER` mock (주석에 "현재 로그인 mock") 을 Sidebar 가 그대로 import 해서 렌더하던 잔재.
+- **변경 파일**:
+  - [`frontend/src/components/Sidebar.jsx`](../frontend/src/components/Sidebar.jsx): `CURRENT_USER` import 제거. `useMe()` 로 현재 사용자 `userName`/`major` 조회. 이니셜은 `userName.slice(0,1)`, 학과 라벨은 `KOOKMIN_DEPT_OPTIONS` 에서 `value === me.major` lookup 으로 학과명만 추출 (백엔드 직렬화 값 `"단과대학 학과명"` → 라벨 `"학과명"`). lookup 실패 시 raw `me.major` fallback, null/loading 일 땐 빈 문자열.
+  - [`frontend/src/data/sidebar.js`](../frontend/src/data/sidebar.js): `CURRENT_USER` export 삭제 (Sidebar 가 유일한 사용처였으니 죽은 코드).
+  - [`frontend/CLAUDE.md`](../frontend/CLAUDE.md): data/sidebar.js 와 Sidebar.jsx 줄에서 CURRENT_USER 언급 제거 + useMe 사용 명시.
+- **부수 효과**: `/users/me` 가 이미 다른 페이지에서 캐시돼 있으므로 사이드바가 추가 네트워크 호출 없이 즉시 정확한 이름을 보여줌. 회원정보 수정(`useUpdateMe`) 후에도 동일 캐시 키라 사이드바가 자동 갱신.
+
+### 대시보드 친구 패턴으로 환원 + 본인 Dashboard 컴포넌트 정리 (2026-05-16)
+
+- **계기**: 팀 결정이 통합 머지 시점(2026-05-15) 의 "Dashboard 본인 채택" 을 뒤집어 친구 디자인으로 가는 것으로 바뀜. 본인 통합 카드(HeroBanner+PeersOrb+EssayListCard 셸) / MyRoadmapCard / SeniorRoadmapCard 패턴은 폐기.
+- **복원 (친구 시점 `7aeacb5` commit 에서)**:
+  - [`frontend/src/pages/Dashboard.jsx`](../frontend/src/pages/Dashboard.jsx) — `getMyDashboard()` 직접 fetch + RoadmapCard 두 개 (내/선배). myRoadmap/seniorRoadmaps 비면 `EmptyRoadmapCard` 안내, peerAxes 비면 `PEER_AXES` mock + 빨간 경고.
+  - [`frontend/src/components/dashboard/RoadmapCard.jsx`](../frontend/src/components/dashboard/RoadmapCard.jsx), [`Roadmap.jsx`](../frontend/src/components/dashboard/Roadmap.jsx), [`CategoryLegend.jsx`](../frontend/src/components/dashboard/CategoryLegend.jsx) — 친구 시점 그대로 복원.
+  - [`frontend/src/lib/useCurrentUser.js`](../frontend/src/lib/useCurrentUser.js) — 친구 인프라. 본인이 옛적에 dead 로 분류해 삭제했지만 (`741998b`) 친구 Dashboard 가 의존하므로 부활.
+  - [`frontend/src/data/dashboard.js`](../frontend/src/data/dashboard.js) — `PEER_AXES` 상수 추가 (백엔드 `peerAxes` 비어 올 때만 fallback). 옛 마일스톤 mock(`SEMESTERS`/`MY_ROADMAP`/`SENIOR_ROADMAPS`) 은 친구 Dashboard 가 백엔드 응답으로 직접 받기에 굳이 안 가져옴.
+- **dead 정리**:
+  - [`frontend/src/components/dashboard/`](../frontend/src/components/dashboard/) 에서 `MyRoadmapCard.jsx`, `SeniorRoadmapCard.jsx`, `EssayListCard.jsx` 삭제 (Dashboard 에서만 import, 친구 거로 가면 0건).
+  - [`frontend/src/api/queries/useMe.js`](../frontend/src/api/queries/useMe.js) 에서 `useDashboard` export 제거 (사용처 0).
+  - [`frontend/CLAUDE.md`](../frontend/CLAUDE.md) 의 대시보드 카드 섹션 / Data flow / 컴포넌트 맵 / Three.js 섹션 일괄 갱신 — 본인 통합 카드 / MyRoadmapCard / SeniorRoadmapCard / EssayListCard / hasProfile / `useExperiences/useCertificates` 직접 카운트 멘션 모두 폐기.
+- **린트/포맷 / 빌드 검증**: `eslint src/` exit 0, `prettier --write` 로 친구 코드 포맷 정렬, `npm run build` 699ms 성공 (chunk 크기 / dynamic import 경고는 기존 이슈).
+- **macOS Finder 중복본 정리** — 50여 개의 `* 2.jsx` / `* 3.jsx` / `* 2.bak` / `index 2.html` 등 dupe 파일 일괄 삭제 (frontend/root, backend/ 제외). iCloud sync 충돌 잔재로 추정, import/참조 0건 확인 후.
+
+### 사이드바 사용자 footer 실 데이터화 — `CURRENT_USER` mock 폐기 (2026-05-16)
+
+- **문제**: 좌측 사이드바 푸터의 이름·학과·이니셜이 모든 로그인 유저에게 동일하게 "한혜민 / 소프트웨어학부 / 한"으로 표시됨. `src/data/sidebar.js` 의 `CURRENT_USER` mock (주석에 "현재 로그인 mock") 을 Sidebar 가 그대로 import 해서 렌더하던 잔재.
+- **변경 파일**:
+  - [`frontend/src/components/Sidebar.jsx`](../frontend/src/components/Sidebar.jsx): `CURRENT_USER` import 제거. `useMe()` 로 현재 사용자 `userName`/`major` 조회. 이니셜은 `userName.slice(0,1)`, 학과 라벨은 `KOOKMIN_DEPT_OPTIONS` 에서 `value === me.major` lookup 으로 학과명만 추출 (백엔드 직렬화 값 `"단과대학 학과명"` → 라벨 `"학과명"`). lookup 실패 시 raw `me.major` fallback, null/loading 일 땐 빈 문자열.
+  - [`frontend/src/data/sidebar.js`](../frontend/src/data/sidebar.js): `CURRENT_USER` export 삭제 (Sidebar 가 유일한 사용처였으니 죽은 코드).
+  - [`frontend/CLAUDE.md`](../frontend/CLAUDE.md): data/sidebar.js 와 Sidebar.jsx 줄에서 CURRENT_USER 언급 제거 + useMe 사용 명시.
+- **부수 효과**: `/users/me` 가 이미 다른 페이지에서 캐시돼 있으므로 사이드바가 추가 네트워크 호출 없이 즉시 정확한 이름을 보여줌. 회원정보 수정(`useUpdateMe`) 후에도 동일 캐시 키라 사이드바가 자동 갱신.
+
+### 백엔드 도메인 정상화 → vite proxy / EC2 IP 우회 패턴 폐기 (2026-05-16)
+
+- **계기**: 백엔드 팀이 `api.logi.p-e.kr` 도메인을 살림 (안정 IP + 정상 cert) **+ EC2 에 Elastic IP 도 같이 잡음** — 5/14 까지 5번 IP 변경되며 PROJECT_STATUS 에 갱신 entry 4건이 쌓였던 운영 부담이 한 번에 해소. 백엔드 팀이 "이 URL 로 완성해라" 라고 명시. `.env.local` 만 먼저 새 URL 로 바뀌어 있고, 코드/문서는 옛 우회 패턴 (vite proxy + EC2 IP 직접 + secure:false) 그대로였음.
+- **옛 패턴이 필요했던 이유 (이제 무효)**:
+  - EC2 가 Elastic IP 미설정 → 재시작마다 IP 변경 (`98.82 → 98.92 → 3.238 → 44.222 → 18.235`). 매번 사람 손으로 `vite.config.js` 갱신 + dev 서버 재시작. **2026-05-16 기준 EIP 부착 완료 — 이 운영 모드 자체가 끝남.**
+  - 도메인 `logi.p-e.kr` DNS 죽어서 IP 직접 호출 강제 → cert CN mismatch (`ERR_CERT_COMMON_NAME_INVALID`).
+  - 우회: vite dev proxy(`/api` → EC2 IP) + `secure:false` + axios baseURL `/api` (same-origin 으로 CORS 도 회피).
+  - 단점: 운영 부담, prod 빌드 미적용 (proxy 는 dev only), 새 멤버 IP 받아 적기.
+- **변경 파일**:
+  - [`frontend/.env`](../frontend/.env) / [`frontend/.env.local.example`](../frontend/.env.local.example): `VITE_API_URL=https://api.logi.p-e.kr/api`. example 의 옛 IP/proxy 가이드 주석 폐기.
+  - [`frontend/vite.config.js`](../frontend/vite.config.js): `proxy` 블록 + `API_TARGET` 변수 + 옛 cert 우회 헤더 주석 모두 제거. 포트 3000 강제만 유지.
+  - [`frontend/CLAUDE.md`](../frontend/CLAUDE.md): VITE_API_URL 섹션 + Swagger URL + 통합 체크리스트 갱신.
+  - [`CLAUDE.md`](../CLAUDE.md) (root): mismatch 2번 (API base path) 갱신.
+  - 본 문서: 옛 IP 직접 참조 라인 일괄 정정 (Swagger URL × 2, 결정사항, 남은 이슈, 검증 섹션, Next Session Handoff).
+- **백엔드 ops 함정 메모**: `api.logi.p-e.kr` 앞 단(nginx/WAF 추정) 이 기본 봇 UA(`curl/...`)를 TCP timeout 으로 끊음. curl 으로 찔러 죽었다고 오판하기 쉬움 — 진단 시 `-A "Mozilla/..."` 위장 필요. 브라우저 호출엔 영향 없음.
+- **전제 (확인됨)**: 백엔드 CORS allowed-origins 에 `http://localhost:3000` 등록 — 백엔드 팀이 "들어가진다" 확인.
+- **부수 효과**: 프로덕션 빌드 결과물도 같은 baseURL 로 동작 (별도 nginx 설정 불필요). EC2 재시작/IP 변경에 frontend 무관.
+- **마이그 잔재 함정 (2026-05-16 후속)**: 옛 우회 시기에 `.env.local` 의 `VITE_API_URL` 이 EC2 IP 직접(`https://18.235.209.80/api`) 으로 박혀 있던 경우, gitignored 라 자동 마이그 못 받음 → dev 서버에서 `ERR_CERT_COMMON_NAME_INVALID` 로 계속 막힘. **`.env.local` 의 `VITE_API_URL` 라인을 `.env` 와 같이 `https://api.logi.p-e.kr/api` 로 교체하거나, 라인 자체를 제거(그러면 `.env` 가 fall-through) 하면 해결**. 변경 후 dev 서버 재시작.
+
 ### frontend/integration 통합 머지 (2026-05-15)
 
 - **목표**: 친구(승준) PR #44 가 essay 브랜치로 master 에 25 파일/5304 라인 짜리 대규모 프론트 작업을 머지한 상태 + PR #45 로 로고/사이드바 추가 머지. 본인 career-domains 브랜치(236 커밋) 와 시연 전 통합 필요.
@@ -887,7 +1012,7 @@
 
 ### ⚠️ 백엔드 의존 항목 (Swagger 재검증 후, 2026-05-10 — 신규 4종 추가 흡수)
 
-> 백엔드 진실 원천: **`https://44.222.126.118/api/swagger-ui/index.html`** (도메인 DNS 미갱신). 2026-05-10 재검증 결과 스웨거 **28개** 엔드포인트 = 프론트 hook 28개 1:1 매핑 완료 (백엔드가 신규 4종 추가). 아래는 hook 은 있지만 **백엔드 응답 결함으로 일부 동작이 막혀있는** 지점들.
+> 백엔드 진실 원천: **`https://api.logi.p-e.kr/api/swagger-ui/index.html`** (2026-05-16 도메인 정상화 후). 2026-05-10 재검증 결과 스웨거 **28개** 엔드포인트 = 프론트 hook 28개 1:1 매핑 완료 (백엔드가 신규 4종 추가). 아래는 hook 은 있지만 **백엔드 응답 결함으로 일부 동작이 막혀있는** 지점들.
 
 #### 프론트 훅 보강 — 모두 완료 (2026-05-10 시점)
 
@@ -926,7 +1051,7 @@
 ## 중요한 결정사항
 
 - **HashRouter 사용**: BrowserRouter 아님. URL이 `#/...`. `main.jsx` 어댑터가 OAuth callback의 pathname을 hash로 옮김.
-- **API base에 `/api` 포함**: 백엔드 `context-path: /api` 때문. `VITE_API_URL=http://localhost:8080/api`.
+- **API base에 `/api` 포함**: 백엔드 `context-path: /api` 때문. `VITE_API_URL=https://api.logi.p-e.kr/api` (배포) 또는 `http://localhost:8080/api` (로컬).
 - **토큰 저장 키**: `localStorage.accessToken` / `localStorage.refreshToken`. 옛 단일 `localStorage.token` 키 폐기.
 - **응답 unwrap 인터셉터**: axios가 `ApiResponse<T> = { statusCode, message, data }`의 `data`를 까서 호출부에 전달.
 - **OAuth 게이트**: 백엔드가 `@kookmin.ac.kr` 도메인만 허용. 데모용 일반 계정 사용 불가.
@@ -944,8 +1069,8 @@
 ## 남은 이슈 / 리스크
 
 - **CORS allowed-origins 불일치**: 백엔드 yml은 `http://localhost:3000`만 허용. 통합 테스트 시 백엔드 yml 갱신 또는 프론트 3000 사용 필수.
-- **`logi.p-e.kr` 도메인 DNS 갱신 안 됨**: DNS가 옛 IP 가리킴. 도메인으로 접속 시 connection timeout. **현재는 IP 직접 사용 (`https://44.222.126.118/api`, 2026-05-09 EC2 재재시작 후)** — 백엔드/인프라팀이 DNS 갱신할 때까지.
-- **자체 서명 인증서**: 실서버 `https://44.222.126.118/api`는 자체서명. 브라우저 첫 방문 시 해당 URL 직접 열어 "고급 → 진행" 한 번 통과해야 fetch 호출이 SSL 차단되지 않음.
+- **백엔드 도메인 정상화** (2026-05-16): `api.logi.p-e.kr` 살아남 — 안정 IP + 정상 cert. 옛 우회 (vite proxy + EC2 IP 직접 + secure:false) 폐기. 옛 도메인 `logi.p-e.kr` 은 여전히 죽어있고 새 도메인만 사용.
+- **백엔드 WAF/봇 필터**: nginx 또는 그 앞 단에서 `User-Agent: curl/...` 같은 기본 봇 UA 를 TCP timeout 으로 끊음. 브라우저 정상 호출엔 영향 없지만 ops 진단 시 curl 으로 찔러 죽었다고 오판하기 쉬움 — `-A "Mozilla/..."` 위장으로 실 상태 확인.
 - **번들 크기 경고**: 프로덕션 빌드 결과 단일 청크 ~979 KB(gzip 274 KB). Three.js 등으로 부피 큼. 현재는 경고만; 배포 직전 코드 스플릿 검토.
 - **dynamic import 경고**: `src/store/useAuth.js`가 `axios.js`에서 dynamic import + 다른 곳에서 static import. 의도된 cycle 회피이지만 청크 분리 효과 없음 — 현 동작에 문제는 없음.
 - **테스트 부재**: 단위 테스트 없음. `npm test`는 lint+format 게이트. 실제 동작 검증은 dev 서버에서 수동.
@@ -1007,8 +1132,8 @@ npm run build                  # ✅ 663ms, dist/ 생성.
 
 런타임 검증:
 
-- Dev 서버: `http://localhost:3000/` ✅ (Vite proxy 가 `/api` → `https://44.222.126.118` 포워딩, secure:false 로 cert CN mismatch 우회)
-- 프록시 테스트: `POST http://localhost:3000/api/auth/login` 가짜 grantCode → HTTP 401 백엔드 응답 정상 도달 ✅
+- Dev 서버: `http://localhost:3000/` ✅ (axios baseURL 이 `https://api.logi.p-e.kr/api` 로 직접 호출 — 2026-05-16 도메인 정상화 후 vite proxy 폐기)
+- API 호출 테스트: `POST https://api.logi.p-e.kr/api/auth/login` 가짜 grantCode → HTTP 401 백엔드 응답 정상 도달 ✅ (2026-05-09, 옛 proxy 경유 시)
 - Google OAuth 로그인 → /dashboard 도달 (사용자 확인 완료)
 
 ---
@@ -1022,7 +1147,7 @@ npm run build                  # ✅ 663ms, dist/ 생성.
 
 1. **역할**: 프론트엔드 담당. 백엔드 API 직접 구현 X. 백엔드가 만든 엔드포인트를 화면에 연결.
 2. **D-11 마감**: 2026-05-22 최종 발표 (오늘 2026-05-11 기준).
-3. **백엔드 진실 원천 = Swagger**: `https://44.222.126.118/api/swagger-ui/index.html` (현 IP, EC2 재시작마다 변동 — Elastic IP 미설정). **노션 API CSV 부정확** — 차이 있을 때 무조건 스웨거가 우선.
+3. **백엔드 진실 원천 = Swagger**: `https://api.logi.p-e.kr/api/swagger-ui/index.html` (2026-05-16 도메인 정상화 — 옛 EC2 IP 직접 호출 패턴 폐기). **노션 API CSV 부정확** — 차이 있을 때 무조건 스웨거가 우선.
 4. **백엔드 ↔ 프론트 hook 매핑** (2026-05-10 swagger 재재검증, 백엔드 신규 4종 추가):
    - 스웨거 엔드포인트 **28개** = 프론트 hook 28개 (1:1 매핑 완료, **미연결 0건**).
    - 새로 흡수된 4종: `GET /users/me/dashboard`, `GET /users/me/stats?groupBy=`, `GET /essays/{id}`, `GET /experiences/{id}`. 백엔드 미구현 항목 **0개**.
@@ -1054,7 +1179,7 @@ npm run build                  # ✅ 663ms, dist/ 생성.
 - 로그인/dev proxy / 새 IP 적용 완료
 - **모든 페이지 라우트 1차 구현 완료** — Onboarding, Info, Dashboard(mock), MyExperience CRUD, MyCertificates CRUD, Write, MyEssays, Stats(mock). 남은 Placeholder 는 `/essays/:id` 단 하나 (essayId 차단).
 - DatePicker / Combobox / 학과 cascade / 진로 관심사 칩 / 글자수 카운터 등 UX 다듬기 완료
-- 백엔드팀에 질의 발송됨: essayId 추가 / 합격 시 WORKER 책임 / 응답 키 정합 / 신규 필드 4종 / springdoc Bean Validation / Elastic IP
+- 백엔드팀에 질의 발송됨: essayId 추가 / 합격 시 WORKER 책임 / 응답 키 정합 / 신규 필드 4종 / springdoc Bean Validation / ~~Elastic IP~~ (2026-05-16 해소 — EIP 부착 + `api.logi.p-e.kr` 도메인 정상화)
 
 **다음 직접 작업 (백엔드 답변 도착 전)**:
 

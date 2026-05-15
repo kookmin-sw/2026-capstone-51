@@ -23,12 +23,13 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
 
 `.env` / `.env.local` 둘 다 gitignored. 추적되는 건 `.env.local.example` 뿐 — 그게 canonical 가이드.
 
-- `VITE_API_URL` — axios client(`src/api/axios.js`)에 주입. 백엔드 `context-path: /api` 이므로 값에 `/api`까지 포함. **권장 `/api` 사용** (Vite proxy 가 `vite.config.js` 의 `API_TARGET` 으로 포워딩). 직접 IP 도 가능하지만 cert CN mismatch (`ERR_CERT_COMMON_NAME_INVALID`) 발생.
-  - **현재 백엔드 IP: `44.222.126.118`** (2026-05-13 EC2 재시작 후). EC2 가 Elastic IP 미설정이라 **재시작마다 IP 변경** — 변경 시 `vite.config.js` 의 `API_TARGET` 갱신 후 dev 서버 재시작.
-  - 도메인 `logi.p-e.kr` 은 DNS 갱신 안 돼 옛 IP 가리킴 — 사용 불가.
+- `VITE_API_URL` — axios client(`src/api/axios.js`)에 주입. 백엔드 `context-path: /api` 이므로 값에 `/api`까지 포함. **현재 권장 `https://api.logi.p-e.kr/api`** — 백엔드 팀이 도메인 살려놨고 안정 IP + 정상 cert 라 직접 호출이 기본. dev proxy 우회 패턴 폐기 (옛 EC2 IP 직접 + cert 검증 끄던 시기).
+  - 옛 도메인 `logi.p-e.kr` 은 그대로 죽어있음. 새 도메인 `api.logi.p-e.kr` 만 사용.
+  - 로컬 백엔드 띄울 일 있으면 `VITE_API_URL=http://localhost:8080/api`.
+  - same-origin 아니므로 백엔드 CORS allowed-origins 에 `http://localhost:3000` 등록 필요 (dev 서버 포트). 이미 등록되어 있는 것으로 추정 (백엔드 팀 확인됨).
 - `VITE_GOOGLE_CLIENT_ID` — Google OAuth client_id. 백엔드 팀이 Google Console 에 등록한 값과 동일해야 함. `client_secret` 은 백엔드만 보유.
 - `VITE_GOOGLE_REDIRECT_URI` — Google Console 에 등록된 redirect_uri. 기본 `http://localhost:3000/auth/callback`. 다른 값으로 바꾸려면 Google Console 등록도 같이.
-- **백엔드 OpenAPI Source of Truth**: `https://logi.p-e.kr/api/swagger-ui/index.html` (스펙 JSON: `/api/v3/api-docs`). 노션의 API 명세 CSV 와 차이가 있을 경우 **항상 스웨거가 우선**.
+- **백엔드 OpenAPI Source of Truth**: `https://api.logi.p-e.kr/api/swagger-ui/index.html` (스펙 JSON: `/api/v3/api-docs`). 노션의 API 명세 CSV 와 차이가 있을 경우 **항상 스웨거가 우선**.
 
 ## Architecture
 
@@ -86,6 +87,7 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 - `index.css` 가 `src/main.jsx`에서 import 됨. 이 import 한 줄이 빠지면 **Tailwind가 통째로 안 먹어서 페이지가 unstyled HTML로 보임** — 초기 커밋에 이게 누락되어 있어서 첫 dev 서버 띄웠을 때 스타일이 전혀 안 나왔던 적이 있음 (commit `270814c`에서 수정). 새 글로벌 CSS도 `index.css`에 추가.
 - `tailwind.config.js`에 커스텀 팔레트(`primary`, `sidebar`, `ink`, `navy`, `cat`, `paper`, `page`, `border`), 커스텀 `borderRadius`, `boxShadow` 토큰. **`theme`이 named export로도 노출** — 별도 `preview.html`(CDN Tailwind)에 인라인 주입하기 위해서임. named export와 default export의 theme를 동기화해서 유지.
 - `src/index.css`의 `@layer components`에 canonical primitive: `.card`, `.btn-default`, `.btn-primary`, `.btn-ghost`, `.btn-sm`, `.field`, `.badge-{gray|navy|green|red|amber}`. **유틸리티 체인보다 이 클래스 우선 사용**.
+- **`.badge-${tone}` 함정**: `className={\`badge-${tone}\`}` 처럼 동적으로 만드는 클래스는 Tailwind JIT 정적 스캔이 못 잡아 출력 CSS 에서 통째로 purge 됨. `tailwind.config.js` 의 `safelist` 에 5종 (`badge`, `badge-gray|navy|green|red|amber`) 을 강제 포함시켜 해결. 새 톤 추가 시 safelist 도 같이 갱신. 다른 dynamic className 도입 시 같은 함정 주의.
 - `src/lib/cn.js` 는 작은 clsx 대체. 문자열/배열/`{class: bool}` 객체 모두 받음. 조건부 클래스 합성에 사용.
 
 ### Path alias
@@ -101,7 +103,7 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 - 메인 콘텐츠 패딩: `px-4 sm:px-6 lg:px-8 py-5 lg:py-7`.
 - Landing 은 `grid-cols-1 lg:grid-cols-[1.1fr_1fr]` (모바일 단일 컬럼 → lg 에서 split-screen).
 - Onboarding 폼은 `grid-cols-1 sm:grid-cols-2 (또는 sm:grid-cols-3)`.
-- Dashboard 의 학기 타임라인(`MyRoadmapCard`/`SeniorRoadmapCard`)은 `overflow-x-auto` 안에 `min-w-[640px]` 의 `grid-cols-8` 을 둠 — 좁은 화면에서는 가로 스크롤로 8학기 칼럼 유지.
+- Dashboard 의 로드맵(`RoadmapCard` → `Roadmap`)은 입학~졸업 사이 비율 좌표로 마일스톤 점을 배치 — 카드 안 `padding: 16px 52px`(carousel 시) 로 좌우 화살표 자리 확보. 모바일에서 그래프 본체가 좁아질 뿐 가로 스크롤은 없음.
 - Korean 한글 줄바꿈은 의미 단위에서 끊기게 `break-keep` 적용 (긴 본문 / 약관 카피).
 - 검증 완료 viewport: 320 / 768 / 1024 / 1440 — `/info` Placeholder 와 `/landing`, `/onboarding` 모두 깨짐 없음.
 
@@ -129,7 +131,7 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 
 - `keys.js` — queryKey 팩토리 (`qk.me()`, `qk.dashboard()`, `qk.stats(groupBy)`, `qk.experiences.one(id)` ...).
 - `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. **스웨거 28개 엔드포인트 1:1 매핑** (2026-05-10 백엔드 신규 4종 추가 후).
-- `useMe.js` 의 `useDashboard()` / `useMyStats(groupBy)` — `/users/me/dashboard`, `/users/me/stats?groupBy=` (groupBy: STATE|SCHOOL_NUM|WORKER).
+- `useMe.js` 의 `useMyStats(groupBy)` — `/users/me/stats?groupBy=` (groupBy: STATE|SCHOOL_NUM|WORKER). Dashboard 는 친구 패턴(`getMyDashboard()` 직접 fetch)을 그대로 사용 — react-query 안 거침.
 - `useEssays.js` 의 `useEssay(id)` 안에 `normalizeEssayDetail()` 어댑터 — 백엔드 `EssayDetailResponse` 의 `requirement`/`modifiedDate` 를 `globalReq`/`updatedAt` 으로 통일. 호출부는 둘 다 같은 키로만.
 
 **zustand 스토어** — [`src/store/`](2026-capstone-51/frontend/src/store/)
@@ -170,15 +172,15 @@ src/
 │   ├── cn.js             # clsx 대체
 │   └── enums.js          # 백엔드 ↔ 프론트 enum 매핑 (ExperienceCategory, State, Progress 등)
 ├── data/                 # 정적 mock / 토큰
-│   ├── sidebar.js        # NAV, RELATED_SITES, CURRENT_USER
-│   └── dashboard.js      # CAT_LABELS, CAT_COLORS — Dashboard/Stats 시각화 색상 토큰만 (5축 mock 은 백엔드 흡수로 제거됨)
+│   ├── sidebar.js        # NAV, RELATED_SITES
+│   └── dashboard.js      # CAT_LABELS, CAT_COLORS — Roadmap/Stats 시각화 색상 토큰. PEER_AXES — PeersOrb fallback (백엔드 peerAxes 비어 올 때만 사용, 빨간 경고 함께)
 ├── components/
 │   ├── Layout.jsx        # Sidebar + Outlet 셸 (max-width 1100)
 │   ├── ProtectedRoute.jsx# useAuth.isAuthenticated 가드. 미인증 → /landing replace
-│   ├── Sidebar.jsx       # NAV 렌더 (lucide ICONS lookup) → 푸터 위 고정 영역에 RELATED_SITES → 사용자 footer. 로그아웃 = useAuth.logout() (클라 즉시 비움 + 백엔드 /auth/logout best-effort)
+│   ├── Sidebar.jsx       # NAV 렌더 (lucide ICONS lookup) → 푸터 위 고정 영역에 RELATED_SITES → 사용자 footer (useMe 로 userName/major 표시, major 는 KOOKMIN_DEPT_OPTIONS lookup 으로 학과명만). 로그아웃 = useAuth.logout() (클라 즉시 비움 + 백엔드 /auth/logout best-effort)
 │   ├── Toaster.jsx       # 우상단 토스트 스택. App 루트에 한 번 마운트
 │   ├── Crumbs.jsx        # 빵부스러기. items: string[] | {label, to?}[]
-│   ├── ErrorBoundary.jsx # 자식 throw 캐치 → fallback 카드. Dashboard 의 PeersOrb/EssayListCard/MyRoadmapCard/SeniorRoadmapCard 각각 감쌈
+│   ├── ErrorBoundary.jsx # 자식 throw 캐치 → fallback 카드. (현재 Dashboard 가 친구 패턴이라 ErrorBoundary 미사용 — 다른 페이지 보호용으로 보존)
 │   ├── Button.jsx        # variant: default|primary|ghost|danger, size: md|sm — 디자인 시스템(현재 미사용, 보존)
 │   ├── Modal.jsx         # open/onClose/title/sub/footer/width/hideClose 슬롯. backdrop click + 우상단 X + Esc 키로 닫힘. 열린 동안 body 스크롤 잠금. 현재 Info.jsx 회원 탈퇴 확인 모달에서 사용
 │   ├── Badge.jsx         # tone: gray|navy|green|red|amber — 디자인 시스템(현재 미사용, 보존)
@@ -187,24 +189,24 @@ src/
 │   ├── DatePicker.jsx    # 커스텀 캘린더 popover. day/month/year drill-down (헤더 클릭으로 view 전환). 'YYYY-MM-DD' 입출력. min/max 모든 view 적용, allowClear, forceDirection, viewport 자동 펼침
 │   ├── PeersOrb.jsx      # Three.js 5축 입체 레이더 — 나/동기/선배 3개 prism, 색 커스텀(localStorage 영속), stepped pyramid 중첩 (아래 참조)
 │   ├── experience/       # ExperienceForm.jsx (신규/수정 공용 폼, swagger ExperienceRequest 정합. 관련 전공은 KOOKMIN_DEPT_OPTIONS Combobox 단일 선택, 빈값 비허용)
-│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 UI — 클라 .pdf/10MB 검증, 백엔드 업로드 엔드포인트 미연동이라 form state 만 보관)
+│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부)
 │   ├── essay/            # EssayMetaForm.jsx (회사·직무·요구사항), QuestionEditor.jsx (문항 편집기 — 추천/생성/재생성/저장 통합)
-│   └── dashboard/        # HeroBanner, EssayListCard, MyRoadmapCard, SeniorRoadmapCard
+│   └── dashboard/        # HeroBanner, RoadmapCard, Roadmap, CategoryLegend (친구 패턴)
 ├── pages/
 │   ├── Landing.jsx       # 풀-블리드 split-screen. Google 버튼 클릭 시 accounts.google.com 로 풀페이지 리다이렉트
 │   ├── SplashScreen.jsx  # /auth/callback OAuth 콜백 — 친구 연필 글씨 SVG 애니메이션 + 본인 zustand(useAuth.setTokens) 인증 로직. grant code → POST /auth/login → firstLogin 분기
 │   ├── Onboarding.jsx    # 단일 페이지 폼. lib/enums 직접 사용. 인라인 검증(필수/범위/부전공≠전공). 시작하기 = PUT /users/me → /dashboard
-│   ├── Dashboard.jsx     # Crumbs + 상단 통합 카드(HeroBanner 그라데이션 띠 + PeersOrb 좌 / EssayListCard 우, lg 2-col + divider) + MyRoadmapCard + SeniorRoadmapCard 스택. !hasProfile 일 때만 HeroBanner 단독 + placeholder.
-│   ├── MyExperience.jsx  # /my-experience — useExperiences 목록. 단일 .card !p-0 셸 안에 검색창 + 카테고리 필터 칩 + <ol> 번호 매긴 두 줄 콤팩트 row 리스트. row = 번호 + 카테고리 뱃지·제목 / 기간·관련전공. 클릭 → 상세. 검색은 experienceTitle 부분일치만 (클라이언트).
+│   ├── Dashboard.jsx     # 친구 패턴 — Crumbs + HeroBanner + PeersOrb(axes/sub/warning) + 내 RoadmapCard + 선배 RoadmapCard(carousel). 백엔드 `getMyDashboard()` 직접 fetch (react-query 미사용). myRoadmap/seniorRoadmaps 비면 EmptyRoadmapCard 안내, peerAxes 비면 PEER_AXES mock + 빨간 경고.
+│   ├── MyExperience.jsx  # /my-experience — useExperiences 목록. 단일 .card !p-0 셸 안에 검색창 + 카테고리 필터 칩 + 두 줄 콤팩트 row 리스트. row 첫 줄 = `N.` 번호 + 카테고리 chip(`.badge-${tone}` — 파스텔 배경 + dot 컬러 보더·텍스트) + 제목 (`items-center` 한 줄 정렬), 둘째 줄 = 기간·관련전공. 상단 필터 칩은 별도 패턴(흰 배경 + 컬러 dot). 클릭 → 상세. 검색은 experienceTitle 부분일치만 (클라이언트).
 │   ├── NewExperience.jsx # /my-experience/new — useCreateExperience + ExperienceForm 래퍼
 │   ├── ExperienceDetail.jsx # /my-experience/:id — view/edit 토글 + useUpdateExperience + useDeleteExperience (Modal 삭제 확인)
 │   ├── MyCertificates.jsx   # /my-certificates — 단일 .card !p-0 셸 안의 <ol> 번호 매긴 두 줄 콤팩트 row 리스트 (검색 필터 없음). row 전체가 Link → /my-certificates/:id. 목록 자체엔 수정·삭제 액션 없음 (상세 페이지에서 처리).
 │   ├── NewCertificate.jsx   # /my-certificates/new — useCreateCertificate + CertificateForm 래퍼
-│   ├── CertificateDetail.jsx # /my-certificates/:id — view/edit 토글 + useUpdateCertificate + useDeleteCertificate (Modal 삭제 확인). 백엔드 단건 GET 없어 목록 캐시에서 ID 매칭. 증빙 자료 섹션은 백엔드 multipart 업로드 미연동 안내.
-│   ├── Write.jsx            # /write — 자소서 작성 stage machine: meta(회사·직무·요구사항) → questions(문항 카드 다중 + AI 추천/생성/재생성/저장)
-│   ├── Essays.jsx           # /essays — 자소서 목록 (친구 mock 기반). data/essays.js 의 ESSAYS 사용. 결과 입력 드롭다운 / 행 클릭 → /essays/:id.
-│   ├── EssayView.jsx        # /essays/:id — 자소서 열람 (친구 mock 기반). 회사·직무·공통 요구사항 + 문항 읽기. 우측 상단 "수정하기" → /essays/:id/edit.
-│   ├── EssayEdit.jsx        # /essays/:id/edit — 자소서 수정 (친구 mock 기반). 메타/문항 카드별 인라인 편집 + AI 재생성(mockGenerateDraft).
+│   ├── CertificateDetail.jsx # /my-certificates/:id — view/edit 토글 + useUpdateCertificate + useDeleteCertificate (Modal 삭제 확인). 백엔드 단건 GET 없어 목록 캐시에서 ID 매칭. 증빙 자료 섹션은 item.fileUrl 있으면 다운로드 링크, 없으면 빈 상태 안내.
+│   ├── Write.jsx            # /write — 자소서 작성 2단계. Step1 지원정보 → useCreateEssay(POST /essays/create) → essayId. Step2 문항 추가 — 한 카드씩 입력 → useCreateEssayQuestion / useGenerateAnswer (AI 초안: placeholder POST → questionId 받기 → generate 호출). 저장된 문항 미리보기 + "작성 완료" → /essays/:essayId.
+│   ├── Essays.jsx           # /essays — 자소서 목록. useEssays() (GET /essays). progress 뱃지 + useUpdateEssayResult 드롭다운 (PASS/FAIL/IN_PROGRESS) + 행 클릭 → /essays/:essayId. 친구 mock 의 prog/total/dday 컬럼은 백엔드 미제공이라 제거.
+│   ├── EssayView.jsx        # /essays/:id — 자소서 열람. useEssay(id) → normalize 어댑터로 globalReq/updatedAt 통일. 회사·직무·공통 요구사항 + 문항 읽기. 친구 mock 의 UsedExperiences 섹션은 백엔드 QuestionResponse 가 relatedExperience 필드를 안 줘서 제거.
+│   ├── EssayEdit.jsx        # /essays/:id/edit — 자소서 수정. 지원 정보 카드 PATCH /essays/:id, 문항 카드 PATCH /essays/:id/questions/:qid, 새 문항 POST /essays/:id/questions, AI 재생성 POST /essays/regenerate.
 │   ├── Stats.jsx            # /stats — 통계 페이지. useMyStats(groupBy) 실 데이터(placeholderData 로 toggle 시 깜빡임 방지). 단일 .card !p-0 통합 카드: 막대 + 도넛은 lg:grid-cols-[1.4fr_1fr] 좌우 분할 / 5축 막대(헤더 양 끝 chevron carousel 로 STATE/SCHOOL_NUM/WORKER 토글, dot indicator) / 2D 도넛(흰색 stroke 외곽선 + 작은 슬라이스는 stroke 얇게, hover 시 scale + drop-shadow 로 z 축 lift, 마우스 커서 따라다니는 툴팁, 범례 하단 우측에 작게) / 부족한 경험.
 │   └── Info.jsx          # /info — useMe + view/edit 모드 + useUpdateMe. 학적/직무 enum 선택자. 하단에 회원 탈퇴(POST /auth/withdraw) 위험 영역 + 확인 모달 ("탈퇴" 입력 검증)
 ```
@@ -217,16 +219,17 @@ src/
 
 ### Three.js (`PeersOrb`)
 
-`src/components/PeersOrb.jsx`는 npm `three` 의존(`^0.184.0`). 5축 데이터 contract `{ label, me, peers, seniors? }` (값 0–100, `seniors` 누락 시 0). 나/동기/선배 3개 prism 을 z=0 평면 가운데 두고 ±양쪽(`mesh.position.z = -depth/2`, depth 0.07/0.10/0.13)으로 솟는 **샌드위치** prism — 회전 어느 각도에서도 양면 모두 튀어나와 보임. 앞/뒤 cap 외곽선 둘 다 그림. 범례 swatch 클릭 시 native `<input type="color">` 가 열려 색을 바꿀 수 있고, 선택은 `localStorage.peersOrb.colors.v1` 에 영속화. 색/가시성 변경은 ref 로 직접 갱신해 scene 재구축 회피. 헤더 우측 `Maximize2` 아이콘(`onExpand` prop 전달 시) 으로 Dashboard 가 모달에서 확대 PeersOrb (`chartMaxWidth=620`) 띄움. **본인 5축은 백엔드 dashboard myCount 가 0 으로 비어와 `Dashboard.jsx` 가 `useExperiences()`/`useCertificates()` 로 클라 직접 카운트.** **동기 평균은 백엔드 값이 우선이지만 0 이면 mock 보강. 선배 통계는 백엔드 미구현이라 항상 mock** (`PEER_MOCK` / `SENIOR_MOCK` in Dashboard.jsx). 백엔드가 정상화되면 mock fallback 자연 회피.
+`src/components/PeersOrb.jsx`는 npm `three` 의존(`^0.184.0`). 5축 데이터 contract `{ label, me, peers, seniors? }` (값 0–100, `seniors` 누락 시 0). 나/동기/선배 3개 prism 을 z=0 평면 가운데 두고 ±양쪽(`mesh.position.z = -depth/2`, depth 0.07/0.10/0.13)으로 솟는 **샌드위치** prism — 회전 어느 각도에서도 양면 모두 튀어나와 보임. 앞/뒤 cap 외곽선 둘 다 그림. 범례 swatch 클릭 시 native `<input type="color">` 가 열려 색을 바꿀 수 있고, 선택은 `localStorage.peersOrb.colors.v1` 에 영속화. 색/가시성 변경은 ref 로 직접 갱신해 scene 재구축 회피. **친구 Dashboard 가 props 로 `axes` (백엔드 `peerAxes` 또는 빈 응답일 때 `PEER_AXES` mock) + `sub` + `warning` 만 넘김** — 백엔드 `peerAxes` 가 비어 오면 빨간 경고 카피와 함께 mock 5축으로 fallback (그래프 빈 채 three.js 터지는 것 방지).
 
-### 대시보드 카드
+### 대시보드 카드 (2026-05-16 친구 패턴으로 환원)
 
-`hasProfile=true` 일 때 HeroBanner / PeersOrb / EssayListCard 셋을 단일 `<section className="card !p-0 overflow-hidden">` 안에 묶어 hero 영역 통합. 그래서 세 컴포넌트 모두 `embedded` prop 으로 외곽 카드 셸을 벗는 모드를 지원.
+본인 통합 카드(HeroBanner+PeersOrb+EssayListCard 한 셸) / MyRoadmapCard / SeniorRoadmapCard 패턴은 폐기. 현재는 친구가 만든 단일 컬럼 스택 — HeroBanner → PeersOrb → 내 RoadmapCard → 선배 RoadmapCard.
 
-- `dashboard/HeroBanner.jsx` — 그라데이션 배너. `hasProfile=true` 분기에서는 카피만 노출(자소서 작성 CTA 는 EssayListCard 로 이전). `!hasProfile` 일 때만 "온보딩 시작하기" CTA. `embedded` 면 `rounded-2xl/border/shadow/mb-3` 제거하고 그라데이션 배경만 남겨 통합 카드의 상단 띠로 사용.
-- `dashboard/EssayListCard.jsx` — `data/essays.js` 의 ESSAYS mock 최대 5개 행 렌더(회사명·진행상태 뱃지·직무·최근수정일). 각 행 → `/essays/:id` (친구 EssayView). 우하단 `자소서 작성하기` btn-primary CTA → `/write`. 6+ 시 좌하단 `전체 보기 (N)` → `/essays`. `embedded` 면 `card !p-4` 제거하고 `flex flex-col h-full` 로 그리드 셀에 stretch. 시연용 mock 일관성 위해 React Query 훅 의존성 제거 (2026-05-15 통합 머지).
-- `dashboard/MyRoadmapCard.jsx` — `SEMESTERS`(8학기 1-1~4-2) 가로 grid에 `MY_ROADMAP` 마일스톤을 `ymToSemIndex(y, m)`으로 버킷팅. `TODAY_SEM_INDEX = 6` (4-1) 학기 하이라이트.
-- `dashboard/SeniorRoadmapCard.jsx` — `SENIOR_ROADMAPS` 3명 배열을 ←/→ 화살표로 carousel. 같은 학기 축에 마일스톤 매핑.
+- `dashboard/HeroBanner.jsx` — 그라데이션 배너. `hasProfile=true` 분기에서는 카피만 노출, `!hasProfile` 일 때 "온보딩 시작하기" CTA. (친구 Dashboard 는 항상 `hasProfile={true}` 로 호출 — onboarding 분기는 ProtectedRoute / Onboarding 페이지가 처리.)
+- `dashboard/RoadmapCard.jsx` — 헤더(제목 + `CategoryLegend`) + 본체. `carousel={{ list, idx, onChange }}` prop 주면 좌우 화살표 노출(선배용). `items` 와 `showNowMarker` 는 `Roadmap` 으로 그대로 위임.
+- `dashboard/Roadmap.jsx` — 입학(`rangeStart`)~졸업(`rangeEnd`) 사이 비율 좌표로 마일스톤 점 배치. hover/click 시 카테고리·제목·날짜·detail 칩 표시. 색은 `CAT_COLORS` lookup.
+- `dashboard/CategoryLegend.jsx` — `CAT_LABELS`/`CAT_COLORS` 5종 색상 범례. 두 RoadmapCard 헤더에서 공유.
+- 본인 친구 Dashboard 는 빈 응답 (`myRoadmap=[]` 또는 `seniorRoadmaps=[]`) 일 때 `EmptyRoadmapCard` 인라인 컴포넌트로 안내 ("아직 등록한 경험이 없어서…" + "경험을 등록하러 가볼까요?" CTA → `/my-experience/new`).
 
 ## 컨벤션
 
@@ -239,7 +242,7 @@ src/
 
 (상세는 [../CLAUDE.md](../CLAUDE.md))
 
-1. `.env`에 `VITE_API_URL=http://localhost:8080/api` (`/api` 포함).
+1. `.env`에 `VITE_API_URL=https://api.logi.p-e.kr/api` (배포 백엔드) 또는 `http://localhost:8080/api` (로컬 백엔드). `/api` 포함.
 2. 백엔드 yml의 `app.cors.allowed-origins`에 dev 포트 추가 — 현재는 `http://localhost:3000`만 허용.
 3. `axios.js`에 response interceptor 추가해서 `ApiResponse<T> = { statusCode, message, data }` 의 `data`를 까는 layer 만들면 호출부가 깔끔해짐.
 4. 토큰 저장 키는 `localStorage.token`으로 약속됨 (interceptor가 그 키를 읽음). 로그인 응답 `accessToken`을 그 키에 저장.
