@@ -39,10 +39,3 @@ export const RELATED_SITES = [
   { label: 'ON국민시스템', href: 'https://portal.kookmin.ac.kr/por/ln' },
   { label: 'K-Startrack', href: 'https://k-startrack.kookmin.ac.kr/' },
 ];
-
-// 현재 로그인 mock — 페이지 분리 후에도 같은 사용자 정보 표시
-export const CURRENT_USER = {
-  name: '한혜민',
-  sub: '소프트웨어학부',
-  initial: '한',
-};

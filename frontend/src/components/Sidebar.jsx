@@ -9,8 +9,10 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '../lib/cn';
-import { NAV, RELATED_SITES, CURRENT_USER } from '../data/sidebar';
+import { NAV, RELATED_SITES } from '../data/sidebar';
 import { useAuth } from '../store/useAuth';
+import { useMe } from '../api/queries/useMe';
+import { KOOKMIN_DEPT_OPTIONS } from '../lib/enums';
 
 const ICONS = { Home, PencilLine, BarChart3, User };
 
@@ -26,6 +28,14 @@ const ICONS = { Home, PencilLine, BarChart3, User };
 export default function Sidebar({ open = false, onClose }) {
   const navigate = useNavigate();
   const logout = useAuth((s) => s.logout);
+  const { data: me } = useMe();
+
+  const userName = me?.userName ?? '';
+  const initial = userName ? userName.slice(0, 1) : '';
+  const majorLabel =
+    KOOKMIN_DEPT_OPTIONS.find((o) => o.value === me?.major)?.label ??
+    me?.major ??
+    '';
 
   const handleLogout = () => {
     // useAuth.logout 이 토큰/유저 비우고 백엔드 /auth/logout 을 best-effort 호출.
@@ -78,7 +88,7 @@ export default function Sidebar({ open = false, onClose }) {
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
           <span className="grid place-items-center w-8 h-8">
             <img
-              src="/favicon.svg"
+              src="/logo.svg"
               alt="Logi"
               className="w-8 h-8 object-contain"
             />
@@ -166,14 +176,14 @@ export default function Sidebar({ open = false, onClose }) {
         {/* User footer */}
         <div className="flex items-center gap-2.5 px-3.5 py-3 border-t border-white/10">
           <span className="grid place-items-center w-8 h-8 rounded-full bg-white/15 text-white text-[12px] font-bold">
-            {CURRENT_USER.initial}
+            {initial}
           </span>
           <div className="flex-1 min-w-0 leading-tight">
             <div className="text-white text-[12.5px] font-semibold truncate">
-              {CURRENT_USER.name}
+              {userName}
             </div>
             <div className="text-white/55 text-[10.5px] truncate">
-              {CURRENT_USER.sub}
+              {majorLabel}
             </div>
           </div>
           <button
