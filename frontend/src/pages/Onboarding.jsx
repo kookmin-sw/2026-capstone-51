@@ -136,21 +136,14 @@ export default function Onboarding() {
   const cancel = () => nav('/');
 
   return (
-    <div className="min-h-screen bg-page flex flex-col items-center px-6 pt-10 pb-24">
+    <div className="min-h-screen bg-page flex flex-col justify-center items-center px-6 pt-10 pb-24">
       {/* 브랜드 */}
-      <div className="flex items-center gap-2.5 mb-7 text-primary-900 font-bold text-[19px] tracking-tight">
-        <span className="grid place-items-center w-8 h-8 rounded-md bg-primary-900 text-white">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M5 4v16M5 20h12"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <circle cx="18" cy="7" r="2" fill="currentColor" />
-          </svg>
-        </span>
+      <div className="flex items-center gap-1.5 mb-7 text-primary-900 font-bold text-[19px] tracking-tight">
+        <img
+          src="/logo2.svg"
+          alt="Logi 로고"
+          className="h-9 w-auto object-contain shrink-0"
+        />
         Logi
       </div>
 

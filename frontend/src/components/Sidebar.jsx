@@ -27,18 +27,11 @@ export default function Sidebar() {
     <aside className="flex flex-col w-[232px] shrink-0 bg-sidebar-bg text-white/80 min-h-screen">
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
-        <span className="grid place-items-center w-8 h-8 rounded-md bg-white/10 text-white">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M5 4v16M5 20h12"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <circle cx="18" cy="7" r="2" fill="currentColor" />
-          </svg>
-        </span>
+        <img
+          src="/logo2.svg"
+          alt="Logi 로고"
+          className="w-9 h-9 object-contain shrink-0"
+        />
         <div className="leading-tight">
           <div className="text-white font-bold text-[15px]">Logi</div>
           <div className="text-white/55 text-[10.5px]">Kookmin University</div>
