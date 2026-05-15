@@ -1,52 +1,47 @@
-import React from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
-import { ESSAYS } from '../data/essays';
+import { useEssays, useUpdateEssayResult } from '../api/queries/useEssays';
+import { PROGRESS_LABEL, PROGRESS_TONE } from '../lib/enums';
+import { toast } from '../store/useToast';
 
 /* ------------------------------------------------------------------ *
  * 자소서 관리.
- *  - 행 전체 클릭 시 자소서 열람으로 이동
- *  - 액션 컬럼은 "결과 입력" 으로 통일 (작성 중 / 제출 완료 모두 적용)
- *    · 작성 중: "결과 입력" 버튼 (제출됨으로 전환 + 결과 선택)
- *    · 제출 완료: 현재 결과 뱃지 + 결과 변경 드롭다운
+ *  - GET /essays → EssayResponse[] = { essayId, companyName, wishJob, progress, updatedAt }
+ *  - 행 전체 클릭 → /essays/:essayId
+ *  - "결과 변경" 드롭다운 → PATCH /essays/:id/result { progress: IN_PROGRESS|PASS|FAIL }
+ *  - 친구 mock 의 prog/total/dday 는 백엔드 미제공 — UI 에서 제거.
  * ------------------------------------------------------------------ */
-
-const RESULT_LABELS = {
-  pending: '결과 대기',
-  pass: '서류 합격',
-  fail: '서류 탈락',
-};
-const RESULT_TONES = {
-  pending: 'gray',
-  pass: 'green',
-  fail: 'red',
-};
 
 export default function Essays() {
   const navigate = useNavigate();
-  const [query, setQuery] = React.useState('');
-  const [list, setList] = React.useState(ESSAYS);
-  const [openId, setOpenId] = React.useState(null); // 결과 입력 드롭다운
+  const [query, setQuery] = useState('');
+  const [openId, setOpenId] = useState(null);
+  const list = useEssays();
+  const updateResult = useUpdateEssayResult();
 
-  const setResult = (id, result) => {
-    setList((prev) =>
-      prev.map((e) =>
-        e.id === id
-          ? { ...e, status: 'submitted', result, dday: '제출 완료' }
-          : e
-      )
-    );
-    setOpenId(null);
-  };
-
-  const filtered = list.filter((e) => {
+  const items = list.data ?? [];
+  const filtered = items.filter((e) => {
     if (!query) return true;
     const q = query.toLowerCase();
-    return (e.co + ' ' + e.job).toLowerCase().includes(q);
+    return ((e.companyName ?? '') + ' ' + (e.wishJob ?? ''))
+      .toLowerCase()
+      .includes(q);
   });
+
+  const setResult = (id, progress) => {
+    setOpenId(null);
+    updateResult.mutate(
+      { id, progress },
+      {
+        onError: (err) =>
+          toast.error(err?.apiMessage || '결과 저장에 실패했어요.'),
+      }
+    );
+  };
 
   return (
     <>
@@ -65,7 +60,7 @@ export default function Essays() {
 
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="text-[12px] text-ink-500">
-          전체 <b className="text-ink-800 font-bold">{list.length}</b>건
+          전체 <b className="text-ink-800 font-bold">{items.length}</b>건
         </div>
         <div className="flex items-center gap-2 bg-paper border border-ink-200 rounded-md px-3 py-1.5 min-w-[260px]">
           <Search size={13} className="text-ink-500" />
@@ -78,31 +73,54 @@ export default function Essays() {
         </div>
       </div>
 
-      {/* 표 */}
       <section className="bg-paper border border-ink-200 rounded-md overflow-visible">
         <div
           className="grid items-center px-5 py-2.5 bg-ink-50 border-b border-ink-200 text-[11.5px] font-semibold text-ink-500 tracking-wide"
-          style={{ gridTemplateColumns: '1fr 130px 110px 200px' }}
+          style={{ gridTemplateColumns: '1fr 140px 130px 180px' }}
         >
           <div>기업 · 직무</div>
-          <div>마감 / 상태</div>
+          <div>진행 상태</div>
           <div>마지막 수정</div>
           <div className="text-right">액션</div>
         </div>
-        {filtered.length === 0 ? (
+
+        {list.isLoading ? (
           <div className="py-16 text-center text-[13px] text-ink-500">
-            조건에 맞는 자소서가 없습니다.
+            불러오는 중…
+          </div>
+        ) : list.isError ? (
+          <div className="py-16 text-center">
+            <p className="text-[13px] text-ink-700 mb-3">
+              {list.error?.apiMessage || '자소서 목록을 불러오지 못했습니다.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => list.refetch()}
+              className="btn-default"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-[13px] text-ink-500">
+            {items.length === 0
+              ? '아직 작성한 자소서가 없어요. 우측 상단에서 새로 작성해보세요.'
+              : '조건에 맞는 자소서가 없습니다.'}
           </div>
         ) : (
           filtered.map((e, i) => (
             <Row
-              key={e.id}
+              key={e.essayId}
               e={e}
               isLast={i === filtered.length - 1}
-              open={openId === e.id}
-              onOpen={() => setOpenId(openId === e.id ? null : e.id)}
-              onClickRow={() => navigate(`/essays/${e.id}`)}
-              onSetResult={(r) => setResult(e.id, r)}
+              open={openId === e.essayId}
+              onOpen={() => setOpenId(openId === e.essayId ? null : e.essayId)}
+              onClickRow={() => navigate(`/essays/${e.essayId}`)}
+              onSetResult={(p) => setResult(e.essayId, p)}
+              isPending={
+                updateResult.isPending &&
+                updateResult.variables?.id === e.essayId
+              }
             />
           ))
         )}
@@ -111,78 +129,66 @@ export default function Essays() {
   );
 }
 
-function Row({ e, isLast, open, onOpen, onClickRow, onSetResult }) {
-  const submitted = e.status === 'submitted';
+function Row({ e, isLast, open, onOpen, onClickRow, onSetResult, isPending }) {
+  const progress = e.progress ?? 'IN_PROGRESS';
+  const isFinal = progress === 'PASS' || progress === 'FAIL';
   return (
     <div
       onClick={onClickRow}
       className={`grid items-center px-5 py-3.5 cursor-pointer hover:bg-ink-50/60 transition-colors
         ${isLast ? '' : 'border-b border-ink-150'}`}
-      style={{ gridTemplateColumns: '1fr 130px 110px 200px' }}
+      style={{ gridTemplateColumns: '1fr 140px 130px 180px' }}
     >
-      {/* 기업 · 직무 */}
       <div className="min-w-0 pr-3">
         <div className="text-[14px] font-bold text-ink-900 truncate">
-          {e.co}
+          {e.companyName || '(회사명 없음)'}
         </div>
-        <div className="text-[12px] text-ink-500 truncate mt-0.5">{e.job}</div>
+        <div className="text-[12px] text-ink-500 truncate mt-0.5">
+          {e.wishJob || '(직무 미입력)'}
+        </div>
       </div>
 
-      {/* 마감/상태 */}
       <div className="text-[12px]">
-        {submitted ? (
-          <span className="text-ink-500">제출 완료</span>
-        ) : (
-          <>
-            <div className="font-bold text-ink-800">{e.dday}</div>
-            <div className="text-[11px] text-ink-500 mt-0.5">
-              {e.prog}/{e.total} 문항
-            </div>
-          </>
-        )}
+        <Badge tone={PROGRESS_TONE[progress] ?? 'gray'}>
+          {PROGRESS_LABEL[progress] ?? progress}
+        </Badge>
       </div>
 
-      {/* 마지막 수정 */}
-      <div className="text-[12px] text-ink-600">{e.updated}</div>
+      <div className="text-[12px] text-ink-600 tabular-nums">
+        {fmtDate(e.updatedAt)}
+      </div>
 
-      {/* 액션 — 결과 입력으로 통일 */}
       <div
         className="flex justify-end relative"
         onClick={(ev) => ev.stopPropagation()}
       >
-        {submitted ? (
-          <div className="flex items-center gap-2">
-            <Badge tone={RESULT_TONES[e.result]}>
-              {RESULT_LABELS[e.result]}
-            </Badge>
-            <Button size="sm" onClick={onOpen}>
-              결과 변경 ▾
-            </Button>
-          </div>
-        ) : (
-          <Button size="sm" variant="primary" onClick={onOpen}>
-            결과 입력 ▾
-          </Button>
-        )}
+        <Button
+          size="sm"
+          variant={isFinal ? 'default' : 'primary'}
+          onClick={onOpen}
+          disabled={isPending}
+        >
+          {isPending ? '저장 중…' : isFinal ? '결과 변경 ▾' : '결과 입력 ▾'}
+        </Button>
 
         {open && (
           <div className="absolute right-0 top-full mt-1 z-30 bg-paper border border-ink-200 rounded-md shadow-lg w-44 py-1">
-            {['pass', 'fail', 'pending'].map((r) => (
+            {['PASS', 'FAIL', 'IN_PROGRESS'].map((p) => (
               <button
-                key={r}
-                onClick={() => onSetResult(r)}
+                key={p}
+                onClick={() => onSetResult(p)}
                 className="w-full text-left px-3 py-1.5 text-[12.5px] hover:bg-ink-50 flex items-center gap-2"
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    r === 'pass'
+                    p === 'PASS'
                       ? 'bg-[#1F7A4E]'
-                      : r === 'fail'
+                      : p === 'FAIL'
                         ? 'bg-red-500'
                         : 'bg-ink-400'
                   }`}
                 />
-                {RESULT_LABELS[r]}
+                {PROGRESS_LABEL[p]}
               </button>
             ))}
           </div>
@@ -190,4 +196,9 @@ function Row({ e, isLast, open, onOpen, onClickRow, onSetResult }) {
       </div>
     </div>
   );
+}
+
+function fmtDate(s) {
+  if (!s) return '';
+  return s.slice(0, 10).replaceAll('-', '.');
 }
