@@ -115,42 +115,35 @@ export default function Landing() {
           }}
         />
 
-        {/* Top block — emblem + tagline */}
+        {/* Top block — logo + tagline */}
         <div className="relative max-w-[560px]">
-          <div
-            className="grid place-items-center w-12 h-12 sm:w-14 sm:h-14 rounded-[14px] mb-7 sm:mb-9 transition-transform duration-500"
-            style={{
-              background: 'rgba(255,255,255,0.14)',
-              border: '1px solid rgba(255,255,255,0.26)',
-              transform: hover
-                ? 'rotate(-6deg) scale(1.05)'
-                : 'rotate(0) scale(1)',
-              boxShadow: hover ? '0 16px 36px rgba(120,170,255,0.4)' : 'none',
-            }}
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 4v16M5 20h12"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="18" cy="7" r="2" fill="currentColor" />
-            </svg>
-          </div>
           <div
             className="text-[12px] sm:text-[14px] uppercase tracking-[0.1em] font-medium mb-5 sm:mb-7"
             style={{ color: 'rgba(255,255,255,0.70)' }}
           >
             Kookmin University
           </div>
-          <h1
-            className="text-[56px] sm:text-[72px] lg:text-[88px] font-bold leading-[0.95] tracking-[-0.03em] m-0 mb-4 sm:mb-6"
-            style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}
-          >
-            Logi
-          </h1>
+          <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <img
+              src="/logo.svg"
+              alt="Logi 로고"
+              className="w-[64px] h-[64px] sm:w-[80px] sm:h-[80px] lg:w-[96px] lg:h-[96px] object-contain transition-transform duration-500"
+              style={{
+                transform: hover
+                  ? 'rotate(-6deg) scale(1.05)'
+                  : 'rotate(0) scale(1)',
+                filter: hover
+                  ? 'drop-shadow(0 16px 36px rgba(120,170,255,0.4))'
+                  : 'none',
+              }}
+            />
+            <h1
+              className="text-[56px] sm:text-[72px] lg:text-[88px] font-bold leading-[0.95] tracking-[-0.03em] m-0"
+              style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif" }}
+            >
+              Logi
+            </h1>
+          </div>
           <p
             className="text-[15px] sm:text-[17px] lg:text-[19px] leading-[1.65] max-w-[460px] break-keep"
             style={{ color: 'rgba(255,255,255,0.86)' }}
