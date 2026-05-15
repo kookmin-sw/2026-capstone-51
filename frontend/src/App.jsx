@@ -16,8 +16,9 @@ import MyCertificates from './pages/MyCertificates';
 import NewCertificate from './pages/NewCertificate';
 import CertificateDetail from './pages/CertificateDetail';
 import Write from './pages/Write';
-import MyEssays from './pages/MyEssays';
-import EssayDetail from './pages/EssayDetail';
+import Essays from './pages/Essays';
+import EssayView from './pages/EssayView';
+import EssayEdit from './pages/EssayEdit';
 import Stats from './pages/Stats';
 
 /**
@@ -41,8 +42,9 @@ export default function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/write" element={<Write />} />
-              <Route path="/essays" element={<MyEssays />} />
-              <Route path="/essays/:id" element={<EssayDetail />} />
+              <Route path="/essays" element={<Essays />} />
+              <Route path="/essays/:id" element={<EssayView />} />
+              <Route path="/essays/:id/edit" element={<EssayEdit />} />
               <Route path="/stats" element={<Stats />} />
               <Route path="/info" element={<Info />} />
               <Route path="/my-experience" element={<MyExperience />} />
