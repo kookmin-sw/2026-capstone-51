@@ -49,36 +49,45 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
             @Param("major") KookminDepartment major
     );
 
-    // major + state 기준 자격증 보유 유저 수
+    // major + state 기준 자격증 유저별 최대 수
     @Query("""
-            SELECT COUNT(DISTINCT c.user) AS userCount
-            FROM Certificate c
-            JOIN c.user u
-            WHERE u.major = :major AND u.state = :state
+            SELECT MAX(sub.cnt) FROM (
+                SELECT COUNT(c) AS cnt
+                FROM Certificate c
+                JOIN c.user u
+                WHERE u.major = :major AND u.state = :state
+                GROUP BY c.user
+            ) sub
             """)
-    Long findLicenseUserCountByMajorAndState(
+    Long findLicenseMaxCountByMajorAndState(
             @Param("major") KookminDepartment major,
             @Param("state") State state
     );
 
     @Query("""
-            SELECT COUNT(DISTINCT c.user) AS userCount
-            FROM Certificate c
-            JOIN c.user u
-            WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
+            SELECT MAX(sub.cnt) FROM (
+                SELECT COUNT(c) AS cnt
+                FROM Certificate c
+                JOIN c.user u
+                WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
+                GROUP BY c.user
+            ) sub
             """)
-    Long findLicenseUserCountByMajorAndSchoolNum(
+    Long findLicenseMaxCountByMajorAndSchoolNum(
             @Param("major") KookminDepartment major,
             @Param("schoolNumPrefix") String schoolNumPrefix
     );
 
     @Query("""
-            SELECT COUNT(DISTINCT c.user) AS userCount
-            FROM Certificate c
-            JOIN c.user u
-            WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
+            SELECT MAX(sub.cnt) FROM (
+                SELECT COUNT(c) AS cnt
+                FROM Certificate c
+                JOIN c.user u
+                WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
+                GROUP BY c.user
+            ) sub
             """)
-    Long findLicenseUserCountByMajorAndWorker(
+    Long findLicenseMaxCountByMajorAndWorker(
             @Param("major") KookminDepartment major
     );
 

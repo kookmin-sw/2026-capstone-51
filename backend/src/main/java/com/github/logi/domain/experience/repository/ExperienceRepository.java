@@ -55,40 +55,52 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             @Param("major") KookminDepartment major
     );
 
-    // major + state 기준 경험 카테고리별 유저 수 (해당 카테고리를 가진 유저 수)
-    @Query("""
-            SELECT e.experienceCategory AS category, COUNT(DISTINCT e.user) AS userCount
-            FROM Experience e
-            JOIN e.user u
-            WHERE u.major = :major AND u.state = :state
-            GROUP BY e.experienceCategory
-            """)
-    List<CategoryUserCountView> findCategoryUserCountByMajorAndState(
-            @Param("major") KookminDepartment major,
-            @Param("state") State state
+    // major + state 기준 카테고리별 유저 최대 경험 수
+    @Query(value = """
+            SELECT sub.experience_category AS category, MAX(sub.cnt) AS maxCount
+            FROM (
+                SELECT e.experience_category, e.user_id, COUNT(e.id) AS cnt
+                FROM experiences e
+                JOIN users u ON u.id = e.user_id
+                WHERE u.major = :major AND u.state = :state AND e.deleted_at IS NULL
+                GROUP BY e.experience_category, e.user_id
+            ) sub
+            GROUP BY sub.experience_category
+            """, nativeQuery = true)
+    List<CategoryMaxCountView> findCategoryMaxCountByMajorAndState(
+            @Param("major") String major,
+            @Param("state") String state
     );
 
-    @Query("""
-            SELECT e.experienceCategory AS category, COUNT(DISTINCT e.user) AS userCount
-            FROM Experience e
-            JOIN e.user u
-            WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
-            GROUP BY e.experienceCategory
-            """)
-    List<CategoryUserCountView> findCategoryUserCountByMajorAndSchoolNum(
-            @Param("major") KookminDepartment major,
+    @Query(value = """
+            SELECT sub.experience_category AS category, MAX(sub.cnt) AS maxCount
+            FROM (
+                SELECT e.experience_category, e.user_id, COUNT(e.id) AS cnt
+                FROM experiences e
+                JOIN users u ON u.id = e.user_id
+                WHERE u.major = :major AND u.school_number LIKE :schoolNumPrefix% AND e.deleted_at IS NULL
+                GROUP BY e.experience_category, e.user_id
+            ) sub
+            GROUP BY sub.experience_category
+            """, nativeQuery = true)
+    List<CategoryMaxCountView> findCategoryMaxCountByMajorAndSchoolNum(
+            @Param("major") String major,
             @Param("schoolNumPrefix") String schoolNumPrefix
     );
 
-    @Query("""
-            SELECT e.experienceCategory AS category, COUNT(DISTINCT e.user) AS userCount
-            FROM Experience e
-            JOIN e.user u
-            WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
-            GROUP BY e.experienceCategory
-            """)
-    List<CategoryUserCountView> findCategoryUserCountByMajorAndWorker(
-            @Param("major") KookminDepartment major
+    @Query(value = """
+            SELECT sub.experience_category AS category, MAX(sub.cnt) AS maxCount
+            FROM (
+                SELECT e.experience_category, e.user_id, COUNT(e.id) AS cnt
+                FROM experiences e
+                JOIN users u ON u.id = e.user_id
+                WHERE u.major = :major AND u.state = 'WORKER' AND e.deleted_at IS NULL
+                GROUP BY e.experience_category, e.user_id
+            ) sub
+            GROUP BY sub.experience_category
+            """, nativeQuery = true)
+    List<CategoryMaxCountView> findCategoryMaxCountByMajorAndWorker(
+            @Param("major") String major
     );
 
     // major + state 기준 자신을 제외한 최신 경험 제목 Top N (weakPoints 추천)
@@ -165,9 +177,9 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
         Double getAvg();
     }
 
-    interface CategoryUserCountView {
-        ExperienceCategory getCategory();
-        Long getUserCount();
+    interface CategoryMaxCountView {
+        String getCategory();
+        Long getMaxCount();
     }
 
     interface TitleCountView {

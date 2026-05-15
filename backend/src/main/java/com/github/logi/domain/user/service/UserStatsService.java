@@ -56,7 +56,7 @@ public class UserStatsService {
                 buildCategoryStat(ExperienceCategory.PARTTIME, groupAvg, myCountMap),
                 buildCategoryStat(ExperienceCategory.EXTERNAL, groupAvg, myCountMap),
                 buildCategoryStat(ExperienceCategory.INTERNAL, groupAvg, myCountMap),
-                CategoryStat.of(groupAvg.licenseAvg(), groupAvg.licenseUserCount(), myLicenseCount),
+                CategoryStat.of(groupAvg.licenseAvg(), groupAvg.licenseMaxCount(), myLicenseCount),
                 buildCategoryStat(ExperienceCategory.INTERN, groupAvg, myCountMap)
         );
     }
@@ -67,9 +67,9 @@ public class UserStatsService {
             Map<ExperienceCategory, Long> myCountMap
     ) {
         double avg = groupAvg.avgMap().getOrDefault(category, 0.0);
-        long userCount = groupAvg.userCountMap().getOrDefault(category, 0L);
+        long maxCount = groupAvg.maxCountMap().getOrDefault(category, 0L);
         long myCount = myCountMap.getOrDefault(category, 0L);
-        return CategoryStat.of(avg, userCount, myCount);
+        return CategoryStat.of(avg, maxCount, myCount);
     }
 
     private List<WeakPoint> buildWeakPoints(User user, GroupContext ctx, Statistics statistics) {
