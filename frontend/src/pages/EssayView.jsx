@@ -48,7 +48,10 @@ export default function EssayView() {
   }
 
   const essay = q.data;
-  const questions = essay.questions ?? [];
+  // questionNum 오름차순 정렬 — 백엔드가 생성 순으로 줄 수 있어 클라이언트에서 보정.
+  const questions = (essay.questions ?? [])
+    .slice()
+    .sort((a, b) => (a.questionNum ?? 0) - (b.questionNum ?? 0));
   const progress = essay.progress ?? 'IN_PROGRESS';
 
   return (

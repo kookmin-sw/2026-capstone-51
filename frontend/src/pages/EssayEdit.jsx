@@ -65,9 +65,11 @@ export default function EssayEdit() {
   const essay = detail.data;
   // placeholder response 가 박힌 문항 = 아래 QuestionEditor 에서 등록만 하고 아직 저장 전인
   // 작성 중 임시 레코드. 사용자의 "저장하기" PATCH 가 끝나기 전엔 기존 리스트에서 숨긴다.
-  const questions = (essay.questions ?? []).filter(
-    (q) => q.response !== PLACEHOLDER_RESPONSE
-  );
+  // questionNum 오름차순 정렬 — 백엔드가 생성 순(최근이 위)으로 줄 수 있어 항상 클라이언트에서 보정.
+  const questions = (essay.questions ?? [])
+    .filter((q) => q.response !== PLACEHOLDER_RESPONSE)
+    .slice()
+    .sort((a, b) => (a.questionNum ?? 0) - (b.questionNum ?? 0));
 
   return (
     <>
