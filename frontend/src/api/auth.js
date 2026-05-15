@@ -15,7 +15,7 @@ export function redirectToGoogleLogin() {
 
   if (!clientId || !redirectUri) {
     alert(
-      'Google OAuth 설정이 비어 있습니다. .env 의 VITE_GOOGLE_CLIENT_ID / VITE_GOOGLE_REDIRECT_URI 를 채워주세요.',
+      'Google OAuth 설정이 비어 있습니다. .env 의 VITE_GOOGLE_CLIENT_ID / VITE_GOOGLE_REDIRECT_URI 를 채워주세요.'
     );
     return;
   }
@@ -53,7 +53,7 @@ export function logApiError(label, err) {
     if (response) {
       const body = response.data ?? {};
       console.groupCollapsed(
-        `[${label}] HTTP ${response.status} ${response.statusText} — ${body?.message ?? message}`,
+        `[${label}] HTTP ${response.status} ${response.statusText} — ${body?.message ?? message}`
       );
       console.error('url      :', config?.baseURL ?? '', config?.url ?? '');
       console.error('method   :', config?.method?.toUpperCase());
@@ -68,7 +68,7 @@ export function logApiError(label, err) {
     }
     if (request) {
       console.groupCollapsed(
-        `[${label}] 응답을 받지 못함 (네트워크/CORS/타임아웃) — ${code ?? message}`,
+        `[${label}] 응답을 받지 못함 (네트워크/CORS/타임아웃) — ${code ?? message}`
       );
       console.error('url     :', config?.baseURL ?? '', config?.url ?? '');
       console.error('method  :', config?.method?.toUpperCase());
