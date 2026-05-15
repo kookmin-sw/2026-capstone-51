@@ -53,7 +53,7 @@ export const EXPERIENCE_CATEGORY_OPTIONS = [
 // 백엔드: FAIL | PASS | IN_PROGRESS
 
 export const PROGRESS_LABEL = {
-  IN_PROGRESS: '작성 중',
+  IN_PROGRESS: '결과 대기',
   PASS: '합격',
   FAIL: '불합격',
 };
