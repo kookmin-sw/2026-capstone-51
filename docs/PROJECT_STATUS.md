@@ -9,12 +9,31 @@
 
 ## 현재 브랜치 / 작업 범위
 
-- **브랜치**: `frontend/chore/safety-fixes`
+- **브랜치**: `frontend/integration` (master + `frontend/feat/career-domains` 통합용)
 - **레포**: `kookmin-sw/2026-capstone-51` (default `master`)
 - **작업 범위**: 프론트엔드 전용 (`frontend/`). `backend/`는 read-only 컨텍스트로만 참고.
 - **푸시/PR 정책**: 로컬 커밋만. `git push` / PR 생성 안 함.
 
 ## 최근 작업 단위 (가장 최근부터)
+
+### frontend/integration 통합 머지 (2026-05-15)
+
+- **목표**: 친구(승준) PR #44 가 essay 브랜치로 master 에 25 파일/5304 라인 짜리 대규모 프론트 작업을 머지한 상태 + PR #45 로 로고/사이드바 추가 머지. 본인 career-domains 브랜치(236 커밋) 와 시연 전 통합 필요.
+- **전략**: master 에서 `frontend/integration` 새 브랜치 → career-domains 머지 → 충돌·중복 해결.
+  - **마이페이지(내 경험/내 자격증/내 정보)** + **본인 인프라**(api/queries, store, App.jsx, ProtectedRoute, ErrorBoundary, Toaster, axios 인터셉터, lib/enums) — **본인 채택**
+  - **Layout/Sidebar/main/Landing/Onboarding/Dashboard** — 본인 채택 (모바일 반응형 + 통합 카드 2컬럼)
+  - **PeersOrb/HeroBanner/Stats/Write/SplashScreen** — 친구 UI 채택
+  - **자소서 페이지(Essays/EssayView/EssayEdit) + mock 데이터** — 친구 채택 (시연용 mock 유지)
+  - **친구 인프라(api/auth.js, api/users.js, lib/useCurrentUser.js)** — 임시 유지 (친구 페이지 의존)
+  - **로고**: Sidebar `assets/logo.png` → `/favicon.svg`, index.html 도 favicon.svg
+  - **SplashScreen 인증 로직**: 친구 UI(연필 글씨 애니메이션) + 본인 zustand(`useAuth.setTokens`)·`toast.error` 로 마이그레이션. AuthCallback 삭제.
+- **삭제**: 본인 MyEssays/EssayDetail/EssayMetaForm/QuestionEditor, 친구 PeersCard/Roadmap/RoadmapCard/CategoryLegend, AuthCallback, assets/logo.png.
+- **EssayListCard**: useEssays() React Query 훅 → `data/essays.js` ESSAYS mock 직접 사용으로 단순화 (자소서가 mock 으로 가니 일관성 확보).
+- **커밋 흐름**: `d7b7fb3` 머지 → `5dbfc57` SplashScreen 마이그레이션 → 자소서 친구 페이지 회귀 → logo.png 정리 → 본 문서 갱신.
+- **결정 안 한 항목 / 후속**:
+  - 친구 인프라 3 파일(`api/auth.js`/`api/users.js`/`lib/useCurrentUser.js`) — 친구 Stats 가 `getMyStats` 의존. Stats 가 mock fallback 로 자동 작동하긴 함. 마이그레이션 안 함, 유지.
+  - 검증(빌드/lint) 미실행 — 다음 작업에서 한 번에.
+  - PR #46 이후 master 추가 변경 미반영 — 시연 전 한 번 더 fetch+merge 필요.
 
 ### 자소서 결과 토스트를 변경과 같은 시점으로 (2026-05-13)
 

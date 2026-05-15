@@ -58,7 +58,7 @@ Logi 프론트엔드 — 국민대학교 자소서 플랫폼. React 19 + Vite 8 
                                                        ↓
    main.jsx 의 어댑터: pathname /auth/callback → hash /#/auth/callback (HashRouter 가 hash 만 보므로)
                                                        ↓
-   /auth/callback (AuthCallback.jsx)
+   /auth/callback (SplashScreen.jsx — 친구 디자인 + 본인 zustand 로직)
      └─ POST /api/auth/login { grantCode } → { accessToken, refreshToken, firstLogin }
         ├─ useAuth.setTokens (localStorage 저장)
         └─ firstLogin === true ? /onboarding : /dashboard
@@ -192,7 +192,7 @@ src/
 │   └── dashboard/        # HeroBanner, EssayListCard, MyRoadmapCard, SeniorRoadmapCard
 ├── pages/
 │   ├── Landing.jsx       # 풀-블리드 split-screen. Google 버튼 클릭 시 accounts.google.com 로 풀페이지 리다이렉트
-│   ├── AuthCallback.jsx  # OAuth 콜백 — grant code → POST /auth/login → firstLogin 분기
+│   ├── SplashScreen.jsx  # /auth/callback OAuth 콜백 — 친구 연필 글씨 SVG 애니메이션 + 본인 zustand(useAuth.setTokens) 인증 로직. grant code → POST /auth/login → firstLogin 분기
 │   ├── Onboarding.jsx    # 단일 페이지 폼. lib/enums 직접 사용. 인라인 검증(필수/범위/부전공≠전공). 시작하기 = PUT /users/me → /dashboard
 │   ├── Dashboard.jsx     # Crumbs + 상단 통합 카드(HeroBanner 그라데이션 띠 + PeersOrb 좌 / EssayListCard 우, lg 2-col + divider) + MyRoadmapCard + SeniorRoadmapCard 스택. !hasProfile 일 때만 HeroBanner 단독 + placeholder.
 │   ├── MyExperience.jsx  # /my-experience — useExperiences 목록. 단일 .card !p-0 셸 안에 검색창 + 카테고리 필터 칩 + <ol> 번호 매긴 두 줄 콤팩트 row 리스트. row = 번호 + 카테고리 뱃지·제목 / 기간·관련전공. 클릭 → 상세. 검색은 experienceTitle 부분일치만 (클라이언트).
@@ -202,8 +202,9 @@ src/
 │   ├── NewCertificate.jsx   # /my-certificates/new — useCreateCertificate + CertificateForm 래퍼
 │   ├── CertificateDetail.jsx # /my-certificates/:id — view/edit 토글 + useUpdateCertificate + useDeleteCertificate (Modal 삭제 확인). 백엔드 단건 GET 없어 목록 캐시에서 ID 매칭. 증빙 자료 섹션은 백엔드 multipart 업로드 미연동 안내.
 │   ├── Write.jsx            # /write — 자소서 작성 stage machine: meta(회사·직무·요구사항) → questions(문항 카드 다중 + AI 추천/생성/재생성/저장)
-│   ├── MyEssays.jsx         # /essays — 자소서 목록. 단일 .card !p-0 셸 안에 검색창 + <ol> 번호 매긴 두 줄 콤팩트 row 리스트. row = 번호 + 회사명·진행상태 뱃지 / 직무·최종수정일. essayId opportunistic — 있으면 우측 ghost "상세" 활성, 누락이면 disabled + 카드 위 안내 박스.
-│   ├── EssayDetail.jsx      # /essays/:id — 메타 view/edit + 결과 입력(IN_PROGRESS/PASS/FAIL) + 문항 읽기 + 자소서 삭제(2클릭 confirm). useEssay normalize 어댑터 사용.
+│   ├── Essays.jsx           # /essays — 자소서 목록 (친구 mock 기반). data/essays.js 의 ESSAYS 사용. 결과 입력 드롭다운 / 행 클릭 → /essays/:id.
+│   ├── EssayView.jsx        # /essays/:id — 자소서 열람 (친구 mock 기반). 회사·직무·공통 요구사항 + 문항 읽기. 우측 상단 "수정하기" → /essays/:id/edit.
+│   ├── EssayEdit.jsx        # /essays/:id/edit — 자소서 수정 (친구 mock 기반). 메타/문항 카드별 인라인 편집 + AI 재생성(mockGenerateDraft).
 │   ├── Stats.jsx            # /stats — 통계 페이지. useMyStats(groupBy) 실 데이터(placeholderData 로 toggle 시 깜빡임 방지). 단일 .card !p-0 통합 카드: 막대 + 도넛은 lg:grid-cols-[1.4fr_1fr] 좌우 분할 / 5축 막대(헤더 양 끝 chevron carousel 로 STATE/SCHOOL_NUM/WORKER 토글, dot indicator) / 2D 도넛(흰색 stroke 외곽선 + 작은 슬라이스는 stroke 얇게, hover 시 scale + drop-shadow 로 z 축 lift, 마우스 커서 따라다니는 툴팁, 범례 하단 우측에 작게) / 부족한 경험.
 │   └── Info.jsx          # /info — useMe + view/edit 모드 + useUpdateMe. 학적/직무 enum 선택자. 하단에 회원 탈퇴(POST /auth/withdraw) 위험 영역 + 확인 모달 ("탈퇴" 입력 검증)
 ```
@@ -223,7 +224,7 @@ src/
 `hasProfile=true` 일 때 HeroBanner / PeersOrb / EssayListCard 셋을 단일 `<section className="card !p-0 overflow-hidden">` 안에 묶어 hero 영역 통합. 그래서 세 컴포넌트 모두 `embedded` prop 으로 외곽 카드 셸을 벗는 모드를 지원.
 
 - `dashboard/HeroBanner.jsx` — 그라데이션 배너. `hasProfile=true` 분기에서는 카피만 노출(자소서 작성 CTA 는 EssayListCard 로 이전). `!hasProfile` 일 때만 "온보딩 시작하기" CTA. `embedded` 면 `rounded-2xl/border/shadow/mb-3` 제거하고 그라데이션 배경만 남겨 통합 카드의 상단 띠로 사용.
-- `dashboard/EssayListCard.jsx` — `useEssays` 로 자소서 최대 5개 행 렌더(회사명·진행상태 뱃지·직무·최종수정일). 우하단 `자소서 작성하기` btn-primary CTA → `/write`. 6+ 시 좌하단 `전체 보기 (N)` → `/essays`. 백엔드 `EssayResponse.essayId` 누락으로 행 → 상세 진입은 비활성. `embedded` 면 `card !p-4` 제거하고 `flex flex-col h-full` 로 그리드 셀에 stretch — PeersOrb 의 자연 높이를 흡수해 CTA 가 우하단 고정.
+- `dashboard/EssayListCard.jsx` — `data/essays.js` 의 ESSAYS mock 최대 5개 행 렌더(회사명·진행상태 뱃지·직무·최근수정일). 각 행 → `/essays/:id` (친구 EssayView). 우하단 `자소서 작성하기` btn-primary CTA → `/write`. 6+ 시 좌하단 `전체 보기 (N)` → `/essays`. `embedded` 면 `card !p-4` 제거하고 `flex flex-col h-full` 로 그리드 셀에 stretch. 시연용 mock 일관성 위해 React Query 훅 의존성 제거 (2026-05-15 통합 머지).
 - `dashboard/MyRoadmapCard.jsx` — `SEMESTERS`(8학기 1-1~4-2) 가로 grid에 `MY_ROADMAP` 마일스톤을 `ymToSemIndex(y, m)`으로 버킷팅. `TODAY_SEM_INDEX = 6` (4-1) 학기 하이라이트.
 - `dashboard/SeniorRoadmapCard.jsx` — `SENIOR_ROADMAPS` 3명 배열을 ←/→ 화살표로 carousel. 같은 학기 축에 마일스톤 매핑.
 
