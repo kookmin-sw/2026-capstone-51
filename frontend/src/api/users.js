@@ -1,5 +1,6 @@
 import api from './axios';
-import { STATS_BACK_TO_FRONT, pickStat } from '../lib/enums';
+import { pickStat } from '../lib/enums';
+import { PEER_AXES } from '../data/dashboard';
 
 /**
  * 사용자 본인 프로필 갱신. 온보딩 완료 시 호출.
@@ -24,7 +25,10 @@ export async function getMe() {
  *
  * 백엔드 DashboardResponse 는 { statistics, userExperiences, graduateUserExperiences } 형태인데,
  * 친구 Dashboard.jsx 는 { peerAxes, myRoadmap, seniorRoadmaps } 키를 기대. 어댑터로 변환.
- *  - statistics.{partTime|external|internal|license|intern}.{avg|myCount} → peerAxes[]
+ *  - me 축 = userExperiences.{*}History 의 항목 수 (statistics.myCount 는 신뢰 못 함 — null 인 경우가 있음)
+ *  - peers 축 = statistics.{*}.avg
+ *  - me / peers 한 쪽이 전 축에서 0 이면 그 쪽만 PEER_AXES mock 으로 채워서 그래프가 비지 않게.
+ *    어느 쪽이 mock 인지 `peerAxesMock = { me, peers }` 로 같이 내려 Dashboard 가 경고 문구를 분기.
  *  - userExperiences.{partTime|intern|license|internal|external}History → myRoadmap[]
  *  - graduateUserExperiences[] → seniorRoadmaps[]
  */
@@ -55,29 +59,45 @@ const HISTORY_TO_CAT = {
 
 function adaptDashboard(raw) {
   if (!raw || typeof raw !== 'object') return raw;
+  const { peerAxes, peerAxesMock } = buildPeerAxes(
+    raw.statistics,
+    raw.userExperiences
+  );
   return {
     ...raw,
-    peerAxes: buildPeerAxes(raw.statistics),
+    peerAxes,
+    peerAxesMock,
     myRoadmap: buildRoadmap(raw.userExperiences),
     seniorRoadmaps: buildSeniors(raw.graduateUserExperiences),
   };
 }
 
-function buildPeerAxes(statistics) {
-  if (!statistics) return [];
-  const me = pickStat(statistics, 'myCount');
-  const peers = pickStat(statistics, 'avg');
-  // 모든 me/peers 가 0 이면 빈 배열로 — Dashboard 가 PEER_AXES mock fallback 띄우게.
-  const allZero = Object.values(STATS_BACK_TO_FRONT).every(
-    (k) => !Number(me[k]) && !Number(peers[k])
-  );
-  if (allZero) return [];
-  return AXIS_DEFS.map(({ key, label }) => ({
-    key,
-    label,
-    me: Number(me[key] ?? 0),
-    peers: Number(peers[key] ?? 0),
-  }));
+function buildPeerAxes(statistics, userExperiences) {
+  const me = countMyExperiences(userExperiences);
+  const peers = statistics ? pickStat(statistics, 'avg') : {};
+  // me / peers 를 독립적으로 평가 — 비어 있는 쪽만 mock 으로 대체.
+  const meEmpty = AXIS_DEFS.every(({ key }) => !Number(me[key]));
+  const peersEmpty = AXIS_DEFS.every(({ key }) => !Number(peers[key]));
+  const peerAxes = AXIS_DEFS.map(({ key, label }) => {
+    const mock = PEER_AXES.find((p) => p.key === key);
+    return {
+      key,
+      label,
+      me: meEmpty ? Number(mock?.me ?? 0) : Number(me[key] ?? 0),
+      peers: peersEmpty ? Number(mock?.peers ?? 0) : Number(peers[key] ?? 0),
+    };
+  });
+  return { peerAxes, peerAxesMock: { me: meEmpty, peers: peersEmpty } };
+}
+
+function countMyExperiences(userExperiences) {
+  const out = { parttime: 0, activity: 0, intern: 0, internal: 0, cert: 0 };
+  if (!userExperiences || typeof userExperiences !== 'object') return out;
+  for (const [historyKey, cat] of Object.entries(HISTORY_TO_CAT)) {
+    const list = userExperiences[historyKey];
+    if (Array.isArray(list)) out[cat] = list.length;
+  }
+  return out;
 }
 
 function buildRoadmap(userExperiences) {
@@ -88,9 +108,12 @@ function buildRoadmap(userExperiences) {
     if (!Array.isArray(list)) continue;
     for (const it of list) {
       const start = parseYm(it.startDate);
+      const end = parseYm(it.endDate);
       items.push({
         y: start.y,
         m: start.m,
+        endY: end.y || start.y,
+        endM: end.m || start.m,
         cat,
         title: it.name || '(제목 없음)',
         date: fmtRange(it.startDate, it.endDate),

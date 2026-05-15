@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Crumbs from '../components/Crumbs';
 import { getMyStats } from '../api/users';
 import { logApiError } from '../api/auth';
+import { weakPointLabel } from '../lib/enums';
 
 /* ---------- 상수 ---------- */
 
@@ -292,7 +293,7 @@ function GapRecommendCard({ weakPoints }) {
           >
             <div className="flex items-center justify-between mb-3.5">
               <span className="text-[13px] font-bold text-ink-900">
-                {wp.type}
+                {weakPointLabel(wp.type)}
               </span>
               {wp.gap && (
                 <span className="text-[11px] font-bold text-amber-700 tabular-nums">
@@ -305,7 +306,7 @@ function GapRecommendCard({ weakPoints }) {
                 {wp.detail}
               </div>
             )}
-            {wp.recommendedItems == null ? (
+            {!wp.recommendedItems || wp.recommendedItems.length === 0 ? (
               <div className="text-[11.5px] text-ink-500 leading-relaxed pt-3 border-t border-ink-100">
                 아직 충분한 경험이 모이지 않아서 추천해드릴 수 없어요.
                 <br />
@@ -371,10 +372,10 @@ export default function Stats() {
 
   const scopeMeta = COMPARE_SCOPES.find((s) => s.id === scope);
 
-  // API 응답: { statistics: { [catId]: { avg, userCount, myCount } }, ... }
+  // API 응답: { statistics: { [catId]: { avg, maxCount, myCount } }, ... }
   // - myCount  → 내 값
   // - avg      → 비교 대상 평균
-  // - userCount→ 최댓값으로 매핑 (실제 의미가 다르면 키만 바꿔주세요).
+  // - maxCount→ 최댓값으로 매핑 (실제 의미가 다르면 키만 바꿔주세요).
   const statistics = data?.statistics ?? null;
   const hasStats = statistics && Object.keys(statistics).length > 0;
   const my = {};
@@ -384,7 +385,7 @@ export default function Stats() {
     const s = statistics?.[c.id];
     my[c.id] = s?.myCount ?? 0;
     avg[c.id] = hasStats ? (s?.avg ?? 0) : MOCK_AVERAGE[c.id];
-    max[c.id] = hasStats ? (s?.userCount ?? 0) : MOCK_MAX[c.id];
+    max[c.id] = hasStats ? (s?.maxCount ?? 0) : MOCK_MAX[c.id];
   });
 
   const weakPoints = data?.weakPoints ?? [];

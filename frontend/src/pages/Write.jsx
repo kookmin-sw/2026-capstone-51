@@ -1,32 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Plus,
-  Sparkles,
-  ChevronRight,
-  Trash2,
-  Check,
-  ArrowLeft,
-} from 'lucide-react';
+import { ChevronRight, ArrowLeft, Check, Plus } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
 import { Card } from '../components/Card';
 import Button from '../components/Button';
-import {
-  useCreateEssay,
-  useCreateEssayQuestion,
-  useGenerateAnswer,
-} from '../api/queries/useEssays';
+import QuestionEditor from '../components/essay/QuestionEditor';
+import { useCreateEssay, useUpdateEssayMeta } from '../api/queries/useEssays';
 import { toast } from '../store/useToast';
 
 /* ------------------------------------------------------------------ *
- * 자소서 작성 — 2단계.
- *  Step 1) 지원 정보 입력 → POST /essays/create → essayId 발급
- *  Step 2) 문항 추가 — 한 카드씩 입력 → POST /essays/:essayId/questions
+ * 자소서 작성 — 2 단계.
  *
- * 단순화: 친구 mock 의 "이 문항에 쓸 경험" 선택 섹션은 백엔드 recommend 응답이
- * 매칭% / 카테고리 / 기간 같은 친구 디자인 필드를 안 줘서 시연용으로 제거.
- * AI 초안 생성은 useGenerateAnswer 로 동작 — 단 generate 호출 전에 문항이 백엔드에
- * 저장돼 있어야 하므로 "(작성 예정)" placeholder 로 먼저 POST 하고 generate.
+ *  Step 1) 지원 정보 입력 → POST /essays/create → essayId 발급.
+ *  Step 2) essayId 에 매핑되는 문항을 한 개씩 추가 — 공용 QuestionEditor 사용.
+ *           문항 등록 → 경험 추천/선택 → 초안 생성 → 저장.
+ *           usedExperienceIds 로 이미 다른 문항에 쓴 경험은 추천에서 제외.
+ *  마지막 [자소서 저장 완료] → 디테일 페이지 이동 (인크리멘탈 저장됨).
  * ------------------------------------------------------------------ */
 
 export default function Write() {
@@ -40,8 +29,17 @@ export default function Write() {
   const [essayId, setEssayId] = useState(null);
   const [savedQuestions, setSavedQuestions] = useState([]);
   const create = useCreateEssay();
+  const updateMeta = useUpdateEssayMeta();
 
-  const update = (patch) => setMeta((m) => ({ ...m, ...patch }));
+  const usedExperienceIds = useMemo(
+    () =>
+      new Set(
+        savedQuestions.flatMap((q) =>
+          (q.relatedExperience ?? []).map((e) => e.experienceId)
+        )
+      ),
+    [savedQuestions]
+  );
 
   const goNext = () => {
     if (
@@ -50,6 +48,20 @@ export default function Write() {
       !meta.globalReq.trim()
     ) {
       toast.error('회사명·직무·공통 요구사항을 모두 입력해주세요.');
+      return;
+    }
+    // 이미 essay 가 생성된 상태(= 사용자가 [이전] 으로 Step1 에 돌아왔다가 다시 [다음])
+    // 라면 POST 로 새로 만들지 말고 PATCH 로 메타만 갱신. 그래야 같은 essay 에 문항이
+    // 누적된다 — 안 그러면 이전·다음 누를 때마다 중복 자소서가 생김.
+    if (essayId) {
+      updateMeta.mutate(
+        { id: essayId, body: meta },
+        {
+          onSuccess: () => setStep(2),
+          onError: (e) =>
+            toast.error(e?.apiMessage || '지원 정보 갱신에 실패했어요.'),
+        }
+      );
       return;
     }
     create.mutate(meta, {
@@ -75,7 +87,7 @@ export default function Write() {
           <div className="sub">
             {step === 1
               ? '먼저 어떤 자소서를 쓸지 알려주세요.'
-              : '문항을 추가하면 AI 가 초안을 만들어드려요.'}
+              : '문항을 하나씩 추가하면서 AI 와 함께 초안을 만들어보세요.'}
           </div>
         </div>
         <Button onClick={() => navigate('/essays')}>
@@ -92,16 +104,17 @@ export default function Write() {
       {step === 1 ? (
         <Step1
           form={meta}
-          onChange={update}
+          onChange={(p) => setMeta((m) => ({ ...m, ...p }))}
           onNext={goNext}
-          isPending={create.isPending}
+          isPending={create.isPending || updateMeta.isPending}
         />
       ) : (
         <Step2
           essayId={essayId}
-          form={meta}
+          meta={meta}
           savedQuestions={savedQuestions}
-          onSavedQuestion={(q) => setSavedQuestions((prev) => [...prev, q])}
+          usedExperienceIds={usedExperienceIds}
+          onQuestionSaved={(q) => setSavedQuestions((prev) => [...prev, q])}
           onBack={() => setStep(1)}
           onFinish={() => navigate(`/essays/${essayId}`)}
         />
@@ -110,7 +123,8 @@ export default function Write() {
   );
 }
 
-/* ============== Step 1 ============== */
+/* ============================ Step 1 ============================ */
+
 function Step1({ form, onChange, onNext, isPending }) {
   const ready =
     form.companyName.trim() && form.wishJob.trim() && form.globalReq.trim();
@@ -119,7 +133,8 @@ function Step1({ form, onChange, onNext, isPending }) {
       <div className="mb-4">
         <h2 className="text-[15px] font-bold text-ink-900">지원 정보</h2>
         <p className="text-[12.5px] text-ink-500 mt-1">
-          자소서를 작성할 회사, 직무, 공통 요구사항을 정리해주세요.
+          자소서를 작성할 회사, 직무, 공통 요구사항을 정리해주세요. 모든 문항의
+          초안 생성에 반영됩니다.
         </p>
       </div>
 
@@ -146,7 +161,7 @@ function Step1({ form, onChange, onNext, isPending }) {
         <Field
           label="공통 요구사항"
           required
-          hint="공고에 반복적으로 등장한 인재상·역량을 적어두면 모든 문항의 초안 생성에 반영됩니다."
+          hint="공고에 반복적으로 등장한 인재상·역량을 적어두면 모든 문항의 초안에 반영됩니다."
         >
           <textarea
             className="field min-h-[100px]"
@@ -167,7 +182,7 @@ function Step1({ form, onChange, onNext, isPending }) {
             '생성 중…'
           ) : (
             <>
-              다음 단계 <ChevronRight size={13} />
+              다음 <ChevronRight size={13} />
             </>
           )}
         </Button>
@@ -176,65 +191,72 @@ function Step1({ form, onChange, onNext, isPending }) {
   );
 }
 
-/* ============== Step 2 ============== */
+/* ============================ Step 2 ============================ */
+
 function Step2({
   essayId,
-  form,
+  meta,
   savedQuestions,
-  onSavedQuestion,
+  usedExperienceIds,
+  onQuestionSaved,
   onBack,
   onFinish,
 }) {
+  // editor 토글 — [+ 새 문항 추가] 를 눌러야 폼이 뜸. 저장 시 자동으로 닫힘.
+  const [open, setOpen] = useState(false);
+  // 저장 후 editor 강제 리마운트해서 모든 내부 state 초기화 (다음 추가 때 fresh).
+  const [editorKey, setEditorKey] = useState(0);
+
+  const handleSaved = (q) => {
+    onQuestionSaved(q);
+    setEditorKey((k) => k + 1);
+    setOpen(false);
+  };
+
   return (
     <>
+      {/* 지원 정보 요약 */}
       <Card className="mb-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="text-[11px] text-ink-500 font-semibold mb-1">
-              지원 정보
-            </div>
-            <div className="text-[14px] font-bold text-ink-900 truncate">
-              {form.companyName}{' '}
-              <span className="text-ink-400 font-normal">·</span> {form.wishJob}
-            </div>
-            <div className="text-[12px] text-ink-600 mt-1 line-clamp-1">
-              요구사항 — {form.globalReq}
-            </div>
-          </div>
-          <Button onClick={onBack} disabled>
-            지원 정보 수정
-          </Button>
+        <div className="text-[11px] text-ink-500 font-semibold mb-1">
+          지원 정보
+        </div>
+        <div className="text-[14px] font-bold text-ink-900">
+          {meta.companyName}{' '}
+          <span className="text-ink-400 font-normal">·</span> {meta.wishJob}
+        </div>
+        <div className="text-[12px] text-ink-600 mt-1 break-keep">
+          공통 요구사항 — {meta.globalReq}
         </div>
       </Card>
 
+      {/* 저장된 문항 */}
       {savedQuestions.length > 0 && (
         <div className="flex flex-col gap-3 mb-4">
           {savedQuestions.map((q, i) => (
-            <Card key={q.questionId}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-6 h-6 rounded-full bg-primary-900 text-white grid place-items-center text-[11px] font-bold">
-                  Q{i + 1}
-                </span>
-                <span className="text-[11px] text-ink-500 font-semibold">
-                  {q.maxLength}자 이내 · 추가 완료
-                </span>
-              </div>
-              <div className="text-[13.5px] font-bold text-ink-900 mb-1.5 leading-relaxed">
-                {q.question}
-              </div>
-              <div className="text-[12.5px] text-ink-600 line-clamp-2 break-keep">
-                {q.response}
-              </div>
-            </Card>
+            <SavedQuestionCard key={q.questionId} q={q} index={i} />
           ))}
         </div>
       )}
 
-      <NewQuestionCard
-        essayId={essayId}
-        nextNum={savedQuestions.length + 1}
-        onSaved={onSavedQuestion}
-      />
+      {/* 새 문항 추가 — 명시적 버튼 토글 */}
+      {open ? (
+        <QuestionEditor
+          key={editorKey}
+          essayId={essayId}
+          nextNum={savedQuestions.length + 1}
+          usedExperienceIds={usedExperienceIds}
+          onSaved={handleSaved}
+          onCancel={() => setOpen(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full py-4 rounded-md border border-dashed border-ink-300 bg-paper hover:bg-ink-50 text-[13px] font-semibold text-ink-700 inline-flex items-center justify-center gap-2 transition-colors"
+        >
+          <Plus size={14} /> 새 문항 추가
+        </button>
+      )}
 
       <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-ink-150">
         <Button onClick={onBack}>이전</Button>
@@ -243,209 +265,37 @@ function Step2({
           onClick={onFinish}
           disabled={savedQuestions.length === 0}
         >
-          <Check size={13} /> 작성 완료
+          <Check size={13} /> 자소서 저장 완료
         </Button>
       </div>
     </>
   );
 }
 
-/* ============== 새 문항 입력 카드 ============== */
-function NewQuestionCard({ essayId, nextNum, onSaved }) {
-  const [draft, setDraft] = useState({
-    question: '',
-    response: '',
-    maxLength: 800,
-  });
-  const create = useCreateEssayQuestion();
-  const generate = useGenerateAnswer();
-  const [busyAi, setBusyAi] = useState(false);
-
-  const reset = () => setDraft({ question: '', response: '', maxLength: 800 });
-
-  const save = (response) => {
-    if (!draft.question.trim()) {
-      toast.error('문항을 입력해주세요.');
-      return;
-    }
-    const finalResponse = (response ?? draft.response).trim();
-    if (!finalResponse) {
-      toast.error('답변을 입력하거나 AI 초안을 생성해주세요.');
-      return;
-    }
-    create.mutate(
-      {
-        essayId,
-        body: {
-          questionNum: nextNum,
-          question: draft.question.trim(),
-          response: finalResponse,
-          maxLength: draft.maxLength,
-          relatedExperience: [],
-        },
-      },
-      {
-        onSuccess: (data) => {
-          toast.success(`Q${nextNum} 추가 완료.`);
-          onSaved({
-            questionId: data?.questionId ?? `tmp-${Date.now()}`,
-            questionNum: nextNum,
-            question: draft.question.trim(),
-            response: finalResponse,
-            maxLength: draft.maxLength,
-          });
-          reset();
-        },
-        onError: (e) => toast.error(e?.apiMessage || '문항 추가에 실패했어요.'),
-      }
-    );
-  };
-
-  // AI 초안: 백엔드 generate 가 essayId+questionId 를 받음 → 문항을 placeholder
-  // response 로 먼저 POST → 받은 questionId 로 generate → 응답을 폼에 채워넣음.
-  // 사용자가 검토 후 "추가하기" 누르면 PATCH 가 아니라 — 이미 저장된 questionId 가 있으니
-  // 단순히 onSaved 로 부모 목록 업데이트 + 새 문항 폼 reset.
-  const draftWithAi = async () => {
-    if (!draft.question.trim()) {
-      toast.error('문항을 먼저 입력해주세요.');
-      return;
-    }
-    setBusyAi(true);
-    try {
-      // 1) placeholder 로 question POST → questionId 받음
-      const created = await create.mutateAsync({
-        essayId,
-        body: {
-          questionNum: nextNum,
-          question: draft.question.trim(),
-          response: '(작성 예정)',
-          maxLength: draft.maxLength,
-          relatedExperience: [],
-        },
-      });
-      const questionId = created?.questionId;
-      if (!questionId) {
-        toast.error('문항 ID를 받지 못해 AI 생성을 건너뜁니다.');
-        setBusyAi(false);
-        return;
-      }
-      // 2) generate 호출
-      const gen = await generate.mutateAsync({ essayId, questionId });
-      const response = gen?.response ?? '';
-      // 3) 부모 목록에 즉시 추가 (이미 백엔드에 저장됨)
-      onSaved({
-        questionId,
-        questionNum: nextNum,
-        question: draft.question.trim(),
-        response: response || '(작성 예정)',
-        maxLength: draft.maxLength,
-      });
-      toast.success(`Q${nextNum} AI 초안 생성 후 추가 완료.`);
-      reset();
-    } catch (e) {
-      toast.error(e?.apiMessage || 'AI 초안 생성에 실패했어요.');
-    } finally {
-      setBusyAi(false);
-    }
-  };
-
+/* -------- 저장된 문항 카드 (읽기 전용) -------- */
+function SavedQuestionCard({ q, index }) {
   return (
     <Card>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-primary-900 text-white grid place-items-center text-[11px] font-bold">
-            Q{nextNum}
-          </span>
-          <span className="text-[13px] font-bold text-ink-900">새 문항</span>
-        </div>
-        {(draft.question || draft.response) && (
-          <button
-            onClick={reset}
-            className="text-ink-400 hover:text-red-500 transition-colors p-1"
-            title="입력 비우기"
-            disabled={create.isPending || busyAi}
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="w-6 h-6 rounded-full bg-primary-900 text-white grid place-items-center text-[11px] font-bold">
+          Q{index + 1}
+        </span>
+        <span className="text-[11px] text-ink-500 font-semibold">
+          {q.maxLength}자 이내 · 저장 완료
+        </span>
       </div>
-
-      <FieldInput label="문항">
-        <textarea
-          className="field min-h-[68px]"
-          placeholder="자소서 문항을 그대로 붙여넣으세요."
-          value={draft.question}
-          onChange={(e) => setDraft({ ...draft, question: e.target.value })}
-        />
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-[11.5px] text-ink-500">글자 제한</span>
-          <input
-            type="number"
-            className="field max-w-[110px] py-1 text-[12px]"
-            value={draft.maxLength}
-            min={100}
-            step={100}
-            onChange={(e) =>
-              setDraft({
-                ...draft,
-                maxLength: Number(e.target.value) || 0,
-              })
-            }
-          />
-          <span className="text-[11.5px] text-ink-500">자</span>
-        </div>
-      </FieldInput>
-
-      <FieldInput label="답변">
-        <textarea
-          className="field min-h-[160px] leading-relaxed"
-          placeholder="여기에 직접 답변을 작성하거나, 아래 [AI 초안 생성] 버튼을 눌러 자동 생성 후 추가하세요."
-          value={draft.response}
-          onChange={(e) => setDraft({ ...draft, response: e.target.value })}
-        />
-        <div className="text-right text-[11.5px] text-ink-500 font-mono mt-1">
-          {draft.response.length} / {draft.maxLength}
-        </div>
-      </FieldInput>
-
-      <div className="flex justify-end gap-2 pt-3 border-t border-ink-150 mt-3">
-        <Button
-          variant="primary"
-          onClick={draftWithAi}
-          disabled={busyAi || create.isPending || !draft.question.trim()}
-        >
-          {busyAi ? (
-            'AI 생성 중…'
-          ) : (
-            <>
-              <Sparkles size={13} /> AI 초안 생성 + 추가
-            </>
-          )}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => save()}
-          disabled={
-            busyAi ||
-            create.isPending ||
-            !draft.question.trim() ||
-            !draft.response.trim()
-          }
-        >
-          {create.isPending ? (
-            '추가 중…'
-          ) : (
-            <>
-              <Plus size={13} /> 직접 입력 추가
-            </>
-          )}
-        </Button>
+      <div className="text-[13.5px] font-bold text-ink-900 mb-1.5 leading-relaxed">
+        {q.question}
+      </div>
+      <div className="text-[12.5px] text-ink-600 line-clamp-3 break-keep whitespace-pre-line">
+        {q.response}
       </div>
     </Card>
   );
 }
 
-/* ============== 보조 ============== */
+/* ============================ 보조 ============================ */
+
 function Field({ label, required, hint, children }) {
   return (
     <label className="block">
@@ -460,22 +310,6 @@ function Field({ label, required, hint, children }) {
         </div>
       )}
     </label>
-  );
-}
-
-function FieldInput({ label, hint, children }) {
-  return (
-    <div className="mt-3 first:mt-0">
-      <div className="text-[12px] font-semibold text-ink-700 mb-1.5">
-        {label}
-      </div>
-      {children}
-      {hint && (
-        <div className="text-[11.5px] text-ink-500 mt-1.5 leading-relaxed">
-          {hint}
-        </div>
-      )}
-    </div>
   );
 }
 

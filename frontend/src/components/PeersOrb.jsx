@@ -1,33 +1,37 @@
 /**
- * 동기 비교 — 5축 입체 레이더 (유리 구체 안에 입체 차트).
- * Three.js (window.THREE) 사용. 마우스 드래그로 회전, 자동 회전.
- *
- * props:
- *   axes    — [{ label, me, peers }] (값 0~100)
- *   title, sub
- *   warning — 그래프 하단에 빨간 글씨로 표시할 안내 (예: 임시 데이터 사용 중)
- *
- * 5축 파라미터(label/me/peers)는 절대 변경하지 않고, 시각화만 입체로 바꿉니다.
- */
+* 동기 비교 — 5축 입체 레이더 (유리 구체 안에 입체 차트).
+* Three.js (window.THREE) 사용. 마우스 드래그로 회전, 자동 회전.
+*
+* props:
+*   axes    — [{ label, me, peers }] (값 0~MAX_VALUE, 초과 시 외곽 링에 클램프)
+*   title, sub
+*   warning — 그래프 하단에 빨간 글씨로 표시할 안내 (예: 임시 데이터 사용 중)
+*
+* 한 카테고리의 경험 누적이 보통 20개 이하이므로 축 max=25 로 정의.
+* 5축 파라미터(label/me/peers)는 절대 변경하지 않고, 시각화만 입체로 바꿉니다.
+*/
+const MAX_VALUE = 25;
+const RING_LEVELS = [0.2, 0.4, 0.6, 0.8, 1]; // 5/10/15/20/25
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 export default function PeersOrb({
-  axes,
-  title = '내 동기들은 뭐하고 있을까?',
-  sub = '익명 집계',
-  warning,
-}) {
+                                   axes,
+                                   title = '내 동기들은 뭐하고 있을까?',
+                                   sub = '익명 집계',
+                                   warning,
+                                 }) {
   const wrapRef = useRef(null);
 
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
 
-    // 0~1 정규화
+    // 0~1 정규화 — MAX_VALUE 초과 값은 외곽 링에 클램프.
+    const norm = (v) => Math.max(0, Math.min(Number(v) / MAX_VALUE, 1));
     const labels = axes.map((a) => a.label);
-    const myData = axes.map((a) => a.me / 100);
-    const avgData = axes.map((a) => a.peers / 100);
+    const myData = axes.map((a) => norm(a.me));
+    const avgData = axes.map((a) => norm(a.peers));
     const N = axes.length;
 
     const SPHERE_R = 2.5;
@@ -132,16 +136,14 @@ export default function PeersOrb({
       opacity: 0.7,
     });
 
-    [0.25, 0.5, 0.75, 1].forEach((level) => {
+    RING_LEVELS.forEach((level) => {
       const pts = [];
       for (let i = 0; i <= N; i++) {
         const a = angleAt(i % N);
         const r = CHART_R * level;
         pts.push(new THREE.Vector3(r * Math.cos(a), r * Math.sin(a), 0));
       }
-      const mat =
-        level === 1 || level === 0.5 ? gridStrong.clone() : gridMat.clone();
-      if (level === 0.5) mat.color.setHex(0xcbd5e1);
+      const mat = level === 1 ? gridStrong.clone() : gridMat.clone();
       orbGroup.add(
         new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat)
       );
@@ -185,8 +187,8 @@ export default function PeersOrb({
       sp.scale.set(0.4, 0.2, 1);
       return sp;
     };
-    [0.25, 0.5, 0.75, 1].forEach((level) => {
-      const sp = makeScaleText(Math.round(level * 100));
+    RING_LEVELS.forEach((level) => {
+      const sp = makeScaleText(Math.round(level * MAX_VALUE));
       sp.position.set(0.06, CHART_R * level, 0.001);
       sp.center.set(0, 0.5);
       orbGroup.add(sp);

@@ -8,8 +8,7 @@ import RoadmapCard from '../components/dashboard/RoadmapCard';
 import CategoryLegend from '../components/dashboard/CategoryLegend';
 import { getMyDashboard } from '../api/users';
 import { logApiError } from '../api/auth';
-import { useCurrentUser } from '../lib/useCurrentUser';
-import { PEER_AXES } from '../data/dashboard';
+import { useMe } from '../api/queries/useMe';
 
 /**
  * 대시보드 — API(/users/me/dashboard)로 받은 데이터를 렌더.
@@ -18,7 +17,7 @@ import { PEER_AXES } from '../data/dashboard';
  *  - 선배 로드맵       : data.seniorRoadmaps (없으면 안내 카드)
  */
 export default function Dashboard() {
-  const user = useCurrentUser();
+  const { data: user } = useMe();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [seniorIdx, setSeniorIdx] = useState(0);
@@ -53,16 +52,32 @@ export default function Dashboard() {
     );
   }
 
-  // API 응답이 빈 배열/누락이면 PeersOrb가 입력 데이터 없이 렌더링되며
-  // three.js 내부에서 터지기 때문에, 그래프가 어색하지 않도록 임시 데이터로
-  // fallback 하고 그래프 하단에 빨간 경고 문구를 노출한다.
-  const peerAxesFromApi = data?.peerAxes ?? [];
-  const hasPeerData = peerAxesFromApi.length > 0;
-  const peerAxes = hasPeerData ? peerAxesFromApi : PEER_AXES;
+  // 어댑터(adaptDashboard)가 5축을 항상 채워서 내려준다 — me/peers 중 비어 있는 쪽만
+  // 내부적으로 PEER_AXES 로 대체. 어느 쪽이 mock 인지 peerAxesMock 으로 받아 경고 문구를 분기.
+  const peerAxes = data?.peerAxes ?? [];
+  const peerAxesMock = data?.peerAxesMock ?? { me: false, peers: false };
+  const peerWarning =
+    peerAxesMock.me && peerAxesMock.peers
+      ? '아직 데이터가 없어 표시되는 그래프는 예시예요. 경험을 등록하면 실제 그래프가 보입니다.'
+      : peerAxesMock.me
+        ? '아직 등록한 경험이 없어 내 데이터는 예시로 표시돼요. 경험을 등록해 보세요.'
+        : peerAxesMock.peers
+          ? '아직 동기 데이터가 부족해 평균은 예시로 표시돼요.'
+          : undefined;
 
   const myRoadmap = data?.myRoadmap ?? [];
   const seniorList = data?.seniorRoadmaps ?? [];
   const senior = seniorList[seniorIdx];
+
+  // 내 로드맵 연도 범위
+  //  - 시작: min(학번 입학년도, 모든 경험 종료일자 중 가장 빠른 것)
+  //  - 끝  : max(모든 경험 종료일자 중 가장 최근)
+  // 마커가 종료 시점에 찍히므로 범위도 종료일자 기준.
+  const myRange = computeRange(
+    myRoadmap,
+    parseEnrollmentYear(user?.schoolNumber)
+  );
+  const seniorRange = senior ? computeRange(senior.items, null) : null;
 
   return (
     <>
@@ -72,11 +87,7 @@ export default function Dashboard() {
         <PeersOrb
           axes={peerAxes}
           sub={user?.major ? `${user.major} · 익명 집계` : '익명 집계'}
-          warning={
-            hasPeerData
-              ? undefined
-              : '현재 사용자가 등록한 경험이 없어서 등록 후 실제 그래프를 볼 수 있어요.'
-          }
+          warning={peerWarning}
         />
 
         {myRoadmap.length > 0 ? (
@@ -84,6 +95,8 @@ export default function Dashboard() {
             title="나의 학창시절 로드맵"
             items={myRoadmap}
             showNowMarker
+            rangeStart={myRange?.start}
+            rangeEnd={myRange?.end}
           />
         ) : (
           <EmptyRoadmapCard
@@ -103,6 +116,8 @@ export default function Dashboard() {
               onChange: setSeniorIdx,
             }}
             items={senior.items}
+            rangeStart={seniorRange?.start}
+            rangeEnd={seniorRange?.end}
           />
         ) : (
           <EmptyRoadmapCard
@@ -114,6 +129,36 @@ export default function Dashboard() {
       </div>
     </>
   );
+}
+
+/**
+ * 학번(예: 20223059) 앞 4자리 → 입학년도(2022). 형식이 아니면 null.
+ */
+function parseEnrollmentYear(schoolNumber) {
+  const s = String(schoolNumber ?? '').trim();
+  if (!/^\d{4}/.test(s)) return null;
+  const y = Number(s.slice(0, 4));
+  return Number.isFinite(y) ? y : null;
+}
+
+/**
+ * 로드맵 표시용 연도 범위.
+ *   start.y = min(enrollmentYear, 모든 item.endY 중 최소)
+ *   end.y   = max(모든 item.endY)            (학번은 끝 연도에 영향 X)
+ * items 가 없으면 null — Roadmap 의 기본 범위(2022~2026) 사용.
+ */
+function computeRange(items, enrollmentYear) {
+  const ends = (items ?? [])
+    .map((it) => Number(it.endY))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (ends.length === 0) return null;
+  const minEnd = Math.min(...ends);
+  const maxEnd = Math.max(...ends);
+  const startY = Math.min(enrollmentYear ?? Infinity, minEnd);
+  return {
+    start: { y: startY, m: 1 },
+    end: { y: maxEnd, m: 12 },
+  };
 }
 
 /**

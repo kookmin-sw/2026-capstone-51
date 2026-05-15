@@ -8,13 +8,14 @@
  * PEER_AXES 는 백엔드 peerAxes 가 비어 올 때만 fallback 으로 사용 (그래프 빈 채 three.js 터지는 것 방지).
  */
 
-/** PeersOrb fallback — 백엔드 peerAxes 응답 비었을 때만 사용 (Dashboard 가 빨간 경고도 같이 표시). */
+/** PeersOrb fallback — 백엔드 peerAxes 응답 비었을 때만 사용 (Dashboard 가 빨간 경고도 같이 표시).
+ *  PeersOrb 축 max=25 스케일에 맞춘 예시 값. */
 export const PEER_AXES = [
-  { key: 'internal', label: '대내활동', me: 78, peers: 55 },
-  { key: 'activity', label: '대외활동', me: 42, peers: 60 },
-  { key: 'intern', label: '인턴', me: 65, peers: 48 },
-  { key: 'parttime', label: '알바', me: 50, peers: 45 },
-  { key: 'cert', label: '자격증', me: 55, peers: 62 },
+  { key: 'internal', label: '대내활동', me: 10, peers: 7 },
+  { key: 'activity', label: '대외활동', me: 5, peers: 8 },
+  { key: 'intern', label: '인턴', me: 8, peers: 6 },
+  { key: 'parttime', label: '알바', me: 6, peers: 5 },
+  { key: 'cert', label: '자격증', me: 7, peers: 8 },
 ];
 
 export const CAT_LABELS = {

@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
-import { useEssays, useUpdateEssayResult } from '../api/queries/useEssays';
+import Modal from '../components/Modal';
+import {
+  useEssays,
+  useUpdateEssayResult,
+  useDeleteEssay,
+} from '../api/queries/useEssays';
 import { PROGRESS_LABEL, PROGRESS_TONE } from '../lib/enums';
 import { toast } from '../store/useToast';
 
@@ -20,8 +25,11 @@ export default function Essays() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState(null);
+  // 삭제 확인 모달 — { essayId, companyName } 또는 null.
+  const [confirmDel, setConfirmDel] = useState(null);
   const list = useEssays();
   const updateResult = useUpdateEssayResult();
+  const del = useDeleteEssay();
 
   const items = list.data ?? [];
   const filtered = items.filter((e) => {
@@ -41,6 +49,18 @@ export default function Essays() {
           toast.error(err?.apiMessage || '결과 저장에 실패했어요.'),
       }
     );
+  };
+
+  const handleConfirmDelete = () => {
+    if (!confirmDel) return;
+    del.mutate(confirmDel.essayId, {
+      onSuccess: () => {
+        toast.success('자소서를 삭제했어요.');
+        setConfirmDel(null);
+      },
+      onError: (err) =>
+        toast.error(err?.apiMessage || '삭제 중 오류가 발생했어요.'),
+    });
   };
 
   return (
@@ -76,12 +96,12 @@ export default function Essays() {
       <section className="bg-paper border border-ink-200 rounded-md overflow-visible">
         <div
           className="grid items-center px-5 py-2.5 bg-ink-50 border-b border-ink-200 text-[11.5px] font-semibold text-ink-500 tracking-wide"
-          style={{ gridTemplateColumns: '1fr 140px 130px 180px' }}
+          style={{ gridTemplateColumns: '1fr 110px 120px 180px' }}
         >
           <div>기업 · 직무</div>
-          <div>진행 상태</div>
-          <div>마지막 수정</div>
-          <div className="text-right">액션</div>
+          <div className="text-center">진행 상태</div>
+          <div className="text-center">마지막 수정</div>
+          <div className="text-center">액션</div>
         </div>
 
         {list.isLoading ? (
@@ -117,19 +137,67 @@ export default function Essays() {
               onOpen={() => setOpenId(openId === e.essayId ? null : e.essayId)}
               onClickRow={() => navigate(`/essays/${e.essayId}`)}
               onSetResult={(p) => setResult(e.essayId, p)}
+              onAskDelete={() =>
+                setConfirmDel({
+                  essayId: e.essayId,
+                  companyName: e.companyName,
+                })
+              }
               isPending={
                 updateResult.isPending &&
                 updateResult.variables?.id === e.essayId
               }
+              isDeleting={del.isPending && del.variables === e.essayId}
             />
           ))
         )}
       </section>
+
+      <Modal
+        open={!!confirmDel}
+        onClose={() => (del.isPending ? null : setConfirmDel(null))}
+        title="자소서를 삭제하시겠습니까?"
+        sub={`'${confirmDel?.companyName || '이 자소서'}' 자소서와 모든 문항이 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
+        width={440}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn-default"
+              disabled={del.isPending}
+              onClick={() => setConfirmDel(null)}
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              className="btn-default !text-red-600 !border-red-200 hover:!bg-red-50"
+              disabled={del.isPending}
+              onClick={handleConfirmDelete}
+            >
+              <Trash2 size={13} strokeWidth={2} />
+              {del.isPending ? '삭제 중…' : '삭제'}
+            </button>
+          </>
+        }
+      >
+        <></>
+      </Modal>
     </>
   );
 }
 
-function Row({ e, isLast, open, onOpen, onClickRow, onSetResult, isPending }) {
+function Row({
+  e,
+  isLast,
+  open,
+  onOpen,
+  onClickRow,
+  onSetResult,
+  onAskDelete,
+  isPending,
+  isDeleting,
+}) {
   const progress = e.progress ?? 'IN_PROGRESS';
   const isFinal = progress === 'PASS' || progress === 'FAIL';
   return (
@@ -137,7 +205,7 @@ function Row({ e, isLast, open, onOpen, onClickRow, onSetResult, isPending }) {
       onClick={onClickRow}
       className={`grid items-center px-5 py-3.5 cursor-pointer hover:bg-ink-50/60 transition-colors
         ${isLast ? '' : 'border-b border-ink-150'}`}
-      style={{ gridTemplateColumns: '1fr 140px 130px 180px' }}
+      style={{ gridTemplateColumns: '1fr 110px 120px 180px' }}
     >
       <div className="min-w-0 pr-3">
         <div className="text-[14px] font-bold text-ink-900 truncate">
@@ -148,18 +216,18 @@ function Row({ e, isLast, open, onOpen, onClickRow, onSetResult, isPending }) {
         </div>
       </div>
 
-      <div className="text-[12px]">
+      <div className="text-[12px] flex justify-center">
         <Badge tone={PROGRESS_TONE[progress] ?? 'gray'}>
           {PROGRESS_LABEL[progress] ?? progress}
         </Badge>
       </div>
 
-      <div className="text-[12px] text-ink-600 tabular-nums">
+      <div className="text-[12px] text-ink-600 tabular-nums text-center">
         {fmtDate(e.updatedAt)}
       </div>
 
       <div
-        className="flex justify-end relative"
+        className="flex justify-center items-center gap-1.5 relative"
         onClick={(ev) => ev.stopPropagation()}
       >
         <Button
@@ -170,6 +238,17 @@ function Row({ e, isLast, open, onOpen, onClickRow, onSetResult, isPending }) {
         >
           {isPending ? '저장 중…' : isFinal ? '결과 변경 ▾' : '결과 입력 ▾'}
         </Button>
+
+        <button
+          type="button"
+          onClick={onAskDelete}
+          disabled={isDeleting}
+          title="자소서 삭제"
+          aria-label="자소서 삭제"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors disabled:opacity-50"
+        >
+          <Trash2 size={14} strokeWidth={2} />
+        </button>
 
         {open && (
           <div className="absolute right-0 top-full mt-1 z-30 bg-paper border border-ink-200 rounded-md shadow-lg w-44 py-1">

@@ -6,10 +6,21 @@ import Roadmap from './Roadmap';
  *
  * Props
  *  - title (헤더 제목)
- *  - items, showNowMarker  → Roadmap 으로 그대로 전달
+ *  - items, showNowMarker, rangeStart, rangeEnd  → Roadmap 으로 그대로 전달
  *  - carousel: { list, idx, onChange }  로드맵 본체 좌우 화살표만 노출 (선배용)
+ *
+ * 본체는 가로 스크롤(overflow-x-auto) — 연도 수가 많아 Roadmap 의 minWidth 가
+ * 컨테이너를 넘으면 슬라이드해서 모든 마일스톤이 잘리지 않게.
+ * 캐러셀 화살표는 스크롤 영역 밖(부모 relative)에 두어 스크롤 위치와 무관.
  */
-export default function RoadmapCard({ title, items, showNowMarker, carousel }) {
+export default function RoadmapCard({
+  title,
+  items,
+  showNowMarker,
+  rangeStart,
+  rangeEnd,
+  carousel,
+}) {
   const hasCarousel = !!carousel;
 
   return (
@@ -73,8 +84,16 @@ export default function RoadmapCard({ title, items, showNowMarker, carousel }) {
             ›
           </button>
         )}
-        <div style={{ padding: hasCarousel ? '16px 52px' : 16 }}>
-          <Roadmap items={items} showNowMarker={showNowMarker} />
+        <div
+          className="overflow-x-auto"
+          style={{ padding: hasCarousel ? '16px 52px' : 16 }}
+        >
+          <Roadmap
+            items={items}
+            showNowMarker={showNowMarker}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+          />
         </div>
       </div>
     </section>

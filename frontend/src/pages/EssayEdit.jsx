@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Pencil, Plus, Sparkles, ArrowLeft, Check, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Sparkles, ArrowLeft, Check } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
 import { Card } from '../components/Card';
 import Button from '../components/Button';
+import QuestionEditor, {
+  PLACEHOLDER_RESPONSE,
+} from '../components/essay/QuestionEditor';
 import {
   useEssay,
   useUpdateEssayMeta,
   useUpdateEssayQuestion,
-  useCreateEssayQuestion,
   useRegenerateAnswer,
 } from '../api/queries/useEssays';
 import { toast } from '../store/useToast';
@@ -19,11 +21,13 @@ import { toast } from '../store/useToast';
  *
  *  - 지원 정보 (회사명/직무/공통요구사항) 카드: 수정하기 → 적용 시 useUpdateEssayMeta.
  *  - 각 문항 카드: 수정하기 → 적용 시 useUpdateEssayQuestion.
- *  - 새 문항 추가: 입력 후 저장 시 useCreateEssayQuestion.
- *  - AI 재생성: 카드 안에서 요구사항 입력 + useRegenerateAnswer → 별도 텍스트폼에 노출.
+ *  - 새 문항 추가: Write Step 2 와 동일한 QuestionEditor 사용
+ *                  (문항 등록 → 경험 추천/선택 → 초안 생성 → 저장).
+ *  - AI 재생성: 각 문항 카드 안에서 요구사항 입력 + useRegenerateAnswer → 별도 텍스트폼.
  *
- * 친구 mock 의 "이 문항에 쓸 경험" 선택 섹션은 백엔드 QuestionResponse 에
- * relatedExperience 필드가 없어 시연용으로 제거 — recommend 흐름은 Write 작성 시점에만.
+ * 한계: 이번 세션 안에서 새로 추가한 문항의 경험만 usedExperienceIds 로 모아 추천에서 제외.
+ *       기존(이미 저장된) 문항의 relatedExperience 는 QuestionResponse 에 포함되지 않아
+ *       제외 대상에서 누락 — 백엔드 응답 확장 시 동일 로직으로 합치면 됨.
  * ------------------------------------------------------------------ */
 
 export default function EssayEdit() {
@@ -59,7 +63,11 @@ export default function EssayEdit() {
   }
 
   const essay = detail.data;
-  const questions = essay.questions ?? [];
+  // placeholder response 가 박힌 문항 = 아래 QuestionEditor 에서 등록만 하고 아직 저장 전인
+  // 작성 중 임시 레코드. 사용자의 "저장하기" PATCH 가 끝나기 전엔 기존 리스트에서 숨긴다.
+  const questions = (essay.questions ?? []).filter(
+    (q) => q.response !== PLACEHOLDER_RESPONSE
+  );
 
   return (
     <>
@@ -84,7 +92,7 @@ export default function EssayEdit() {
         ))}
       </div>
 
-      <NewQuestionBlock essayId={id} nextNum={questions.length + 1} />
+      <NewQuestionBlock essayId={id} initialNextNum={questions.length + 1} />
     </>
   );
 }
@@ -398,40 +406,35 @@ function QuestionEditCard({ essayId, q, index }) {
 }
 
 /* ============== 새 문항 추가 ============== */
-function NewQuestionBlock({ essayId, nextNum }) {
+/**
+ * Write Step 2 와 동일한 QuestionEditor 를 사용.
+ * - 토글: "+ 새 문항 추가" 버튼 → 클릭 시 editor 펼침. 우상단 X 로 접을 수 있음.
+ * - 한 문항 저장 후 editor 를 강제 리마운트(editorKey)해서 연속으로 새 문항을 추가 가능.
+ * - 이번 세션에서 새로 추가한 문항의 경험만 usedExperienceIds 로 추적해 추천에서 제외.
+ *
+ * nextNum:
+ *  - 부모에서 `initialNextNum = questions.length + 1` 를 전달.
+ *  - 로컬 state 로 관리해서 저장 후 즉시 +1 (refetch 대기로 인한 stale 회피).
+ *  - useEffect 로 부모 prop 이 더 크면 따라잡되 절대 줄어들지 않음.
+ */
+function NewQuestionBlock({ essayId, initialNextNum }) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState({
-    question: '',
-    response: '(작성 예정)',
-    maxLength: 800,
-  });
-  const create = useCreateEssayQuestion();
+  const [editorKey, setEditorKey] = useState(0);
+  const [sessionUsed, setSessionUsed] = useState(() => new Set());
+  // storedNextNum: 로컬에서 저장할 때마다 +1. nextNum: 부모 prop 과 max 로 합쳐 절대 감소 안 함.
+  const [storedNextNum, setStoredNextNum] = useState(initialNextNum);
+  const nextNum = Math.max(storedNextNum, initialNextNum);
 
-  const save = () => {
-    if (!draft.question.trim()) {
-      toast.error('문항을 입력해주세요.');
-      return;
-    }
-    create.mutate(
-      {
-        essayId,
-        body: {
-          questionNum: nextNum,
-          question: draft.question.trim(),
-          response: draft.response.trim() || '(작성 예정)',
-          maxLength: draft.maxLength,
-          relatedExperience: [],
-        },
-      },
-      {
-        onSuccess: () => {
-          toast.success('새 문항을 추가했어요.');
-          setOpen(false);
-          setDraft({ question: '', response: '(작성 예정)', maxLength: 800 });
-        },
-        onError: (e) => toast.error(e?.apiMessage || '추가에 실패했어요.'),
-      }
-    );
+  const handleSaved = (q) => {
+    setSessionUsed((prev) => {
+      const next = new Set(prev);
+      for (const e of q.relatedExperience ?? []) next.add(e.experienceId);
+      return next;
+    });
+    setStoredNextNum(nextNum + 1);
+    setEditorKey((k) => k + 1);
+    // 저장 후 editor 닫음 — 다음 문항은 [+ 새 문항 추가] 다시 눌러야 열림.
+    setOpen(false);
   };
 
   if (!open) {
@@ -446,69 +449,16 @@ function NewQuestionBlock({ essayId, nextNum }) {
   }
 
   return (
-    <Card className="mt-4 border-primary-700">
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-primary-800">
-          새 문항 · Q{nextNum}
-        </div>
-        <button
-          onClick={() => setOpen(false)}
-          className="text-ink-400 hover:text-red-500 transition-colors p-1.5"
-          title="추가 취소"
-        >
-          <Trash2 size={13} />
-        </button>
-      </div>
-      <FieldInput label="문항">
-        <textarea
-          className="field min-h-[68px]"
-          placeholder="자소서 문항을 입력하세요."
-          value={draft.question}
-          onChange={(e) => setDraft({ ...draft, question: e.target.value })}
-        />
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-[11.5px] text-ink-500">글자 제한</span>
-          <input
-            type="number"
-            className="field max-w-[110px] py-1 text-[12px]"
-            value={draft.maxLength}
-            min={100}
-            step={100}
-            onChange={(e) =>
-              setDraft({
-                ...draft,
-                maxLength: Number(e.target.value) || 0,
-              })
-            }
-          />
-          <span className="text-[11.5px] text-ink-500">자</span>
-        </div>
-      </FieldInput>
-      <FieldInput
-        label="답변"
-        hint="비워두면 '(작성 예정)' 으로 저장되고, 이후 수정에서 채울 수 있어요."
-      >
-        <textarea
-          className="field min-h-[100px]"
-          value={draft.response}
-          onChange={(e) => setDraft({ ...draft, response: e.target.value })}
-        />
-      </FieldInput>
-      <div className="flex justify-end gap-2 pt-3 border-t border-ink-150 mt-2">
-        <Button onClick={() => setOpen(false)} disabled={create.isPending}>
-          취소
-        </Button>
-        <Button variant="primary" onClick={save} disabled={create.isPending}>
-          {create.isPending ? (
-            '추가 중…'
-          ) : (
-            <>
-              <Check size={13} /> 추가하기
-            </>
-          )}
-        </Button>
-      </div>
-    </Card>
+    <div className="mt-4">
+      <QuestionEditor
+        key={editorKey}
+        essayId={essayId}
+        nextNum={nextNum}
+        usedExperienceIds={sessionUsed}
+        onSaved={handleSaved}
+        onCancel={() => setOpen(false)}
+      />
+    </div>
   );
 }
 

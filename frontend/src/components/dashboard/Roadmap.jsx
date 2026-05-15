@@ -75,6 +75,11 @@ export default function Roadmap({
 
   const trackY = 100;
   const heightPx = 200;
+  // 연도 수가 많아지면 그래프가 좁아 가독성이 떨어지므로 연도당 최소 폭을 잡고,
+  // 부모(RoadmapCard)에서 overflow-x-auto 로 가로 스크롤되게 한다.
+  const PX_PER_YEAR = 150;
+  const yearSpan = rangeEnd.y - rangeStart.y + 1;
+  const minWidth = yearSpan * PX_PER_YEAR;
   // 연도 점선의 시작/끝 — 트랙 위·아래로 동일하게 확장
   const dividerTop = 18;
   const dividerBottom = trackY + 60;
@@ -85,7 +90,7 @@ export default function Roadmap({
   return (
     <div
       className="relative"
-      style={{ height: heightPx }}
+      style={{ height: heightPx, minWidth }}
       onMouseLeave={() => setHoverIdx(null)}
     >
       {/* 트랙 */}
