@@ -85,7 +85,7 @@ export default function Sidebar({ open = false, onClose }) {
             />
           </span>
           <div className="leading-tight flex-1 min-w-0">
-            <div className="text-white font-bold text-[15px]">Logi</div>
+            <div className="text-white font-bold text-[15px]">LogI</div>
             <div className="text-white/55 text-[10.5px]">
               Kookmin University
             </div>
