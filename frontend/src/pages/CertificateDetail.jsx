@@ -15,9 +15,8 @@ import { toast } from '../store/useToast';
  * /my-certificates/:id — 자격증 열람 + 수정 + 삭제.
  *
  * 모드:
- *  - view: 자격증명·발급기관·취득일·유효기간·자격증번호 표시. 첨부 PDF 섹션은
- *    백엔드 multipart 업로드 엔드포인트 미연동 — 안내 캡션만.
- *  - edit: 같은 CertificateForm 으로 토글 → PUT /certificates/:id.
+ *  - view: 자격증명·발급기관·취득일·유효기간·자격증번호 + 첨부 PDF 다운로드 링크 (item.fileUrl).
+ *  - edit: 같은 CertificateForm 으로 토글 → PUT /certificates/:id (PDF 새로 첨부 시 presigned 흐름 자동).
  *
  * 백엔드 단건 GET 없음 — 목록 캐시에서 ID 매칭 (EditCertificate 패턴 차용).
  * 삭제 확인은 모달.
@@ -228,18 +227,37 @@ export default function CertificateDetail() {
             <h2 className="text-[14px] font-bold text-ink-900 mb-2">
               증빙 자료
             </h2>
-            <div className="rounded-md border border-dashed border-ink-300 bg-ink-50/40 px-4 py-5 flex items-center gap-3">
-              <FileText
-                size={20}
-                strokeWidth={1.6}
-                className="text-ink-400 shrink-0"
-              />
-              <div className="text-[12.5px] text-ink-500 break-keep">
-                백엔드 첨부 파일 업로드 엔드포인트가 아직 연결되지 않아 첨부된
-                PDF 를 표시할 수 없어요. 업로드 기능이 준비되면 여기에 파일
-                정보가 나타납니다.
+            {item.fileUrl ? (
+              <a
+                href={item.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border border-ink-200 bg-paper px-4 py-3 flex items-center gap-3 hover:border-primary-400 hover:bg-primary-50/30 transition-colors"
+              >
+                <FileText
+                  size={20}
+                  strokeWidth={1.6}
+                  className="text-primary-600 shrink-0"
+                />
+                <div className="flex-1 min-w-0 text-[13px] font-semibold text-ink-900">
+                  첨부 PDF 보기
+                </div>
+                <span className="text-[11.5px] text-ink-500">
+                  새 탭에서 열기 ↗
+                </span>
+              </a>
+            ) : (
+              <div className="rounded-md border border-dashed border-ink-300 bg-ink-50/40 px-4 py-5 flex items-center gap-3">
+                <FileText
+                  size={20}
+                  strokeWidth={1.6}
+                  className="text-ink-400 shrink-0"
+                />
+                <div className="text-[12.5px] text-ink-500 break-keep">
+                  첨부된 자료가 없어요. 수정에서 PDF 를 추가할 수 있어요.
+                </div>
               </div>
-            </div>
+            )}
           </section>
         </div>
       )}

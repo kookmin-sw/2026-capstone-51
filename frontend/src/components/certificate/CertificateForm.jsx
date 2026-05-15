@@ -1,13 +1,17 @@
 import { useRef, useState } from 'react';
 import { Paperclip, FileText, X as XIcon } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import {
+  useUploadCertificateUrl,
+  putPdfToS3,
+} from '../../api/queries/useCertificates';
 
 /**
  * 자격증 신규/수정 공용 폼.
  *
  * Props:
- *   - initialValue?: { certificateName, getDate, expirationDate, certificateCode, issuingOrganization }
- *   - onSubmit(body): swagger CertificateRequest 형식으로 호출.
+ *   - initialValue?: { certificateName, getDate, expirationDate, certificateCode, issuingOrganization, fileUrl? }
+ *   - onSubmit(body): swagger CertificateRequest 형식 (+ 새 PDF 첨부 시 fileKey 포함) 으로 호출.
  *   - onCancel()
  *   - isPending: mutation 진행 중인지
  *   - submitLabel: 버튼 텍스트
@@ -17,8 +21,9 @@ import { cn } from '../../lib/cn';
  *  - 취득일은 오늘까지만 (백엔드 @PastOrPresent 제약 추정 — input max 로도 차단)
  *  - "유효기간 있음" 체크 시 만료일 필수, 만료일 ≥ 취득일 (만료일은 미래 허용)
  *  - 자격증 번호는 옵셔널
- *  - 증빙 PDF 파일은 옵셔널. 클라이언트 검증(.pdf 확장자 + 10MB 제한)만. 백엔드 업로드
- *    엔드포인트 추가 전까지는 form state 에만 보관 — 저장 시 미전송, 새로고침 시 휘발.
+ *  - 증빙 PDF 옵셔널. 새로 첨부 시 ① POST /certificates/upload-url → ② presigned PUT
+ *    으로 S3 직접 업로드 → ③ 받은 fileKey 를 자격증 POST/PUT body 에 첨부. 첨부 안 하면
+ *    fileKey 미포함 (수정 시 백엔드가 기존 PDF 어떻게 처리하는지는 통합 테스트로 확정).
  *
  * 첫 "저장" 클릭 후부터 라이브 검증.
  */
@@ -36,8 +41,11 @@ export default function CertificateForm({
   const [pdfFile, setPdfFile] = useState(null); // File | null
   const [pdfError, setPdfError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const errors = submitted ? validate(form) : {};
+  const uploadUrl = useUploadCertificateUrl();
+  const existingFileUrl = initialValue?.fileUrl ?? '';
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -95,13 +103,31 @@ export default function CertificateForm({
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitted(true);
     const errs = validate(form);
     if (Object.keys(errs).length > 0) return;
-    if (isPending) return;
-    onSubmit(toBody(form));
+    if (isPending || uploading) return;
+
+    let fileKey = '';
+    if (pdfFile) {
+      setUploading(true);
+      try {
+        const issued = await uploadUrl.mutateAsync();
+        await putPdfToS3(issued.uploadUrl, pdfFile, issued.contentType);
+        fileKey = issued.fileKey;
+      } catch (err) {
+        setUploading(false);
+        setPdfError(
+          err?.apiMessage || err?.message || 'PDF 업로드 중 오류가 발생했어요.'
+        );
+        return;
+      }
+      setUploading(false);
+    }
+
+    onSubmit(toBody(form, fileKey));
   };
 
   return (
@@ -176,7 +202,7 @@ export default function CertificateForm({
         </div>
       </Section>
 
-      {/* 증빙 PDF 업로드 — 백엔드 업로드 엔드포인트 미연동 */}
+      {/* 증빙 PDF — presigned URL 발급 → S3 직접 PUT → fileKey 본 요청에 첨부. */}
       <Section
         title="증빙 자료"
         sub="자격증 사본 PDF 파일을 첨부할 수 있어요. (10MB 이하, .pdf)"
@@ -250,23 +276,34 @@ export default function CertificateForm({
             {pdfError}
           </div>
         )}
-        <div className="text-[11px] text-ink-400 mt-1.5 break-keep">
-          ※ 백엔드 업로드 엔드포인트 준비 후 자동 첨부됩니다. 현재는 미리보기
-          전용.
-        </div>
+        {existingFileUrl && !pdfFile && (
+          <a
+            href={existingFileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[12px] text-primary-700 hover:underline mt-2"
+          >
+            <FileText size={13} strokeWidth={1.8} />
+            기존 첨부 PDF 보기 (새로 첨부하면 교체)
+          </a>
+        )}
       </Section>
 
       <div className="flex justify-end gap-2 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          disabled={isPending}
+          disabled={isPending || uploading}
           className="btn-default"
         >
           취소
         </button>
-        <button type="submit" disabled={isPending} className="btn-primary">
-          {isPending ? '저장 중…' : submitLabel}
+        <button
+          type="submit"
+          disabled={isPending || uploading}
+          className="btn-primary"
+        >
+          {uploading ? 'PDF 업로드 중…' : isPending ? '저장 중…' : submitLabel}
         </button>
       </div>
     </form>
@@ -286,16 +323,20 @@ function toDraft(d) {
   };
 }
 
-function toBody(form) {
+function toBody(form, fileKey) {
   // swagger 의 모든 필드는 optional. 비어있는 필드는 빈 문자열로 보냄
   // (백엔드 직렬화 정책 미확정 — 통합 테스트 시 null/empty 허용 여부 확인).
-  return {
+  // fileKey 는 새 PDF 첨부 시에만 포함 — 미첨부 시 키 자체를 빼서 백엔드가 기존 첨부를
+  // 어떻게 처리할지(유지/제거) 별도 모드에 영향 안 주게.
+  const body = {
     certificateName: form.certificateName.trim(),
     issuingOrganization: form.issuingOrganization.trim(),
     getDate: form.getDate,
     certificateCode: form.certificateCode.trim(),
     expirationDate: form.hasExpiration ? form.expirationDate : '',
   };
+  if (fileKey) body.fileKey = fileKey;
+  return body;
 }
 
 /* ---------- 검증 ---------- */
