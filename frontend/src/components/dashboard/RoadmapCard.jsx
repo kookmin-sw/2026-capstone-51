@@ -24,7 +24,7 @@ export default function RoadmapCard({
   const hasCarousel = !!carousel;
 
   return (
-    <section className="bg-paper border border-border rounded-lg p-5 mb-4 min-w-0">
+    <section className="bg-paper border border-border rounded-lg p-5 mb-4">
       {/* 헤더 — 제목 + 범례 */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <h2 className="m-0 text-[15px] font-semibold text-ink-900">{title}</h2>

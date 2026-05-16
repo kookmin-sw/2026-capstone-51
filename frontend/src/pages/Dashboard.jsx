@@ -168,7 +168,7 @@ function computeRange(items, enrollmentYear) {
 function EmptyRoadmapCard({ title, icon: Icon, message, cta }) {
   const nav = useNavigate();
   return (
-    <section className="bg-paper border border-border rounded-lg p-5 mb-4 min-w-0">
+    <section className="bg-paper border border-border rounded-lg p-5 mb-4">
       <div className="flex items-start justify-between gap-3 mb-3">
         <h2 className="m-0 text-[15px] font-semibold text-ink-900">{title}</h2>
         <CategoryLegend />
