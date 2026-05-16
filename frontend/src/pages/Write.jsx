@@ -27,6 +27,10 @@ export default function Write() {
   });
   const [essayId, setEssayId] = useState(null);
   const [savedQuestions, setSavedQuestions] = useState([]);
+  // QuestionEditor 안에서 [초안 생성] 이 한 번이라도 눌렸고 아직 저장 전이면 true.
+  // 페이지 헤더의 "취소" 버튼을 잠그는 데 사용 — QuestionEditor 우상단 X 가 사라지는
+  // 시점과 동일하게 잠그기 위해 onGenerationStart 콜백으로 set, onSaved/onBack 으로 release.
+  const [editorBusy, setEditorBusy] = useState(false);
   const create = useCreateEssay();
   const updateMeta = useUpdateEssayMeta();
 
@@ -79,9 +83,19 @@ export default function Write() {
               : '문항을 하나씩 추가하면서 AI 와 함께 초안을 만들어보세요.'}
           </div>
         </div>
-        <Button onClick={() => navigate('/essays')}>
-          <ArrowLeft size={13} /> 취소
-        </Button>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {editorBusy && (
+            <span className="text-[11.5px] text-ink-500 text-right break-keep">
+              초안 생성 중인 문항을 저장한 뒤에 취소할 수 있어요.
+            </span>
+          )}
+          <Button
+            onClick={() => navigate('/essays')}
+            disabled={editorBusy}
+          >
+            <ArrowLeft size={13} /> 취소
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 mb-4 text-[12px]">
@@ -102,8 +116,17 @@ export default function Write() {
           essayId={essayId}
           meta={meta}
           savedQuestions={savedQuestions}
-          onQuestionSaved={(q) => setSavedQuestions((prev) => [...prev, q])}
-          onBack={() => setStep(1)}
+          onQuestionSaved={(q) => {
+            setSavedQuestions((prev) => [...prev, q]);
+            setEditorBusy(false);
+          }}
+          onGenerationStart={() => setEditorBusy(true)}
+          onBack={() => {
+            // step 1 로 돌아갈 땐 일단 lock 해제. 다시 step 2 로 와서 새 editor 를 열면
+            // QuestionEditor 가 한 번 [초안 생성] 을 누를 때 다시 set 됨.
+            setEditorBusy(false);
+            setStep(1);
+          }}
           onFinish={() => navigate(`/essays/${essayId}`)}
         />
       )}
@@ -186,6 +209,7 @@ function Step2({
   meta,
   savedQuestions,
   onQuestionSaved,
+  onGenerationStart,
   onBack,
   onFinish,
 }) {
@@ -233,6 +257,7 @@ function Step2({
           nextNum={savedQuestions.length + 1}
           onSaved={handleSaved}
           onCancel={() => setOpen(false)}
+          onGenerationStart={onGenerationStart}
         />
       ) : (
         <button

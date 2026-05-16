@@ -57,6 +57,7 @@ export default function QuestionEditor({
   nextNum,
   onSaved,
   onCancel,
+  onGenerationStart,
 }) {
   // Section 1 — 문항 입력 & 등록
   const [questionText, setQuestionText] = useState('');
@@ -135,8 +136,10 @@ export default function QuestionEditor({
       return;
     }
     // API 호출 시작 전에 X 버튼부터 숨김 — 사용자가 클릭 직후
-    // 잠깐의 pending 진입 전 타이밍에 취소 못 누르게.
+    // 잠깐의 pending 진입 전 타이밍에 취소 못 누르게. 부모(Write/EssayEdit)
+    // 측의 페이지 레벨 "취소" 버튼도 함께 잠그도록 콜백으로 전파.
     setGenerationStarted(true);
+    onGenerationStart?.();
     const relatedExperience = Array.from(selectedIds).map((id) => ({
       experienceId: id,
     }));
