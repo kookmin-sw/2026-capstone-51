@@ -48,7 +48,8 @@ export default function PeersOrb({
     /* ========== Scene setup ========== */
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 0.3, 8.5);
+    // 완전 정면 — 카메라도 y=0 으로 두어 차트 평면이 viewport 와 평행하게 보이게.
+    camera.position.set(0, 0, 8.5);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
