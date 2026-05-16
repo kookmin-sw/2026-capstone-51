@@ -244,15 +244,22 @@ function Step2({
         </button>
       )}
 
-      <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-ink-150">
-        <Button onClick={onBack}>이전</Button>
-        <Button
-          variant="primary"
-          onClick={onFinish}
-          disabled={savedQuestions.length === 0}
-        >
-          <Check size={13} /> 자소서 저장 완료
-        </Button>
+      <div className="flex flex-col items-end gap-1.5 pt-4 mt-4 border-t border-ink-150">
+        {open && (
+          <span className="text-[11.5px] text-ink-500">
+            작성 중인 문항을 저장하거나 취소한 뒤에 완료할 수 있어요.
+          </span>
+        )}
+        <div className="flex justify-end gap-2">
+          <Button onClick={onBack}>이전</Button>
+          <Button
+            variant="primary"
+            onClick={onFinish}
+            disabled={savedQuestions.length === 0 || open}
+          >
+            <Check size={13} /> 자소서 저장 완료
+          </Button>
+        </div>
       </div>
     </>
   );
