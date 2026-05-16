@@ -1,6 +1,8 @@
 package com.github.logi.global.property;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import java.util.List;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -16,6 +18,6 @@ public class GoogleProperty {
     @NotBlank
     String secret;
 
-    @NotBlank
-    String redirectUri;
+    @NotEmpty
+    List<String> allowedRedirectUriHosts;
 }

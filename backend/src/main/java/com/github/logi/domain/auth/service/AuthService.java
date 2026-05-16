@@ -36,7 +36,7 @@ public class AuthService {
     @Transactional
     public TokenResponse login(LoginRequest request) {
 
-        String googleAccessToken = googleOAuthClient.getAccessToken(request.grantCode());
+        String googleAccessToken = googleOAuthClient.getAccessToken(request.grantCode(), request.redirectUri());
         GoogleUserInfoResponse userInfo = googleOAuthClient.getUserInfo(googleAccessToken);
 
         if (userInfo.email() == null) {

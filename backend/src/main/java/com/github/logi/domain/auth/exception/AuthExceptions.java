@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum AuthExceptions implements ApiExceptions {
 
     NOT_KOOKMIN_EMAIL(HttpStatus.UNAUTHORIZED, "국민대학교 이메일이 아닙니다."),
+    INVALID_REDIRECT_URI(HttpStatus.BAD_REQUEST, "허용되지 않은 redirect URI입니다."),
     GOOGLE_TOKEN_EXCHANGE_FAILED(HttpStatus.UNAUTHORIZED, "구글 토큰 교환에 실패했습니다."),
     GOOGLE_USERINFO_FAILED(HttpStatus.UNAUTHORIZED, "구글 사용자 정보 조회에 실패했습니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
