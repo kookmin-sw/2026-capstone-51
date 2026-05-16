@@ -50,6 +50,7 @@ public record DashboardResponse(
 
     public record GraduateUserExperiences(
             UUID userId,
+            String userName,
             List<ExperienceItem> partTimeHistory,
             List<ExperienceItem> internHistory,
             List<ExperienceItem> licenseHistory,

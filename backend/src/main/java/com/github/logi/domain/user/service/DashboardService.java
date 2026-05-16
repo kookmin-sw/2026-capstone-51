@@ -115,6 +115,7 @@ public class DashboardService {
 
                     return new GraduateUserExperiences(
                             worker.getId(),
+                            worker.getUserName(),
                             toExperienceItems(byCategory.getOrDefault(ExperienceCategory.PARTTIME, List.of())),
                             toExperienceItems(byCategory.getOrDefault(ExperienceCategory.INTERN, List.of())),
                             toCertificateItems(certs),
