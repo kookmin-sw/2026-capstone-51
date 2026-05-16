@@ -4,6 +4,7 @@ import Crumbs from '../components/Crumbs';
 import { Card } from '../components/Card';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
+import UsedExperiences from '../components/essay/UsedExperiences';
 import { useEssay } from '../api/queries/useEssays';
 import { PROGRESS_LABEL, PROGRESS_TONE } from '../lib/enums';
 
@@ -11,8 +12,8 @@ import { PROGRESS_LABEL, PROGRESS_TONE } from '../lib/enums';
  * 자소서 열람 (백엔드 GET /essays/:id).
  *  - useEssay(id) → normalizeEssayDetail 어댑터로 globalReq/updatedAt 통일.
  *  - questions[].question/response/maxLength 백엔드 키 그대로 사용.
- *  - 친구 mock 의 UsedExperiences (q.used) 는 백엔드 QuestionResponse 가 relatedExperience
- *    필드를 안 주므로 표시하지 않음 (수정 모드에서 추천 받아 새로 선택만 가능).
+ *  - questions[].relatedExperiences 는 [{ experienceId, experienceTitle, experienceCategory }]
+ *    형태로 내려오며, 문항 카드 하단에 카테고리 뱃지+제목 링크로 노출.
  * ------------------------------------------------------------------ */
 
 export default function EssayView() {
@@ -126,6 +127,7 @@ export default function EssayView() {
                   {qq.response.length} / {qq.maxLength}
                 </div>
               )}
+              <UsedExperiences items={qq.relatedExperiences} />
             </Card>
           ))}
         </div>

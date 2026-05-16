@@ -7,12 +7,17 @@ import Button from '../components/Button';
 import QuestionEditor, {
   PLACEHOLDER_RESPONSE,
 } from '../components/essay/QuestionEditor';
+import UsedExperiences from '../components/essay/UsedExperiences';
 import {
   useEssay,
   useUpdateEssayMeta,
   useUpdateEssayQuestion,
   useRegenerateAnswer,
+  useRecommendExperiences,
+  useGenerateAnswer,
 } from '../api/queries/useEssays';
+import { cn } from '../lib/cn';
+import { Lightbulb } from 'lucide-react';
 import { toast } from '../store/useToast';
 
 /* ------------------------------------------------------------------ *
@@ -24,10 +29,6 @@ import { toast } from '../store/useToast';
  *  - 새 문항 추가: Write Step 2 와 동일한 QuestionEditor 사용
  *                  (문항 등록 → 경험 추천/선택 → 초안 생성 → 저장).
  *  - AI 재생성: 각 문항 카드 안에서 요구사항 입력 + useRegenerateAnswer → 별도 텍스트폼.
- *
- * 한계: 이번 세션 안에서 새로 추가한 문항의 경험만 usedExperienceIds 로 모아 추천에서 제외.
- *       기존(이미 저장된) 문항의 relatedExperience 는 QuestionResponse 에 포함되지 않아
- *       제외 대상에서 누락 — 백엔드 응답 확장 시 동일 로직으로 합치면 됨.
  * ------------------------------------------------------------------ */
 
 export default function EssayEdit() {
@@ -220,8 +221,21 @@ function QuestionEditCard({ essayId, q, index }) {
   });
   const [reqInput, setReqInput] = useState('');
   const [altDraft, setAltDraft] = useState('');
+
+  // 편집 모드의 경험 재추천/재선택 상태.
+  //  - selectedIds: 현재 선택된 경험 ID. 처음 진입 시 q.relatedExperiences 로 초기화.
+  //  - recommendations: null = 추천 전 / [items] = 추천 응답.
+  //  - expDraftCandidate: 경험 기반 재생성 결과 후보. 사용자가 적용/버리기 결정.
+  const [selectedIds, setSelectedIds] = useState(
+    () => new Set((q.relatedExperiences ?? []).map((e) => e.experienceId))
+  );
+  const [recommendations, setRecommendations] = useState(null);
+  const [expDraftCandidate, setExpDraftCandidate] = useState('');
+
   const update = useUpdateEssayQuestion();
   const regen = useRegenerateAnswer();
+  const recommend = useRecommendExperiences();
+  const generate = useGenerateAnswer();
 
   useEffect(() => {
     if (editing) {
@@ -231,12 +245,27 @@ function QuestionEditCard({ essayId, q, index }) {
         response: q.response ?? '',
         maxLength: q.maxLength ?? 800,
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedIds(
+        new Set((q.relatedExperiences ?? []).map((e) => e.experienceId))
+      );
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRecommendations(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setExpDraftCandidate('');
     }
   }, [editing, q]);
 
   const apply = () => {
+    const relatedExperience = Array.from(selectedIds).map((id) => ({
+      experienceId: id,
+    }));
     update.mutate(
-      { essayId, questionId: q.questionId, body: draft },
+      {
+        essayId,
+        questionId: q.questionId,
+        body: { ...draft, relatedExperience },
+      },
       {
         onSuccess: () => {
           toast.success('문항을 저장했어요.');
@@ -246,6 +275,76 @@ function QuestionEditCard({ essayId, q, index }) {
       }
     );
   };
+
+  /* ----- 편집 모드 — 경험 재추천 / 재선택 / 재생성 ----- */
+  const onRecommend = async () => {
+    const questionText = draft.question.trim();
+    if (!questionText) {
+      toast.error('문항이 비어 있어요.');
+      return;
+    }
+    try {
+      const data = await recommend.mutateAsync({ question: questionText });
+      const list = data?.relatedExperience ?? [];
+      setRecommendations(list);
+      // 추천 결과가 비어 있는 케이스는 현재 선택 유지. 있으면 top 2 로 자동 갱신.
+      if (list.length > 0) {
+        setSelectedIds(new Set(list.slice(0, 2).map((e) => e.experienceId)));
+      }
+      setExpDraftCandidate('');
+    } catch (e) {
+      toast.error(e?.apiMessage || '경험 추천에 실패했어요.');
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((s) => {
+      const next = new Set(s);
+      if (next.has(id)) {
+        next.delete(id);
+        return next;
+      }
+      if (next.size >= 2) {
+        toast.error('경험은 최대 2개까지 선택할 수 있어요.');
+        return s;
+      }
+      next.add(id);
+      return next;
+    });
+  };
+
+  // 백엔드 generate 는 question.getExperiences() 를 DB 에서 읽으므로,
+  // PATCH 로 question/relatedExperience 를 sync 한 뒤 generate 호출.
+  const onRegenerateByExperiences = async () => {
+    if (selectedIds.size < 1 || selectedIds.size > 2) {
+      toast.error('경험을 1~2개 선택해주세요.');
+      return;
+    }
+    const relatedExperience = Array.from(selectedIds).map((id) => ({
+      experienceId: id,
+    }));
+    try {
+      await update.mutateAsync({
+        essayId,
+        questionId: q.questionId,
+        body: { ...draft, relatedExperience },
+      });
+      const gen = await generate.mutateAsync({
+        essayId,
+        questionId: q.questionId,
+      });
+      setExpDraftCandidate(gen?.response ?? '');
+    } catch (e) {
+      toast.error(e?.apiMessage || '재생성에 실패했어요.');
+    }
+  };
+
+  const onAcceptExpDraft = () => {
+    setDraft((d) => ({ ...d, response: expDraftCandidate }));
+    setExpDraftCandidate('');
+  };
+
+  const busyRegenByExp = update.isPending || generate.isPending;
 
   const regenerate = () => {
     regen.mutate(
@@ -304,6 +403,8 @@ function QuestionEditCard({ essayId, q, index }) {
             {q.response.length} / {q.maxLength}
           </div>
         )}
+
+        <UsedExperiences items={q.relatedExperiences} />
 
         <RegenBlock
           reqInput={reqInput}
@@ -389,6 +490,21 @@ function QuestionEditCard({ essayId, q, index }) {
         </div>
       </FieldInput>
 
+      <ExperienceEditBlock
+        currentExperiences={q.relatedExperiences}
+        recommendations={recommendations}
+        selectedIds={selectedIds}
+        onRecommend={onRecommend}
+        toggleSelect={toggleSelect}
+        recommending={recommend.isPending}
+        onRegenerate={onRegenerateByExperiences}
+        regenerating={busyRegenByExp}
+        candidate={expDraftCandidate}
+        onAccept={onAcceptExpDraft}
+        onDiscard={() => setExpDraftCandidate('')}
+        maxLength={draft.maxLength}
+      />
+
       <div className="flex justify-end gap-2 pt-3 border-t border-ink-150 mt-2">
         <Button onClick={() => setEditing(false)} disabled={update.isPending}>
           취소
@@ -412,7 +528,6 @@ function QuestionEditCard({ essayId, q, index }) {
  * Write Step 2 와 동일한 QuestionEditor 를 사용.
  * - 토글: "+ 새 문항 추가" 버튼 → 클릭 시 editor 펼침. 우상단 X 로 접을 수 있음.
  * - 한 문항 저장 후 editor 를 강제 리마운트(editorKey)해서 연속으로 새 문항을 추가 가능.
- * - 이번 세션에서 새로 추가한 문항의 경험만 usedExperienceIds 로 추적해 추천에서 제외.
  *
  * nextNum:
  *  - 부모에서 `initialNextNum = questions.length + 1` 를 전달.
@@ -422,17 +537,11 @@ function QuestionEditCard({ essayId, q, index }) {
 function NewQuestionBlock({ essayId, initialNextNum }) {
   const [open, setOpen] = useState(false);
   const [editorKey, setEditorKey] = useState(0);
-  const [sessionUsed, setSessionUsed] = useState(() => new Set());
   // storedNextNum: 로컬에서 저장할 때마다 +1. nextNum: 부모 prop 과 max 로 합쳐 절대 감소 안 함.
   const [storedNextNum, setStoredNextNum] = useState(initialNextNum);
   const nextNum = Math.max(storedNextNum, initialNextNum);
 
-  const handleSaved = (q) => {
-    setSessionUsed((prev) => {
-      const next = new Set(prev);
-      for (const e of q.relatedExperience ?? []) next.add(e.experienceId);
-      return next;
-    });
+  const handleSaved = () => {
     setStoredNextNum(nextNum + 1);
     setEditorKey((k) => k + 1);
     // 저장 후 editor 닫음 — 다음 문항은 [+ 새 문항 추가] 다시 눌러야 열림.
@@ -456,7 +565,6 @@ function NewQuestionBlock({ essayId, initialNextNum }) {
         key={editorKey}
         essayId={essayId}
         nextNum={nextNum}
-        usedExperienceIds={sessionUsed}
         onSaved={handleSaved}
         onCancel={() => setOpen(false)}
       />
@@ -490,6 +598,150 @@ function Field({ label, value, multiline }) {
       >
         {value || <span className="text-ink-400 italic">미입력</span>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * 편집 모드 — 경험 재추천/재선택 + 그 선택으로 답변 재생성.
+ *  - 추천 전: 현재 사용 중인 경험을 UsedExperiences 로 표시.
+ *  - 추천 후: 체크박스 리스트 (선택은 1~2 개). top 2 가 자동 체크된 상태로 시작.
+ *  - 재생성: 백엔드 generate 는 question.experiences 를 DB 에서 읽으므로
+ *    같은 questionId 에 PATCH 로 sync 한 뒤 generate. 새 문항을 만들지 않음.
+ *  - 후보 패널: 적용하면 draft.response 교체. 외부 "적용하기" 누를 때 PATCH 한 번 더 일어남
+ *    (relatedExperience 는 이미 sync 됐으므로 같은 값으로 idempotent — 중복 문항 X).
+ */
+function ExperienceEditBlock({
+  currentExperiences,
+  recommendations,
+  selectedIds,
+  onRecommend,
+  toggleSelect,
+  recommending,
+  onRegenerate,
+  regenerating,
+  candidate,
+  onAccept,
+  onDiscard,
+  maxLength,
+}) {
+  const hasRecs = recommendations !== null;
+  const selValid = selectedIds.size >= 1 && selectedIds.size <= 2;
+
+  return (
+    <div className="mt-4 pt-4 border-t border-dashed border-ink-200">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Lightbulb size={13} className="text-primary-700" />
+          <span className="text-[12px] font-bold text-ink-800">
+            사용한 경험
+          </span>
+        </div>
+        <Button onClick={onRecommend} disabled={recommending}>
+          {recommending ? (
+            '추천 중…'
+          ) : (
+            <>
+              <Lightbulb size={13} /> {hasRecs ? '다시 추천받기' : '경험 다시 추천받기'}
+            </>
+          )}
+        </Button>
+      </div>
+
+      {!hasRecs ? (
+        currentExperiences && currentExperiences.length > 0 ? (
+          <UsedExperiences items={currentExperiences} />
+        ) : (
+          <div className="text-[12.5px] text-ink-500 leading-relaxed border border-dashed border-ink-200 rounded-md px-3 py-3 text-center">
+            아직 연결된 경험이 없어요. [경험 다시 추천받기] 를 눌러보세요.
+          </div>
+        )
+      ) : recommendations.length === 0 ? (
+        <div className="text-[12.5px] text-ink-500 leading-relaxed border border-dashed border-ink-200 rounded-md px-3 py-4 text-center">
+          추천할 수 있는 경험이 없어요. 먼저 경험을 등록해주세요.
+        </div>
+      ) : (
+        <>
+          <div className="max-h-[260px] overflow-y-auto rounded-md border border-ink-200 divide-y divide-ink-150">
+            {recommendations.map((exp, i) => {
+              const checked = selectedIds.has(exp.experienceId);
+              const recommended = i < 2;
+              return (
+                <button
+                  type="button"
+                  key={exp.experienceId}
+                  onClick={() => toggleSelect(exp.experienceId)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors',
+                    checked ? 'bg-primary-50' : 'hover:bg-ink-50'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'w-4 h-4 rounded border grid place-items-center shrink-0',
+                      checked
+                        ? 'bg-primary-700 border-primary-700 text-white'
+                        : 'border-ink-300 bg-white'
+                    )}
+                  >
+                    {checked && <Check size={11} strokeWidth={3} />}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[13px] font-semibold text-ink-900 truncate">
+                      {exp.experienceTitle}
+                    </span>
+                    <span className="block text-[11px] text-ink-500 mt-0.5">
+                      유사도 {(Number(exp.similarity ?? 0) * 100).toFixed(0)}%
+                    </span>
+                  </span>
+                  {recommended && (
+                    <span className="text-[10.5px] font-bold text-primary-700 bg-primary-100 rounded px-1.5 py-0.5">
+                      추천
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex justify-end mt-2">
+            <Button
+              variant="primary"
+              onClick={onRegenerate}
+              disabled={!selValid || regenerating}
+            >
+              {regenerating ? (
+                '생성 중…'
+              ) : (
+                <>
+                  <Sparkles size={13} /> 선택한 경험으로 답변 재생성
+                </>
+              )}
+            </Button>
+          </div>
+        </>
+      )}
+
+      {candidate && (
+        <div className="mt-3 rounded-md bg-primary-50/40 border border-primary-50 p-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-bold text-primary-800">
+              새 답변 후보 (경험 기반)
+            </span>
+          </div>
+          <div className="text-[13px] leading-relaxed text-ink-900 whitespace-pre-wrap bg-paper rounded p-3 border border-ink-150 break-keep">
+            {candidate}
+          </div>
+          <div className="text-right text-[11.5px] text-ink-500 font-mono mt-1">
+            {candidate.length} / {maxLength}
+          </div>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button onClick={onDiscard}>버리기</Button>
+            <Button variant="primary" onClick={onAccept}>
+              <Check size={13} /> 이 답변 적용하기
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Sparkles,
   Check,
@@ -27,7 +27,6 @@ import { cn } from '../../lib/cn';
  *  3 섹션 순차 활성화 (DB POST 는 ③ 까지 도달해야 발생):
  *   ① 문항 입력                — 로컬 state. DB 호출 없음.
  *   ② 경험 추천/선택           → POST /essays/recommend (DB 변경 없음, top 2 자동 선택, ≤2)
- *                                다른 문항에 쓴 경험은 usedExperienceIds 로 제외
  *   ③ 초안 생성/저장          [초안 생성] = POST /essays/{id}/questions + POST /essays/generate
  *                                                  └ 첫 클릭에서만 POST, 이후는 PATCH
  *                                다시 생성: POST /essays/regenerate (기존/신규 비교)
@@ -37,12 +36,11 @@ import { cn } from '../../lib/cn';
  *    문항 입력 / 추천 단계에서 이탈할 경우 orphan 이 남지 않음.
  *
  *  Props:
- *   - essayId            (required) 부모가 essay 생성 후 가지고 있는 ID
- *   - nextNum            (required) 표시용 문항 번호 (Q1, Q2 ...)
- *   - usedExperienceIds  (Set)      추천 결과에서 제외할 경험 ID 들
- *   - onSaved            (q) => void  저장 완료된 문항 데이터 콜백
- *   - onCancel           () => void   (옵션) — 우상단 X 버튼 노출. EssayEdit 의
- *                                     "새 문항 추가" 같이 접을 수 있는 컨텍스트용.
+ *   - essayId   (required) 부모가 essay 생성 후 가지고 있는 ID
+ *   - nextNum   (required) 표시용 문항 번호 (Q1, Q2 ...)
+ *   - onSaved   (q) => void  저장 완료된 문항 데이터 콜백
+ *   - onCancel  () => void   (옵션) — 우상단 X 버튼 노출. EssayEdit 의
+ *                            "새 문항 추가" 같이 접을 수 있는 컨텍스트용.
  *
  *  타이핑·체크박스 onChange 에서는 절대 API 호출 안 함 — 모든 fetch 는 명시적 버튼.
  * ------------------------------------------------------------------ */
@@ -57,7 +55,6 @@ export const PLACEHOLDER_RESPONSE = '(작성중)';
 export default function QuestionEditor({
   essayId,
   nextNum,
-  usedExperienceIds = new Set(),
   onSaved,
   onCancel,
 }) {
@@ -83,13 +80,6 @@ export default function QuestionEditor({
   const generate = useGenerateAnswer();
   const regenerate = useRegenerateAnswer();
 
-  const filteredRecommendations = useMemo(() => {
-    if (!recommendations) return [];
-    return recommendations.filter(
-      (e) => !usedExperienceIds.has(e.experienceId)
-    );
-  }, [recommendations, usedExperienceIds]);
-
   // ② 추천 단계: 문항이 입력돼야 [경험 추천] 활성.
   const section2Active = !!questionText.trim();
   // ③ 초안 생성 단계: 경험이 1~2 개 선택돼야 활성.
@@ -108,12 +98,7 @@ export default function QuestionEditor({
       });
       const list = data?.relatedExperience ?? [];
       setRecommendations(list);
-      const available = list.filter(
-        (e) => !usedExperienceIds.has(e.experienceId)
-      );
-      setSelectedIds(
-        new Set(available.slice(0, 2).map((e) => e.experienceId))
-      );
+      setSelectedIds(new Set(list.slice(0, 2).map((e) => e.experienceId)));
       setDraftResponse('');
       setCompareDraft(null);
       setQuestionReq('');
@@ -346,14 +331,13 @@ export default function QuestionEditor({
         </div>
 
         {recommendations !== null &&
-          (filteredRecommendations.length === 0 ? (
+          (recommendations.length === 0 ? (
             <div className="text-[12.5px] text-ink-500 leading-relaxed border border-dashed border-ink-200 rounded-md px-3 py-4 text-center">
-              추천할 수 있는 경험이 없어요. 먼저 경험을 등록하거나, 다른 문항에
-              이미 사용한 경험을 제외한 결과예요.
+              추천할 수 있는 경험이 없어요. 먼저 경험을 등록해주세요.
             </div>
           ) : (
             <div className="max-h-[260px] overflow-y-auto rounded-md border border-ink-200 divide-y divide-ink-150">
-              {filteredRecommendations.map((exp, i) => {
+              {recommendations.map((exp, i) => {
                 const checked = selectedIds.has(exp.experienceId);
                 const recommended = i < 2;
                 return (

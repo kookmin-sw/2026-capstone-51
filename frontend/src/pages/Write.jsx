@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ArrowLeft, Check, Plus } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
@@ -14,7 +14,6 @@ import { toast } from '../store/useToast';
  *  Step 1) 지원 정보 입력 → POST /essays/create → essayId 발급.
  *  Step 2) essayId 에 매핑되는 문항을 한 개씩 추가 — 공용 QuestionEditor 사용.
  *           문항 등록 → 경험 추천/선택 → 초안 생성 → 저장.
- *           usedExperienceIds 로 이미 다른 문항에 쓴 경험은 추천에서 제외.
  *  마지막 [자소서 저장 완료] → 디테일 페이지 이동 (인크리멘탈 저장됨).
  * ------------------------------------------------------------------ */
 
@@ -30,16 +29,6 @@ export default function Write() {
   const [savedQuestions, setSavedQuestions] = useState([]);
   const create = useCreateEssay();
   const updateMeta = useUpdateEssayMeta();
-
-  const usedExperienceIds = useMemo(
-    () =>
-      new Set(
-        savedQuestions.flatMap((q) =>
-          (q.relatedExperience ?? []).map((e) => e.experienceId)
-        )
-      ),
-    [savedQuestions]
-  );
 
   const goNext = () => {
     if (
@@ -113,7 +102,6 @@ export default function Write() {
           essayId={essayId}
           meta={meta}
           savedQuestions={savedQuestions}
-          usedExperienceIds={usedExperienceIds}
           onQuestionSaved={(q) => setSavedQuestions((prev) => [...prev, q])}
           onBack={() => setStep(1)}
           onFinish={() => navigate(`/essays/${essayId}`)}
@@ -197,7 +185,6 @@ function Step2({
   essayId,
   meta,
   savedQuestions,
-  usedExperienceIds,
   onQuestionSaved,
   onBack,
   onFinish,
@@ -244,7 +231,6 @@ function Step2({
           key={editorKey}
           essayId={essayId}
           nextNum={savedQuestions.length + 1}
-          usedExperienceIds={usedExperienceIds}
           onSaved={handleSaved}
           onCancel={() => setOpen(false)}
         />
