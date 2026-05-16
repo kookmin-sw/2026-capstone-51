@@ -116,6 +116,7 @@ export default function Write() {
           essayId={essayId}
           meta={meta}
           savedQuestions={savedQuestions}
+          editorBusy={editorBusy}
           onQuestionSaved={(q) => {
             setSavedQuestions((prev) => [...prev, q]);
             setEditorBusy(false);
@@ -208,6 +209,7 @@ function Step2({
   essayId,
   meta,
   savedQuestions,
+  editorBusy,
   onQuestionSaved,
   onGenerationStart,
   onBack,
@@ -276,7 +278,9 @@ function Step2({
           </span>
         )}
         <div className="flex justify-end gap-2">
-          <Button onClick={onBack}>이전</Button>
+          <Button onClick={onBack} disabled={editorBusy}>
+            이전
+          </Button>
           <Button
             variant="primary"
             onClick={onFinish}
