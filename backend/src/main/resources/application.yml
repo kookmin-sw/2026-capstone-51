@@ -27,6 +27,7 @@ app:
   cors:
     allowed-origins:
       - http://localhost:3000
+      - https://master.d1zot924wp65d0.amplifyapp.com
   embedding:
     model-id: ${EMBEDDING_MODEL_ID:amazon.titan-embed-text-v2:0}
   llm:
@@ -48,5 +49,5 @@ google:
   client:
     id: ${GOOGLE_CLIENT_ID}
     secret: ${GOOGLE_CLIENT_SECRET}
-    redirect-uri: ${GOOGLE_REDIRECT_URI}
+    allowed-redirect-uri-hosts: ${GOOGLE_ALLOWED_REDIRECT_HOSTS:localhost,master.d1zot924wp65d0.amplifyapp.com}
 

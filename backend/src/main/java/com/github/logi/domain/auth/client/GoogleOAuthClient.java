@@ -5,6 +5,7 @@ import com.github.logi.domain.auth.dto.google.GoogleUserInfoResponse;
 import com.github.logi.domain.auth.exception.AuthExceptions;
 import com.github.logi.global.exception.ApiException;
 import com.github.logi.global.property.GoogleProperty;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -25,13 +26,15 @@ public class GoogleOAuthClient {
     private final GoogleProperty googleProperty;
     private final RestClient restClient = RestClient.create();
 
-    public String getAccessToken(String grantCode) {
+    public String getAccessToken(String grantCode, String redirectUri) {
+
+        validateRedirectUri(redirectUri);
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("code", grantCode);
         form.add("client_id", googleProperty.getId());
         form.add("client_secret", googleProperty.getSecret());
-        form.add("redirect_uri", googleProperty.getRedirectUri());
+        form.add("redirect_uri", redirectUri);
         form.add("grant_type", GRANT_TYPE);
 
         GoogleTokenResponse response;
@@ -79,5 +82,21 @@ public class GoogleOAuthClient {
         }
 
         return response;
+    }
+
+    private void validateRedirectUri(String redirectUri) {
+        try {
+            URI uri = URI.create(redirectUri);
+            String host = uri.getHost();
+            String path = uri.getPath();
+            boolean allowed = googleProperty.getAllowedRedirectUriHosts().stream()
+                    .anyMatch(allowedHost -> allowedHost.equalsIgnoreCase(host))
+                    && "/auth/callback".equals(path);
+            if (!allowed) {
+                throw AuthExceptions.INVALID_REDIRECT_URI.toException();
+            }
+        } catch (IllegalArgumentException e) {
+            throw AuthExceptions.INVALID_REDIRECT_URI.toException();
+        }
     }
 }
