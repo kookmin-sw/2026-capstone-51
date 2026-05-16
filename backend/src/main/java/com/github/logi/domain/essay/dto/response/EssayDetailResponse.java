@@ -3,6 +3,8 @@ package com.github.logi.domain.essay.dto.response;
 import com.github.logi.domain.essay.entity.Essay;
 import com.github.logi.domain.essay.entity.EssayQuestion;
 import com.github.logi.domain.essay.entity.Progress;
+import com.github.logi.domain.experience.entity.Experience;
+import com.github.logi.domain.experience.entity.ExperienceCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
@@ -29,6 +31,26 @@ public record EssayDetailResponse(
         @Schema(description = "최종 수정 일자", example = "2026-05-01")
         LocalDate modifiedDate
 ) {
+    @Schema(description = "관련 경험")
+    public record RelatedExperienceResponse(
+            @Schema(description = "경험 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+            UUID experienceId,
+
+            @Schema(description = "경험 제목", example = "토스 인턴십")
+            String experienceTitle,
+
+            @Schema(description = "경험 카테고리", example = "INTERN")
+            ExperienceCategory experienceCategory
+    ) {
+        public static RelatedExperienceResponse from(Experience experience) {
+            return new RelatedExperienceResponse(
+                    experience.getId(),
+                    experience.getExperienceTitle(),
+                    experience.getExperienceCategory()
+            );
+        }
+    }
+
     @Schema(description = "자소서 문항")
     public record QuestionResponse(
             @Schema(description = "문항 ID", example = "550e8400-e29b-41d4-a716-446655440000")
@@ -44,7 +66,10 @@ public record EssayDetailResponse(
             String response,
 
             @Schema(description = "답변 최대 글자수", example = "500")
-            Integer maxLength
+            Integer maxLength,
+
+            @Schema(description = "관련 경험 목록")
+            List<RelatedExperienceResponse> relatedExperiences
     ) {
         public static QuestionResponse from(EssayQuestion question) {
             return new QuestionResponse(
@@ -52,7 +77,10 @@ public record EssayDetailResponse(
                     question.getQuestionNum(),
                     question.getQuestion(),
                     question.getResponse(),
-                    question.getMaxLength()
+                    question.getMaxLength(),
+                    question.getExperiences().stream()
+                            .map(RelatedExperienceResponse::from)
+                            .toList()
             );
         }
     }
