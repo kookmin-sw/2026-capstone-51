@@ -254,7 +254,7 @@ export default function QuestionEditor({
             새 문항 작성
           </span>
         </div>
-        {onCancel && (
+        {onCancel && !draftResponse && (
           <button
             type="button"
             onClick={onCancel}
