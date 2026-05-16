@@ -13,6 +13,6 @@ import java.util.UUID;
 public interface EssayRepository extends JpaRepository<Essay, UUID> {
     List<Essay> findAllByUser(User user);
 
-    @Query("SELECT DISTINCT e FROM Essay e LEFT JOIN FETCH e.questions q LEFT JOIN FETCH q.experiences WHERE e.id = :id")
+    @Query("SELECT DISTINCT e FROM Essay e LEFT JOIN FETCH e.questions WHERE e.id = :id")
     Optional<Essay> findByIdWithQuestions(@Param("id") UUID id);
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 @Getter
 @Entity
@@ -31,6 +32,7 @@ public class EssayQuestion extends BaseEntity {
     @Column(name = "max_length", nullable = false)
     private Integer maxLength;
 
+    @BatchSize(size = 30)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "essay_question_experiences",
