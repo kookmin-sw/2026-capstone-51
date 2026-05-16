@@ -33,11 +33,13 @@ export function redirectToGoogleLogin() {
 }
 
 /**
- * 백엔드에 grant code를 보내 access/refresh 토큰을 받아옵니다.
+ * 백엔드에 grant code + redirectUri 를 보내 access/refresh 토큰을 받아옵니다.
+ * redirectUri 는 Google OAuth 요청 시 사용한 값과 동일해야 합니다 (백엔드의
+ * Google token exchange 단계에서 동일성 검증).
  * 응답: { accessToken, refreshToken, firstLogin }
  */
-export async function exchangeGoogleCode(grantCode) {
-  const res = await api.post('/auth/login', { grantCode });
+export async function exchangeGoogleCode(grantCode, redirectUri) {
+  const res = await api.post('/auth/login', { grantCode, redirectUri });
   return res.data?.data ?? res.data;
 }
 

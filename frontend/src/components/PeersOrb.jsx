@@ -52,9 +52,14 @@ export default function PeersOrb({
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    // updateStyle=false: canvas inline width/height(px)을 박지 않아 창 축소 시
+    // canvas가 부모를 잡아당기는 deadlock 회피. 실제 표시 크기는 아래 CSS 가 담당.
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.display = 'block';
     wrap.appendChild(renderer.domElement);
 
     /* ========== Lights ========== */
@@ -363,7 +368,9 @@ export default function PeersOrb({
         h = wrap.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      // updateStyle=false: 초기 mount 시 박은 width/height: 100% CSS 유지.
+      // true 로 두면 매 resize 마다 inline px 가 다시 박혀 부모-canvas deadlock 재발.
+      renderer.setSize(w, h, false);
     };
     const ro = new ResizeObserver(onResize);
     ro.observe(wrap);
