@@ -118,6 +118,9 @@ export default function Dashboard() {
             items={senior.items}
             rangeStart={seniorRange?.start}
             rangeEnd={seniorRange?.end}
+            seniorName={
+              senior.userName ? `취업선배 ${senior.userName}` : undefined
+            }
           />
         ) : (
           <EmptyRoadmapCard

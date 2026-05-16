@@ -242,6 +242,7 @@ export default function Onboarding() {
                   placeholder="대분류 선택"
                   searchable={false}
                   forceDirection="down"
+                  compact
                   hasError={!!errors.jobFirst}
                 />
               </Field>
@@ -255,6 +256,7 @@ export default function Onboarding() {
                   }
                   searchable={false}
                   forceDirection="down"
+                  compact
                   disabled={!form.jobFirst}
                   hasError={!!errors.jobSecond}
                 />
@@ -269,6 +271,7 @@ export default function Onboarding() {
                   }
                   searchable={false}
                   forceDirection="down"
+                  compact
                   disabled={!form.jobSecond}
                   hasError={!!errors.jobThird}
                 />
