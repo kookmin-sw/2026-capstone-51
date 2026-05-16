@@ -60,6 +60,10 @@ public class User extends BaseEntity {
         return user;
     }
 
+    public void updateState(State state) {
+        this.state = state;
+    }
+
     public void update(UserMeRequest request) {
         this.userName = request.userName();
         this.state = request.state();

@@ -17,6 +17,8 @@ import com.github.logi.domain.essay.repository.EssayRepository;
 import com.github.logi.domain.experience.entity.Experience;
 import com.github.logi.domain.experience.exception.ExperienceExceptions;
 import com.github.logi.domain.experience.repository.ExperienceRepository;
+import com.github.logi.domain.essay.entity.Progress;
+import com.github.logi.domain.user.entity.State;
 import com.github.logi.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -135,6 +137,10 @@ public class EssayService {
         }
 
         essay.updateProgress(request.progress());
+
+        if (request.progress() == Progress.PASS) {
+            user.updateState(State.WORKER);
+        }
     }
 
     private List<Experience> resolveExperiences(List<UUID> ids) {
