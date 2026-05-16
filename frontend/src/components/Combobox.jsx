@@ -94,8 +94,8 @@ export default function Combobox({
       } else {
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
-          // 검색바(~52) + 옵션 영역 max-h-60(240) ≈ 약 290px 필요
-          const DROPDOWN_H = searchable ? 290 : 240;
+          // 검색바(~52) + 옵션 영역 max-h-48(192) ≈ 약 244px 필요
+          const DROPDOWN_H = searchable ? 244 : 192;
           const below = window.innerHeight - rect.bottom;
           const above = rect.top;
           setDirection(below < DROPDOWN_H && above > below ? 'up' : 'down');
@@ -193,7 +193,7 @@ export default function Combobox({
           )}
           <ul
             ref={listRef}
-            className="max-h-60 overflow-y-auto py-1"
+            className="max-h-48 overflow-y-auto py-1"
             tabIndex={-1}
           >
             {filtered.length === 0 ? (
