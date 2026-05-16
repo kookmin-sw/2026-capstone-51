@@ -73,6 +73,9 @@ export default function QuestionEditor({
   const [questionReq, setQuestionReq] = useState('');
   // 재생성 직후 기존/신규 비교 뷰. null 이면 일반 편집 뷰.
   const [compareDraft, setCompareDraft] = useState(null);
+  // 사용자가 한 번이라도 [초안 생성] 을 눌렀는지 — true 가 되면 우상단 X(작성 취소) 숨김.
+  // API 호출 시작 전(`busyGenerate` 가 true 가 되기 전) 에 즉시 set 되어야 하므로 별도 state.
+  const [generationStarted, setGenerationStarted] = useState(false);
 
   const createQuestion = useCreateEssayQuestion();
   const updateQuestion = useUpdateEssayQuestion();
@@ -131,6 +134,9 @@ export default function QuestionEditor({
       toast.error('경험을 1~2개 선택해주세요.');
       return;
     }
+    // API 호출 시작 전에 X 버튼부터 숨김 — 사용자가 클릭 직후
+    // 잠깐의 pending 진입 전 타이밍에 취소 못 누르게.
+    setGenerationStarted(true);
     const relatedExperience = Array.from(selectedIds).map((id) => ({
       experienceId: id,
     }));
@@ -254,7 +260,7 @@ export default function QuestionEditor({
             새 문항 작성
           </span>
         </div>
-        {onCancel && !draftResponse && (
+        {onCancel && !generationStarted && (
           <button
             type="button"
             onClick={onCancel}
