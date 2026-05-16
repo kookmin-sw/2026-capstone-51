@@ -298,66 +298,18 @@ export default function PeersOrb({
       orbGroup.add(sp);
     }
 
-    /* ========== Interaction (drag rotate) ========== */
-    // 자동 회전 제거 — 초기 모멘텀(velY) 0 으로 시작.
-    let rotY = 0.0,
-      rotX = 0.18,
-      velY = 0,
-      velX = 0;
-    let isDragging = false;
-    let lastX = 0,
-      lastY = 0,
-      lastMoveTime = 0;
+    /* ========== Static orientation (drag interaction disabled) ========== */
+    // 정면 — 기울기 없이 카메라 축과 평행하게.
     const dom = renderer.domElement;
-
-    const onDown = (e) => {
-      isDragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      lastMoveTime = performance.now();
-      dom.setPointerCapture?.(e.pointerId);
-    };
-    const onMove = (e) => {
-      if (!isDragging) return;
-      const now = performance.now();
-      const dt = Math.max(now - lastMoveTime, 1);
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      rotY += dx * 0.008;
-      rotX += dy * 0.006;
-      rotX = Math.max(-0.9, Math.min(0.9, rotX));
-      velY = dx * 0.008 * (16 / dt);
-      velX = dy * 0.006 * (16 / dt);
-      lastX = e.clientX;
-      lastY = e.clientY;
-      lastMoveTime = now;
-    };
-    const onUp = (e) => {
-      if (!isDragging) return;
-      isDragging = false;
-      dom.releasePointerCapture?.(e.pointerId);
-    };
-    dom.addEventListener('pointerdown', onDown);
-    dom.addEventListener('pointermove', onMove);
-    dom.addEventListener('pointerup', onUp);
-    dom.addEventListener('pointercancel', onUp);
-    dom.addEventListener('pointerleave', onUp);
+    orbGroup.rotation.x = 0;
+    orbGroup.rotation.y = 0;
 
     /* ========== Animate ========== */
-    // 드래그하지 않을 땐 정지 — 드래그로 생긴 관성만 자연감쇠 후 0 으로 수렴.
+    // 회전이 없는 정적 장면이지만, ResizeObserver 가 setSize 후 재렌더를 트리거
+    // 받을 수 있도록 raf 루프는 유지. 매 프레임 같은 장면을 그리는 비용이라 가벼움.
     let raf;
     const tick = () => {
       raf = requestAnimationFrame(tick);
-      if (!isDragging) {
-        rotY += velY;
-        rotX += velX;
-        velY *= 0.93;
-        velX *= 0.93;
-        rotX = Math.max(-0.9, Math.min(0.9, rotX));
-        rotX += (0.18 - rotX) * 0.005;
-      }
-      orbGroup.rotation.y = rotY;
-      orbGroup.rotation.x = rotX;
       renderer.render(scene, camera);
     };
     tick();
@@ -378,11 +330,6 @@ export default function PeersOrb({
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
-      dom.removeEventListener('pointerdown', onDown);
-      dom.removeEventListener('pointermove', onMove);
-      dom.removeEventListener('pointerup', onUp);
-      dom.removeEventListener('pointercancel', onUp);
-      dom.removeEventListener('pointerleave', onUp);
       renderer.dispose();
       wrap.removeChild(dom);
     };
@@ -422,9 +369,6 @@ export default function PeersOrb({
           marginRight: 'auto',
         }}
       />
-      <p className="text-center text-[11px] text-ink-400 mt-1.5 tracking-wide">
-        ↻ 드래그해서 돌려보세요
-      </p>
       <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-ink-150">
         <span className="flex items-center gap-2 text-[13px] font-medium text-ink-700">
           <span

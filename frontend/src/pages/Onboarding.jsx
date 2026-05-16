@@ -127,7 +127,7 @@ export default function Onboarding() {
         </div>
       </div>
 
-      <div className="w-full max-w-[920px] bg-paper border border-border rounded-xl shadow-md overflow-hidden">
+      <div className="w-full max-w-[920px] bg-paper border border-border rounded-xl shadow-md">
         {/* 헤더 */}
         <div className="px-6 sm:px-10 lg:px-12 pt-8 sm:pt-10 lg:pt-12 pb-6 sm:pb-8 border-b border-ink-150">
           <h1 className="text-[24px] sm:text-[28px] lg:text-[30px] font-bold text-ink-900 tracking-tight leading-tight mb-2 sm:mb-2.5">
@@ -278,7 +278,7 @@ export default function Onboarding() {
         </div>
 
         {/* 푸터 */}
-        <div className="px-6 sm:px-10 lg:px-12 py-5 sm:py-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 border-t border-ink-150 bg-ink-100">
+        <div className="px-6 sm:px-10 lg:px-12 py-5 sm:py-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 border-t border-ink-150 bg-ink-100 rounded-b-xl">
           <div className="text-[12px] sm:text-[12.5px] text-ink-500 break-keep">
             입력한 정보는 언제든 [내 정보]에서 수정할 수 있어요.
           </div>
