@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { exchangeGoogleCode } from '../api/auth';
+import api from '../api/axios';
 import { useAuth } from '../store/useAuth';
 import { toast } from '../store/useToast';
 
@@ -145,10 +145,8 @@ export default function LogiSplashScreen() {
 
     (async () => {
       try {
-        // Landing 에서 Google 로 보낸 redirect_uri 와 동일해야 백엔드가 token 교환 성공.
-        const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
-        const { accessToken, refreshToken, firstLogin } =
-          await exchangeGoogleCode(code, redirectUri);
+        const res = await api.post('/auth/login', { grantCode: code });
+        const { accessToken, refreshToken, firstLogin } = res.data;
         if (!accessToken || !refreshToken) {
           throw new Error('토큰 응답이 비어있습니다.');
         }
