@@ -16,6 +16,26 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 루트 README.md 신규 작성 + 로고 자산 추가 (2026-05-17)
+
+- **계기**: 루트 `README.md` 가 GitHub 클래스룸 템플릿 잔재(`Welcome to GitHub` / "캡스톤 팀 생성을 축하합니다" 등) 그대로였음. 사용자가 로고 PNG 첨부와 함께 정식 README 작성 요청.
+- **변경 파일**:
+  - [`assets/logo.png`](../assets/logo.png) (신규) — `~/Desktop/logi/logo_transparent.png` (179 KB, 배경 투명 처리본) 을 레포 루트 `assets/` 로 복사. README 헤더 이미지로 참조. 루트 `assets/` 디렉토리 자체가 신규 (frontend/src/assets 는 옛 정리에서 제거됨).
+  - [`README.md`](../README.md) (전면 교체) — 템플릿 폐기, 다음 구조로 작성:
+    1. 헤더: 로고 + 태그라인("나의 경험이 자소서가 되다") + 4종 shields.io 배지 (Capstone / React 19 / Spring Boot 3.5 / Claude Sonnet)
+    2. 프로젝트 소개 (STAR 기록 → AI 추천 → 초안 생성 → 익명 비교)
+    3. 우리가 해결하려는 문제 — `index.html` 의 4개 Problem/Limitation/Solution/Information 카드를 표로 압축
+    4. 핵심 기능 4종 — 경험 자산화 / 스마트 매칭 / AI 초안 / 익명 비교 통계
+    5. 시스템 아키텍처 ASCII 다이어그램 (Frontend → Backend → PG+pgvector / SQS / S3 / Bedrock 분기)
+    6. 기술 스택 — Frontend / Backend / 인증 3블록 표
+    7. 실행 방법 — frontend `npm run dev` (port 3000 강제 이유 명시) / backend `./gradlew bootRun`
+    8. 팀 소개 표 — 김문기(Backend Lead, Kimmoongi0320) / 김민재(Backend) / 도승준(Frontend) / 한혜민(Frontend, gksgpals). 다른 멤버 GitHub 핸들 모름 → "—" 로 표시
+    9. 링크 — 팀페이지 / 레포 / Swagger
+    10. 라이센스 — 국민대 2026 캡스톤 학습용
+- **컨텐츠 출처**: `index.html` (랜딩페이지의 4 problem 카드, 4 solution 카드, 팀 카드, 기술 흐름 단계), 루트 `CLAUDE.md` (프로젝트 요지·기술 스택), `frontend/CLAUDE.md` (실행 명령·포트 정책·OAuth 흐름).
+- **언어**: 한국어 (프로젝트 UI 카피와 일관).
+- **건드리지 않은 항목**: `index.html` (이미 잘 짜인 랜딩페이지 — GitHub Pages 진입점), `_config.yml`, `frontend/README.md` (Vite 기본 README — 별도 정리 대상), 루트 `CLAUDE.md`.
+
 ### 자소서 4개 페이지 mock → 실 API 전환 (Essays / EssayView / EssayEdit / Write) (2026-05-16)
 
 - **계기**: 시연 D-6 (5/22). 백엔드 9개 essay 엔드포인트 + react-query hook 모두 준비된 상태에서 자소서 4개 페이지가 친구 mock 그대로였음. 사용자 결정으로 시연 전 전환 진행 (작업 방식: "하나씩 → 자동 진행").
