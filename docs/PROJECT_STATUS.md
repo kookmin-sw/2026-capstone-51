@@ -16,6 +16,17 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### README 에 캡스톤 포스터 섹션 추가 (2026-05-17)
+
+- **계기**: README 초안이 텍스트·다이어그램 중심이라 "한 화면에 감 잡기" 가 어려움. 사용자가 캡스톤 포스터 PDF + 같은 내용 PNG 첨부, 인라인 임베드 + PDF 원본 다운로드 패턴 채택.
+- **변경 파일**:
+  - [`docs/poster.png`](../docs/poster.png) (신규, 1.28 MB) — GitHub 인라인 렌더용. README 에서 `width="720"` 으로 표시.
+  - [`docs/poster.pdf`](../docs/poster.pdf) (신규, 1.70 MB) — 원본 PDF (인쇄·고해상도 다운로드용).
+  - [`README.md`](../README.md) — "프로젝트 소개" 와 "우리가 해결하려는 문제" 사이에 `## 포스터` 섹션 추가. 이미지를 PDF 링크로 감싸 클릭 시 원본 열림.
+- **포스터 컨텐츠** (참고): ABSTRACT(배경·목표·해결방향) / MAIN FEATURES 4종 UI 스크린샷(경험 등록·경험 추천·자소서 생성·통계) / SERVICE ARCHITECTURE (AWS Cloud: SQS·Lambda·Bedrock Titan v2·React EC2·Spring Boot EC2·S3·PostgreSQL·Bedrock Claude Sonnet) / EXPECTED IMPACT / QR + KMU + AWS 로고.
+- **위치 선택 이유**: 텍스트 소개로 hook 한 뒤 포스터로 시각화 → 핵심 기능 / 아키텍처 텍스트 섹션은 그대로 유지 (포스터 = 한눈 요약, 텍스트 = 자세히 / 설치 가이드).
+- **건드리지 않은 항목**: 핵심 기능·시스템 아키텍처 텍스트 섹션 (포스터와 중복되지만, 검색·복사·하이라이트 가능한 텍스트로도 남겨두는 게 README 표준).
+
 ### 루트 README.md 신규 작성 + 로고 자산 추가 (2026-05-17)
 
 - **계기**: 루트 `README.md` 가 GitHub 클래스룸 템플릿 잔재(`Welcome to GitHub` / "캡스톤 팀 생성을 축하합니다" 등) 그대로였음. 사용자가 로고 PNG 첨부와 함께 정식 README 작성 요청.

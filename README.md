@@ -25,6 +25,15 @@
 
 ---
 
+## 포스터
+
+<div align="center">
+  <a href="docs/poster.pdf"><img src="docs/poster.png" alt="Logi 캡스톤 포스터" width="720" /></a>
+  <p><em>클릭하면 <a href="docs/poster.pdf">PDF 원본</a> 으로 열립니다.</em></p>
+</div>
+
+---
+
 ## 우리가 해결하려는 문제
 
 | | 문제 | Logi의 해결 |
