@@ -26,17 +26,19 @@ export default function RoadmapCard({
 
   return (
     <section className="bg-paper border border-border rounded-lg p-5 mb-4 min-w-0">
-      {/* 헤더 — 제목 + (선배 이름) + 범례 */}
+      {/* 헤더 — 좌: 제목 + (선배 이름) / 우: 범례 */}
       <div className="flex items-start justify-between gap-3 mb-3">
-        <h2 className="m-0 text-[15px] font-semibold text-ink-900">{title}</h2>
-        <div className="flex flex-col items-end gap-1.5">
+        <div className="min-w-0">
+          <h2 className="m-0 text-[15px] font-semibold text-ink-900">
+            {title}
+          </h2>
           {seniorName && (
-            <span className="text-[12px] font-semibold text-ink-700">
+            <div className="mt-1 text-[13px] font-semibold text-ink-700 break-keep">
               {seniorName}
-            </span>
+            </div>
           )}
-          <CategoryLegend />
         </div>
+        <CategoryLegend />
       </div>
 
       {/* 본체 — 좌/우 화살표 + 로드맵 */}
