@@ -144,12 +144,42 @@ cd backend
 
 ## 팀 소개
 
-| 이름 | 역할 | GitHub |
-|------|------|--------|
-| 김문기 | Backend · Team Lead | [@Kimmoongi0320](https://github.com/Kimmoongi0320) |
-| 김민재 | Backend | [@Dlawoct](https://github.com/Dlawoct) |
-| 도승준 | Frontend | [@SudoSzune](https://github.com/SudoSzune) |
-| 한혜민 | Frontend | [@gksgpals](https://github.com/gksgpals) |
+<table>
+  <tr>
+    <td align="center" width="160">
+      <a href="https://github.com/Kimmoongi0320">
+        <img src="https://github.com/Kimmoongi0320.png?size=120" width="100" height="100" style="border-radius:50%;" alt="김문기" /><br/>
+        <sub><b>김문기</b></sub>
+      </a><br/>
+      <sub>Backend · Team Lead</sub><br/>
+      <sub><a href="https://github.com/Kimmoongi0320">@Kimmoongi0320</a></sub>
+    </td>
+    <td align="center" width="160">
+      <a href="https://github.com/Dlawoct">
+        <img src="https://github.com/Dlawoct.png?size=120" width="100" height="100" style="border-radius:50%;" alt="김민재" /><br/>
+        <sub><b>김민재</b></sub>
+      </a><br/>
+      <sub>Backend</sub><br/>
+      <sub><a href="https://github.com/Dlawoct">@Dlawoct</a></sub>
+    </td>
+    <td align="center" width="160">
+      <a href="https://github.com/SudoSzune">
+        <img src="https://github.com/SudoSzune.png?size=120" width="100" height="100" style="border-radius:50%;" alt="도승준" /><br/>
+        <sub><b>도승준</b></sub>
+      </a><br/>
+      <sub>Frontend</sub><br/>
+      <sub><a href="https://github.com/SudoSzune">@SudoSzune</a></sub>
+    </td>
+    <td align="center" width="160">
+      <a href="https://github.com/gksgpals">
+        <img src="https://github.com/gksgpals.png?size=120" width="100" height="100" style="border-radius:50%;" alt="한혜민" /><br/>
+        <sub><b>한혜민</b></sub>
+      </a><br/>
+      <sub>Frontend</sub><br/>
+      <sub><a href="https://github.com/gksgpals">@gksgpals</a></sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
