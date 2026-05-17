@@ -138,8 +138,8 @@ cd backend
 | 이름 | 역할 | GitHub |
 |------|------|--------|
 | 김문기 | Backend · Team Lead | [@Kimmoongi0320](https://github.com/Kimmoongi0320) |
-| 김민재 | Backend | — |
-| 도승준 | Frontend | — |
+| 김민재 | Backend | [@Dlawoct](https://github.com/Dlawoct) |
+| 도승준 | Frontend | [@SudoSzune](https://github.com/SudoSzune) |
 | 한혜민 | Frontend | [@gksgpals](https://github.com/gksgpals) |
 
 ---
