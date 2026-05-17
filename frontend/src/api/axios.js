@@ -59,10 +59,22 @@ export const callLogout = (accessToken, refreshToken) =>
     }
   );
 
-// 요청 — Authorization 헤더 자동 부착.
+// 백엔드 JwtFilter 가 SKIP 하는 인증 불요 엔드포인트.
+// 이 경로엔 stale 토큰을 보내지 않음 — 백엔드의 context-path('/api') 차이로
+// shouldNotFilter 매치가 안 풀려, 만료 토큰이 붙어 가면 401(ACCESS_TOKEN_EXPIRED)
+// 이 나오는 케이스를 방지. 그 외 /auth/withdraw 등 인증 필요한 호출은 영향 없음.
+const NO_AUTH_PATHS = ['/auth/login', '/auth/reissue'];
+
+// 요청 — Authorization 헤더 자동 부착 (NO_AUTH_PATHS 만 제외).
 api.interceptors.request.use((config) => {
-  const t = tokenStore.getAccess();
-  if (t) config.headers.Authorization = `Bearer ${t}`;
+  const url = config.url ?? '';
+  const skipAuth = NO_AUTH_PATHS.some(
+    (p) => url === p || url.startsWith(p + '?')
+  );
+  if (!skipAuth) {
+    const t = tokenStore.getAccess();
+    if (t) config.headers.Authorization = `Bearer ${t}`;
+  }
   return config;
 });
 
