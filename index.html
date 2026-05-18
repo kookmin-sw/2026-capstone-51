@@ -296,21 +296,47 @@
     [data-theme="dark"] .mac-monitor .em-word,
     [data-theme="dark"] .mac-monitor .em-line { fill: var(--sky-300); }
 
-    /* 라인 reveal — fade in (타이핑처럼) */
+    /* 타이핑 동작 — clip-path + steps() 함수로 한 글자씩 좌→우 reveal */
     .mac-monitor .screen-line {
-      opacity: 0;
-      transform: translateX(-6px);
-      transform-origin: left center;
-      transform-box: fill-box;
-      animation: screen-line-in 9s ease-in-out infinite;
+      clip-path: inset(0 100% 0 0);
+      animation-timing-function: steps(1);
+      animation-iteration-count: infinite;
+      animation-duration: 10s;
     }
-    .mac-monitor .line-1 { animation-delay: 0.6s; }
-    .mac-monitor .line-2 { animation-delay: 2.2s; }
-    .mac-monitor .line-3 { animation-delay: 3.8s; }
-    @keyframes screen-line-in {
-      0%       { opacity: 0; transform: translateX(-6px); }
-      14%, 82% { opacity: 1; transform: translateX(0); }
-      92%, 100%{ opacity: 1; transform: translateX(0); }
+    /* line-1: "나의 경험이" 6 글자, 0~14% 동안 타이핑 */
+    .mac-monitor .line-1 {
+      animation-name: type-line-1;
+    }
+    @keyframes type-line-1 {
+      0%   { clip-path: inset(0 100% 0 0); }
+      2.3% { clip-path: inset(0 83.3% 0 0); }   /* 나 */
+      4.6% { clip-path: inset(0 66.6% 0 0); }   /* 의 */
+      6.9% { clip-path: inset(0 50% 0 0); }     /* (공백) */
+      9.2% { clip-path: inset(0 33.3% 0 0); }   /* 경 */
+      11.5%{ clip-path: inset(0 16.6% 0 0); }   /* 험 */
+      14%  { clip-path: inset(0 0 0 0); }        /* 이 */
+      85%  { clip-path: inset(0 0 0 0); }
+      94%, 100% { clip-path: inset(0 100% 0 0); }
+    }
+    /* line-2: "자소서가 되는 순간." 11 글자, 16~38% 동안 타이핑 */
+    .mac-monitor .line-2 {
+      animation-name: type-line-2;
+    }
+    @keyframes type-line-2 {
+      0%, 15%   { clip-path: inset(0 100% 0 0); }
+      17%   { clip-path: inset(0 90.9% 0 0); }  /* 자 */
+      19%   { clip-path: inset(0 81.8% 0 0); }  /* 소 */
+      21%   { clip-path: inset(0 72.7% 0 0); }  /* 서 */
+      23%   { clip-path: inset(0 63.6% 0 0); }  /* 가 */
+      25%   { clip-path: inset(0 54.5% 0 0); }  /* (공백) */
+      27%   { clip-path: inset(0 45.4% 0 0); }  /* 되 */
+      29%   { clip-path: inset(0 36.3% 0 0); }  /* 는 */
+      31%   { clip-path: inset(0 27.2% 0 0); }  /* (공백) */
+      33%   { clip-path: inset(0 18.1% 0 0); }  /* 순 */
+      35%   { clip-path: inset(0 9% 0 0); }     /* 간 */
+      38%   { clip-path: inset(0 0 0 0); }       /* . */
+      85%   { clip-path: inset(0 0 0 0); }
+      94%, 100% { clip-path: inset(0 100% 0 0); }
     }
 
     /* 커서 — "순간." 바로 뒤에서 깜빡임 (텍스트 흐름 안 tspan) */
@@ -1667,8 +1693,8 @@
             </g>
             <g>
               <rect x="350" y="120" width="160" height="64" class="node-accent" />
-              <text x="430" y="146" text-anchor="middle" font-size="12" font-weight="600">Spring Boot</text>
-              <text x="430" y="166" text-anchor="middle" font-size="10">Java 21 · Backend</text>
+              <text x="430" y="146" text-anchor="middle" font-size="12" font-weight="600" fill="#ffffff">Spring Boot</text>
+              <text x="430" y="166" text-anchor="middle" font-size="10" fill="#ffffff">Java 21 · Backend</text>
             </g>
             <g>
               <rect x="350" y="220" width="160" height="58" class="node" />
@@ -1687,13 +1713,13 @@
             </g>
             <g>
               <rect x="720" y="170" width="120" height="50" class="node-accent" />
-              <text x="780" y="190" text-anchor="middle" font-size="11" font-weight="600">Bedrock Titan</text>
-              <text x="780" y="208" text-anchor="middle" font-size="10">Embed v2</text>
+              <text x="780" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#ffffff">Bedrock Titan</text>
+              <text x="780" y="208" text-anchor="middle" font-size="10" fill="#ffffff">Embed v2</text>
             </g>
             <g>
               <rect x="720" y="240" width="120" height="50" class="node-accent" />
-              <text x="780" y="260" text-anchor="middle" font-size="11" font-weight="600">Bedrock Claude</text>
-              <text x="780" y="278" text-anchor="middle" font-size="10">Sonnet 4.5</text>
+              <text x="780" y="260" text-anchor="middle" font-size="11" font-weight="600" fill="#ffffff">Bedrock Claude</text>
+              <text x="780" y="278" text-anchor="middle" font-size="10" fill="#ffffff">Sonnet 4.5</text>
             </g>
             <g>
               <rect x="560" y="240" width="120" height="50" class="node" />
