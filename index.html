@@ -296,48 +296,7 @@
     [data-theme="dark"] .mac-monitor .em-word,
     [data-theme="dark"] .mac-monitor .em-line { fill: var(--sky-300); }
 
-    /* 타이핑 동작 — clip-path + steps() 함수로 한 글자씩 좌→우 reveal */
-    .mac-monitor .screen-line {
-      clip-path: inset(0 100% 0 0);
-      animation-timing-function: steps(1);
-      animation-iteration-count: infinite;
-      animation-duration: 10s;
-    }
-    /* line-1: "나의 경험이" 6 글자, 0~14% 동안 타이핑 */
-    .mac-monitor .line-1 {
-      animation-name: type-line-1;
-    }
-    @keyframes type-line-1 {
-      0%   { clip-path: inset(0 100% 0 0); }
-      2.3% { clip-path: inset(0 83.3% 0 0); }   /* 나 */
-      4.6% { clip-path: inset(0 66.6% 0 0); }   /* 의 */
-      6.9% { clip-path: inset(0 50% 0 0); }     /* (공백) */
-      9.2% { clip-path: inset(0 33.3% 0 0); }   /* 경 */
-      11.5%{ clip-path: inset(0 16.6% 0 0); }   /* 험 */
-      14%  { clip-path: inset(0 0 0 0); }        /* 이 */
-      85%  { clip-path: inset(0 0 0 0); }
-      94%, 100% { clip-path: inset(0 100% 0 0); }
-    }
-    /* line-2: "자소서가 되는 순간." 11 글자, 16~38% 동안 타이핑 */
-    .mac-monitor .line-2 {
-      animation-name: type-line-2;
-    }
-    @keyframes type-line-2 {
-      0%, 15%   { clip-path: inset(0 100% 0 0); }
-      17%   { clip-path: inset(0 90.9% 0 0); }  /* 자 */
-      19%   { clip-path: inset(0 81.8% 0 0); }  /* 소 */
-      21%   { clip-path: inset(0 72.7% 0 0); }  /* 서 */
-      23%   { clip-path: inset(0 63.6% 0 0); }  /* 가 */
-      25%   { clip-path: inset(0 54.5% 0 0); }  /* (공백) */
-      27%   { clip-path: inset(0 45.4% 0 0); }  /* 되 */
-      29%   { clip-path: inset(0 36.3% 0 0); }  /* 는 */
-      31%   { clip-path: inset(0 27.2% 0 0); }  /* (공백) */
-      33%   { clip-path: inset(0 18.1% 0 0); }  /* 순 */
-      35%   { clip-path: inset(0 9% 0 0); }     /* 간 */
-      38%   { clip-path: inset(0 0 0 0); }       /* . */
-      85%   { clip-path: inset(0 0 0 0); }
-      94%, 100% { clip-path: inset(0 100% 0 0); }
-    }
+    /* 타이핑은 JS로 textContent 한 글자씩 변경 — CSS 애니메이션 폐기 */
 
     /* 커서 — "순간." 바로 뒤에서 깜빡임 (텍스트 흐름 안 tspan) */
     .mac-monitor .screen-cursor-tspan {
@@ -1448,12 +1407,12 @@
           <circle cx="88" cy="65" r="6" fill="#febc2e" />
           <circle cx="108" cy="65" r="6" fill="#28c840" />
 
-          <!-- 자소서 본문 — 손글씨 두 줄로 reveal, 커서는 "순간." 바로 뒤에 -->
+          <!-- 자소서 본문 — JS 타이핑 (한 글자씩) -->
           <text x="84" y="200" class="screen-line line-1">
-            나의 <tspan class="em-word">경험</tspan>이
+            <tspan id="type-1a"></tspan><tspan id="type-1b" class="em-word"></tspan><tspan id="type-1c"></tspan>
           </text>
           <text x="84" y="295" class="screen-line line-2">
-            자소서가 되는 <tspan class="em-word">순간.</tspan><tspan class="screen-cursor-tspan" dx="6">▏</tspan>
+            <tspan id="type-2a"></tspan><tspan id="type-2b" class="em-word"></tspan><tspan class="screen-cursor-tspan" dx="4">▏</tspan>
           </text>
         </g>
 
@@ -2101,6 +2060,67 @@
       });
     }, { threshold: 0.3 });
     document.querySelectorAll('[data-vis="stat"]').forEach(c => io.observe(c));
+  })();
+
+  // Hero 모니터 헤드라인 타이핑 — 한 글자씩 textContent 채움 (색 강조 tspan 유지)
+  (function () {
+    const sequence = [
+      { id: 'type-1a', text: '나의 ' },
+      { id: 'type-1b', text: '경험' },
+      { id: 'type-1c', text: '이' },
+      { id: 'type-2a', text: '자소서가 되는 ' },
+      { id: 'type-2b', text: '순간.' }
+    ];
+    const els = sequence.map(s => document.getElementById(s.id));
+    if (els.some(e => !e)) return;
+    els.forEach(e => e.textContent = '');
+
+    let curIdx = 0, charIdx = 0, mode = 'typing';
+    function tick() {
+      if (mode === 'typing') {
+        if (curIdx >= sequence.length) {
+          mode = 'pause-end';
+          setTimeout(tick, 3000);
+          return;
+        }
+        const part = sequence[curIdx];
+        if (charIdx < part.text.length) {
+          charIdx++;
+          els[curIdx].textContent = part.text.slice(0, charIdx);
+          setTimeout(tick, 95);
+        } else {
+          curIdx++;
+          charIdx = 0;
+          setTimeout(tick, 80);
+        }
+      } else if (mode === 'pause-end') {
+        mode = 'erasing';
+        curIdx = sequence.length - 1;
+        charIdx = sequence[curIdx].text.length;
+        tick();
+      } else if (mode === 'erasing') {
+        if (curIdx < 0) {
+          mode = 'pause-start';
+          setTimeout(tick, 700);
+          return;
+        }
+        if (charIdx > 0) {
+          charIdx--;
+          els[curIdx].textContent = sequence[curIdx].text.slice(0, charIdx);
+          setTimeout(tick, 28);
+        } else {
+          curIdx--;
+          if (curIdx >= 0) charIdx = sequence[curIdx].text.length;
+          setTimeout(tick, 30);
+        }
+      } else if (mode === 'pause-start') {
+        mode = 'typing';
+        curIdx = 0;
+        charIdx = 0;
+        tick();
+      }
+    }
+    setTimeout(tick, 600);
   })();
 
   // AI typing
