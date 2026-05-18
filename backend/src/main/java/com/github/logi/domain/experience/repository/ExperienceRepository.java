@@ -103,21 +103,20 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             @Param("major") String major
     );
 
-    // major + state 기준 자신을 제외한 최신 경험 제목 Top N (weakPoints 추천)
+    // relatedMajor 기준 자신을 제외한 최신 경험 제목 Top N (weakPoints 추천)
     @Query("""
             SELECT e.experienceTitle AS title
             FROM Experience e
             JOIN e.user u
-            WHERE u.major = :major AND e.stateAtCreation = :state AND e.experienceCategory = :category
+            WHERE e.stateAtCreation = :state AND e.experienceCategory = :category
               AND e.user <> :me AND e.relatedMajor = :relatedMajor
             ORDER BY e.createdAt DESC
             """)
     List<TitleCountView> findTopTitlesByMajorAndStateAndCategory(
-            @Param("major") KookminDepartment major,
             @Param("state") State state,
             @Param("category") ExperienceCategory category,
             @Param("me") User me,
-            @Param("relatedMajor") String relatedMajor,
+            @Param("relatedMajor") KookminDepartment relatedMajor,
             Pageable pageable
     );
 
@@ -125,17 +124,18 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             SELECT e.experienceTitle AS title
             FROM Experience e
             JOIN e.user u
-            WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
+            WHERE u.schoolNumber LIKE :schoolNumPrefix%
+              AND e.stateAtCreation = :state
               AND e.experienceCategory = :category
               AND e.user <> :me AND e.relatedMajor = :relatedMajor
             ORDER BY e.createdAt DESC
             """)
     List<TitleCountView> findTopTitlesByMajorAndSchoolNumAndCategory(
-            @Param("major") KookminDepartment major,
             @Param("schoolNumPrefix") String schoolNumPrefix,
+            @Param("state") State state,
             @Param("category") ExperienceCategory category,
             @Param("me") User me,
-            @Param("relatedMajor") String relatedMajor,
+            @Param("relatedMajor") KookminDepartment relatedMajor,
             Pageable pageable
     );
 
@@ -143,16 +143,15 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             SELECT e.experienceTitle AS title
             FROM Experience e
             JOIN e.user u
-            WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
+            WHERE u.state = com.github.logi.domain.user.entity.State.WORKER
               AND e.experienceCategory = :category
               AND e.user <> :me AND e.relatedMajor = :relatedMajor
             ORDER BY e.createdAt DESC
             """)
     List<TitleCountView> findTopTitlesByMajorAndWorkerAndCategory(
-            @Param("major") KookminDepartment major,
             @Param("category") ExperienceCategory category,
             @Param("me") User me,
-            @Param("relatedMajor") String relatedMajor,
+            @Param("relatedMajor") KookminDepartment relatedMajor,
             Pageable pageable
     );
 

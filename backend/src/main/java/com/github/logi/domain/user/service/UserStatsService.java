@@ -103,11 +103,11 @@ public class UserStatsService {
 
     private List<String> fetchTopExperienceTitles(User user, GroupContext ctx, ExperienceCategory category) {
         PageRequest page = PageRequest.of(0, RECOMMEND_TOP_N);
-        String relatedMajor = user.getMajor() != null ? user.getMajor().getFullName() : "";
+        KookminDepartment relatedMajor = user.getMajor();
         List<ExperienceRepository.TitleCountView> views = switch (ctx.groupBy()) {
-            case STATE -> experienceRepository.findTopTitlesByMajorAndStateAndCategory(user.getMajor(), ctx.state(), category, user, relatedMajor, page);
-            case SCHOOL_NUM -> experienceRepository.findTopTitlesByMajorAndSchoolNumAndCategory(user.getMajor(), ctx.groupKey(), category, user, relatedMajor, page);
-            case WORKER -> experienceRepository.findTopTitlesByMajorAndWorkerAndCategory(user.getMajor(), category, user, relatedMajor, page);
+            case STATE -> experienceRepository.findTopTitlesByMajorAndStateAndCategory(ctx.state(), category, user, relatedMajor, page);
+            case SCHOOL_NUM -> experienceRepository.findTopTitlesByMajorAndSchoolNumAndCategory(ctx.groupKey(), user.getState(), category, user, relatedMajor, page);
+            case WORKER -> experienceRepository.findTopTitlesByMajorAndWorkerAndCategory(category, user, relatedMajor, page);
         };
         return views.stream()
                 .map(ExperienceRepository.TitleCountView::getTitle)

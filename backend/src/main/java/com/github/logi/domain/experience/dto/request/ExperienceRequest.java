@@ -1,18 +1,17 @@
 package com.github.logi.domain.experience.dto.request;
 
 import com.github.logi.domain.experience.entity.ExperienceCategory;
+import com.github.logi.domain.user.entity.KookminDepartment;
 import com.github.logi.domain.user.entity.State;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record ExperienceRequest(
         @NotNull ExperienceCategory experienceCategory,
         @NotNull State stateAtCreation,
-        @NotBlank @Size(max = 100) String relatedMajor,
+        @NotNull KookminDepartment relatedMajor,
         @NotBlank @Size(max = 200) String experienceTitle,
         @NotNull @PastOrPresent LocalDate startDate,
         @NotNull @PastOrPresent LocalDate endDate,

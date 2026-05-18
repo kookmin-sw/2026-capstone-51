@@ -1,6 +1,7 @@
 package com.github.logi.domain.experience.entity;
 
 import com.github.logi.domain.experience.dto.request.ExperienceRequest;
+import com.github.logi.domain.user.entity.KookminDepartment;
 import com.github.logi.domain.user.entity.State;
 import com.github.logi.domain.user.entity.User;
 import com.github.logi.global.entity.BaseEntity;
@@ -35,8 +36,9 @@ public class Experience extends BaseEntity {
     @Column(name = "experience_category", length = 20)
     private ExperienceCategory experienceCategory;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "related_major", length = 100)
-    private String relatedMajor;
+    private KookminDepartment relatedMajor;
 
     @Column(name = "experience_title", length = 200)
     private String experienceTitle;
