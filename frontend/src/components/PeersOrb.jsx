@@ -337,7 +337,7 @@ export default function PeersOrb({
   }, [axes]);
 
   return (
-    <section className="card">
+    <section className="card min-w-0">
       <div className="flex items-start gap-2 mb-1">
         <svg
           width="18"
