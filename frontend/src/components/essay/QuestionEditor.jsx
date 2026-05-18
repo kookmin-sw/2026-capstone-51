@@ -61,7 +61,9 @@ export default function QuestionEditor({
 }) {
   // Section 1 — 문항 입력 & 등록
   const [questionText, setQuestionText] = useState('');
-  const [maxLength, setMaxLength] = useState(800);
+  // 빈 값(''): 사용자가 backspace 로 지운 상태 — 0 으로 강제 변환하지 않고 그대로 유지.
+  // API 전송/카운터 표시 시점에 maxLengthNum 으로 파싱 (빈/0/음수 면 fallback 1000).
+  const [maxLength, setMaxLength] = useState('1000');
   const [questionId, setQuestionId] = useState(null); // 문항 등록 완료 시 set
 
   // Section 2 — 추천 & 선택
@@ -83,6 +85,11 @@ export default function QuestionEditor({
   const recommend = useRecommendExperiences();
   const generate = useGenerateAnswer();
   const regenerate = useRegenerateAnswer();
+
+  // 글자 제한 — 입력 string 을 number 로 정규화. 빈 값/0/음수는 1000 으로 fallback.
+  const parsedMaxLen = Number(maxLength);
+  const maxLengthNum =
+    Number.isFinite(parsedMaxLen) && parsedMaxLen > 0 ? parsedMaxLen : 1000;
 
   // ② 추천 단계: 문항이 입력돼야 [경험 추천] 활성.
   const section2Active = !!questionText.trim();
@@ -152,7 +159,7 @@ export default function QuestionEditor({
             questionNum: nextNum,
             question: questionText.trim(),
             response: PLACEHOLDER_RESPONSE,
-            maxLength,
+            maxLength: maxLengthNum,
             relatedExperience,
           },
         });
@@ -169,7 +176,7 @@ export default function QuestionEditor({
           body: {
             question: questionText.trim(),
             response: draftResponse || PLACEHOLDER_RESPONSE,
-            maxLength,
+            maxLength: maxLengthNum,
             relatedExperience,
           },
         });
@@ -231,7 +238,7 @@ export default function QuestionEditor({
         body: {
           question: questionText.trim(),
           response: draftResponse,
-          maxLength,
+          maxLength: maxLengthNum,
           relatedExperience,
         },
       });
@@ -241,7 +248,7 @@ export default function QuestionEditor({
         questionNum: nextNum,
         question: questionText.trim(),
         response: draftResponse,
-        maxLength,
+        maxLength: maxLengthNum,
         relatedExperience,
       });
     } catch (e) {
@@ -301,7 +308,7 @@ export default function QuestionEditor({
             value={maxLength}
             min={100}
             step={100}
-            onChange={(e) => setMaxLength(Number(e.target.value) || 0)}
+            onChange={(e) => setMaxLength(e.target.value)}
             disabled={!!questionId}
           />
           <span className="text-[11.5px] text-ink-500">자</span>
@@ -414,7 +421,7 @@ export default function QuestionEditor({
           <CompareDrafts
             oldResponse={compareDraft.oldResponse}
             newResponse={compareDraft.newResponse}
-            maxLength={maxLength}
+            maxLength={maxLengthNum}
             onPick={pickDraft}
           />
         ) : (
@@ -425,7 +432,7 @@ export default function QuestionEditor({
               onChange={(e) => setDraftResponse(e.target.value)}
             />
             <div className="text-right text-[11.5px] text-ink-500 font-mono mt-1">
-              {draftResponse.length} / {maxLength}
+              {draftResponse.length} / {maxLengthNum}
             </div>
 
             <div className="mt-4 pt-3 border-t border-ink-150">
