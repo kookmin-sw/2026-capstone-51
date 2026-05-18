@@ -298,8 +298,9 @@
 
     /* 타이핑은 JS로 textContent 한 글자씩 변경 — CSS 애니메이션 폐기 */
 
-    /* 커서 — "순간." 바로 뒤에서 깜빡임 (텍스트 흐름 안 tspan) */
-    .mac-monitor .screen-cursor-tspan {
+    /* 커서 — 현재 타이핑 위치를 따라가는 얇은 사각 바
+       (▏ 글리프는 손글씨 폰트에서 baseline 이 어긋나 떠 보임 → rect 로 교체) */
+    .mac-monitor .screen-cursor-rect {
       fill: var(--ink-blue);
       animation: cursor-blink 1.05s step-end infinite;
     }
@@ -307,7 +308,7 @@
       0%, 49%   { opacity: 1; }
       50%, 100% { opacity: 0; }
     }
-    [data-theme="dark"] .mac-monitor .screen-cursor-tspan { fill: var(--sky-300); }
+    [data-theme="dark"] .mac-monitor .screen-cursor-rect { fill: var(--sky-300); }
 
     @media (max-width: 760px) {
       .hero-visual { max-width: 95vw; }
@@ -1412,8 +1413,11 @@
             <tspan id="type-1a"></tspan><tspan id="type-1b" class="em-word"></tspan><tspan id="type-1c"></tspan>
           </text>
           <text x="84" y="295" class="screen-line line-2">
-            <tspan id="type-2a"></tspan><tspan id="type-2b" class="em-word"></tspan><tspan class="screen-cursor-tspan" dx="4">▏</tspan>
+            <tspan id="type-2a"></tspan><tspan id="type-2b" class="em-word"></tspan>
           </text>
+          <!-- 커서: rect 두 개를 두고, 활성 줄에만 보이며 getComputedTextLength 로 글자 끝에 붙임 -->
+          <rect id="cursor-1" class="screen-cursor-rect" x="84" y="162" width="3" height="44" rx="1" />
+          <rect id="cursor-2" class="screen-cursor-rect" x="84" y="257" width="3" height="44" rx="1" />
         </g>
 
         <!-- 스탠드 (목+받침) -->
@@ -2075,6 +2079,34 @@
     if (els.some(e => !e)) return;
     els.forEach(e => e.textContent = '');
 
+    // 커서 두 개 (line-1, line-2) — 활성 줄에만 보이고, x 좌표는 그 줄의
+    // 누적 글자 너비(getComputedTextLength)로 계산해서 글자 끝에 붙인다.
+    // sequence index 0..2 는 line-1, 3..4 는 line-2.
+    const cursor1 = document.getElementById('cursor-1');
+    const cursor2 = document.getElementById('cursor-2');
+    const LINE_X = 84;
+    const CURSOR_GAP = 3;
+    function lineWidth(line) {
+      const range = line === 1 ? [0, 1, 2] : [3, 4];
+      let w = 0;
+      for (const i of range) {
+        try { w += els[i].getComputedTextLength(); } catch (_) {}
+      }
+      return w;
+    }
+    function syncCursor(idx) {
+      const onLine1 = idx < 3;
+      if (cursor1) {
+        cursor1.style.display = onLine1 ? '' : 'none';
+        if (onLine1) cursor1.setAttribute('x', LINE_X + lineWidth(1) + CURSOR_GAP);
+      }
+      if (cursor2) {
+        cursor2.style.display = onLine1 ? 'none' : '';
+        if (!onLine1) cursor2.setAttribute('x', LINE_X + lineWidth(2) + CURSOR_GAP);
+      }
+    }
+    syncCursor(0);
+
     let curIdx = 0, charIdx = 0, mode = 'typing';
     function tick() {
       if (mode === 'typing') {
@@ -2087,10 +2119,12 @@
         if (charIdx < part.text.length) {
           charIdx++;
           els[curIdx].textContent = part.text.slice(0, charIdx);
+          syncCursor(curIdx);
           setTimeout(tick, 95);
         } else {
           curIdx++;
           charIdx = 0;
+          syncCursor(Math.min(curIdx, sequence.length - 1));
           setTimeout(tick, 80);
         }
       } else if (mode === 'pause-end') {
@@ -2107,16 +2141,19 @@
         if (charIdx > 0) {
           charIdx--;
           els[curIdx].textContent = sequence[curIdx].text.slice(0, charIdx);
+          syncCursor(curIdx);
           setTimeout(tick, 28);
         } else {
           curIdx--;
           if (curIdx >= 0) charIdx = sequence[curIdx].text.length;
+          syncCursor(Math.max(curIdx, 0));
           setTimeout(tick, 30);
         }
       } else if (mode === 'pause-start') {
         mode = 'typing';
         curIdx = 0;
         charIdx = 0;
+        syncCursor(0);
         tick();
       }
     }
