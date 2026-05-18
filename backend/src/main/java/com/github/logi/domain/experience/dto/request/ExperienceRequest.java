@@ -4,8 +4,10 @@ import com.github.logi.domain.experience.entity.ExperienceCategory;
 import com.github.logi.domain.user.entity.KookminDepartment;
 import com.github.logi.domain.user.entity.State;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record ExperienceRequest(
