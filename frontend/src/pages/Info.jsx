@@ -229,6 +229,7 @@ export default function Info() {
                       placeholder="선택"
                       searchable={false}
                       forceDirection="down"
+                      compact
                       hasError={!!errors.state}
                     />
                   ) : (
@@ -639,6 +640,7 @@ function JobTreeSelect({ value, onChange, errors = {} }) {
           placeholder="대분류 선택"
           searchable={false}
           forceDirection="down"
+          compact
           hasError={!!errors.jobFirst}
         />
       </Field>
@@ -650,6 +652,7 @@ function JobTreeSelect({ value, onChange, errors = {} }) {
           placeholder={first ? '중분류 선택' : '대분류부터 선택'}
           searchable={false}
           forceDirection="down"
+          compact
           disabled={!first}
           hasError={!!errors.jobSecond}
         />
@@ -662,6 +665,7 @@ function JobTreeSelect({ value, onChange, errors = {} }) {
           placeholder={second ? '소분류 선택' : '중분류부터 선택'}
           searchable={false}
           forceDirection="down"
+          compact
           disabled={!second}
           hasError={!!errors.jobThird}
         />
