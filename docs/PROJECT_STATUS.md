@@ -16,6 +16,232 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 랜딩 카피·Architecture 다이어그램 정돈 — Claude→LLM 일반화, 3년 제거, EC2·RDS 명시 (2026-05-18)
+
+- **계기**: 사용자 — "Claude AI 라는 용어를 전부 LLM 으로 바꿔주고, 3년치/3년 동안 같은 시간 한정 표현을 그냥 경험으로 바꾸고, Architecture 그림에 RDS 랑 EC2 추가해줘."
+- 의도: (1) 모델 종속(Claude / Sonnet 4.5)을 표기상 제거해 추후 모델 교체에 둔감하게. (2) 학번/시점에 따라 어색한 "3년" 표현 일반화. (3) 호스팅 인프라(EC2·RDS)를 다이어그램에 노출.
+- 수정 ([index.html](../index.html)):
+  - **Claude → LLM** (9곳): meta description, why-card 카피("Claude AI"→"LLM"), flow 챕터 iii headline / desc / flow-tag / v-ai-meta, arch-lead, Architecture SVG 의 `Bedrock Claude / Sonnet 4.5` → `Bedrock LLM / text generation`, 스택 칩 `Claude Sonnet 4.5` → `LLM`, impact 카드 iii 카피. 한국어 조사도 받침에 맞춰 정리(`Claude가` → `LLM이`).
+  - **3년 / 3년치 제거** (5곳): why-lead `"내가 3년 동안 뭘 했더라"` → `"내가 뭘 했더라"`, flow 챕터 i 메타 `흩어진 3년을 모은다` → `흩어진 경험을 모은다`, 헤드라인 `흩어진 3년을 STAR로 묶는다` → `흩어진 경험을 STAR로`, impact-lead `흩어진 3년이 자산이 되고` → `흩어진 경험이 자산이 되고`, impact 카드 i `3년치 경험이 카드로` → `경험이 카드로`.
+  - **Architecture SVG 노드 라벨 확장**:
+    - Spring Boot 박스 (다크 accent, x=350 y=120 w=160 h=64) 텍스트 3줄로: `EC2 · Spring Boot` (12px) / `Java 21 · Backend` (10px) / `t3.small · ap-northeast-2` (9px, opacity 0.75). y 좌표 142/160/174로 분배.
+    - PostgreSQL 박스 (라이트, x=350 y=220 w=160 h=58) 텍스트 3줄로: `RDS · PostgreSQL` (11px) / `+ pgvector (1024d)` (10px) / `db.t3.micro` (9px, opacity 0.75). y 좌표 242/258/271.
+    - 박스 사이즈·연결선(`path d=...`) 좌표는 그대로 유지 → 레이아웃 안 깨짐.
+- **커밋 분리** (3개, master에 푸시 완료):
+  - `67d8e00 chore(landing): Claude 표기를 LLM으로 일반화`
+  - `ecf0c3e copy(landing): 카피에서 '3년/3년치' 제거하고 일반 '경험'으로 통일`
+  - `f904690 feat(landing): Architecture 다이어그램에 EC2·RDS 호스팅 노드 명시`
+- **검증**: 로컬 preview (5174) 에서 `body.innerText` grep — Claude/Sonnet 0건, 3년 0건, LLM 9건, EC2 1건, RDS 1건. 콘솔 에러 0. SVG `<text>` 노드 확인으로 EC2·Spring Boot, RDS·PostgreSQL 라벨 DOM에 반영됨.
+
+### 랜딩 페이지 좌우 패딩 정돈 — 헤더-본문 정렬 (2026-05-18)
+
+- **계기**: 사용자 — "헤더부터 해서 전체 페이지 좌우 패딩이 너무 꽉차있어서 너무 답답해보여". 와이드 모니터에서 로고가 화면 왼쪽 끝에 거의 붙어 있고 nav가 오른쪽 끝에 붙어 있어 풀블리드처럼 보이는 게 원인.
+- 원인: `.topbar .wrap` 가 `.wrap` 의 max-width 를 1720px / 좌패딩 `clamp(0.75rem, 1.2vw, 1rem)` 로 오버라이드 → 본문 `.wrap` (1560px / 32px 패딩) 보다 헤더가 더 넓게 빠져나옴.
+- 수정 ([index.html](../index.html)):
+  - `.wrap` max-width: 1560px → **1440px**, padding: `clamp(1.25rem, 2.5vw, 2rem)` → **`clamp(1.5rem, 4.5vw, 4rem)`** (와이드에서 32px → 64px).
+  - `.wrap-narrow` 도 동일한 패딩으로, max-width 1100px → 1080px.
+  - `.topbar .wrap` 의 max-width / padding 오버라이드 제거 → `.wrap` 기본값 상속 (flex/gap만 유지).
+- 결과: 헤더와 모든 섹션이 동일한 1440px / 64px 패딩 안에서 정렬. 1920px 뷰포트 기준 좌우 외부 마진 약 240px + 내부 패딩 64px. 모바일 (375px) 은 24px 로 거의 동일 유지.
+
+### Flow 섹션 — 김국민 스토리 + 챕터별 동적 요소 보강 (2026-05-18)
+
+- **계기**: 사용자 — "내용만 변화시키고 싶다 → 김국민이 자소서 쓰는 흐름으로 스토리라인". (1) quote 한 줄 끼움 → 시각상 안 변해 거절. (2) 카피 전면 재작성 + 일자 아크 → 우측 visual 데이터 불일치. (3) visual 데이터 통합. (4) "단조롭게 구성하지 말고 동적으로" 피드백 → **챕터별 어울리는 동적 요소까지 보강**.
+
+**(9)차 — Impact 섹션 4행 텍스트 → 2x2 비주얼 카드 그리드로 재구성** (이번 회차):
+
+- 사용자 — "(8차의) D-7~D-0 줄 레이아웃 존나 구린데, 시각적으로 이쁘게 + 쓸데없는 내용 아닌 + 동적으로". → 4행 텍스트 폐기, **2x2 카드 그리드 + 카드마다 before→after 미니 SVG 비주얼**.
+- 카드 구조 (각각): 헤더 (`D-7~D-0` huge ink-blue 라벨 + 우측 `I. RECORD · 첫째 날` 등 uppercase 메타) + 비주얼 row (3-col grid: before mini SVG · → arrow · after mini SVG) + 3-col labels (before 텍스트 · → · after 텍스트) + 점선 위 한 줄 takeaway (`<strong>` 강조구).
+- 4 미니 비주얼:
+  - D-7: 흩어진 dots (7개, continuous `m-scatter` 4.5s drift) → STAR 카드 3장 스택 (회전, hover 시 spread)
+  - D-5: 떠다니는 `?` (Fraunces italic, `m-q-float` 3.2s rotate+scale) → 3 ranked 추천 바 (top-match highlighted)
+  - D-3: 깜빡이는 cursor `m-cursor` 1s + 빈 박스 외곽 → 4 lines 단락 (hover 시 stroke-dashoffset 재그리기)
+  - D-0: 펄싱 single dot (`m-dot-pulse` 2.4s scale) → 5축 펜타곤 (dashed 평균 + ink-blue solid 김국민 + 5 vertex dots, `m-poly-glow` 4.5s drop-shadow)
+- 우측 → arrow `arrow-pulse` 2.4s 좌우 1인치 미세 흔들림.
+- 카드 자체는 IntersectionObserver 가 `.impact-grid` 에 `.shown` 추가 → 4 카드가 0/0.15/0.3/0.45s 딜레이로 stagger fade+slide-up.
+- 카드 hover 시 border 가 ink-blue 로 + box-shadow + 미니 SVG 의 hover 인터랙션 (STAR stack spread, mini-lines redraw).
+- `@media (prefers-reduced-motion: reduce)` 가드.
+- 폰트·배경 변경 0. 색은 ink-blue / sky-100 / rule-soft 단일 팔레트.
+
+**(8)차 — 추천 라벨 가로 정리 + Impact 7일 재구성 + 아바타 사람화** (누적):
+
+- 사용자 — (1) 추천 카드 세로 라벨 글자 거꿀로 보임 (writing-mode + rotate(180) 조합 글자 순서 역전), (2) Impact 의 `1,024d / 4 / 5축 / STAR` 강조가 스토리와 무관해 의미 없음, (3) 김국민 아바타 더 사람화.
+- **추천 라벨 가로 전환**: `.v-radar-rec` 를 `flex-direction: column` 으로, 라벨은 `writing-mode: horizontal-tb` + `border-bottom` 으로 카드 상단 eyebrow 처럼 배치. `transform: rotate(180deg)` 제거.
+- **Impact 섹션 4행을 김국민 7일 before→after 로 교체**:
+  - 헤드라인: `김국민의 일곱 날, 이렇게 달라진다.`
+  - 리드: 4 챕터 변화를 한 문장으로 압축 + `마감 D-7 부터 D-0 까지` 마감카운트 도입.
+  - 4 행 모두 좌측 huge `D-7 / D-5 / D-3 / D-0` (마감 카운트다운, 챕터 첫째날/셋째날/다섯째날/일곱째날과 정합) + key `흩어진 기억 → 자산` / `막막한 문항 → 후보 카드` / `빈 화면 → 첫 줄` / `혼자 쓰기 → 좌표 확인` + desc 김국민 시점 설명.
+- **아바타 사람화**: 기존 ring + head + shoulders 만 있던 미니멀 추상 SVG 에 **머리(`kk-hair` arc) + 두 눈(`kk-eye` 점) + 입(`kk-mouth` 선)** 추가. ring fill 을 paper 로 줘 안쪽 face 가 깔끔. 챕터별 mouth/eye 차별로 표정 부여:
+  - 셋업: 미세 미소 호 (relaxed)
+  - i. (막연): 일자 입 + 점 눈
+  - ii. (깨달음): 작은 O 입 (open circle)
+  - iii. (집중/막힘): 좁은 일자 입 + `kk-eye-line` 선 눈 (squint)
+  - iv. (확신): 와이드 미소 호
+- 폰트·배경 변경 0, 색은 ink-blue / sky-300 단일 톤 유지.
+
+**(7)차 — 모션 보강 (정적 → 동적)** (누적):
+- 사용자 — "존나 정적인데 좀더 시각적으로 동적으로 만들어봐". 폰트·배경 변경 금지 룰 그대로 유지하면서 모션만 추가.
+- **김국민 아바타 5개 전부 continuous breathing**: `@keyframes kk-breathe` (translateY 0 ↔ -3px). 셋업 lg 아바타 4s, 챕터 narrator 아바타 3.4s — 위상이 어긋나 페이지 전체가 미세하게 호흡함.
+- **챕터 i v-stack 자동 순환**: JS interval 3.6s, IntersectionObserver 가 시야 안일 때만 동작 (out-of-view 이면 timer 해제). hover 시 일시정지. 카드 3장이 v-card-1/2/3 클래스를 순환적으로 swap 하면서 기존 `transition: transform 0.7s` 가 부드럽게 이동.
+- **챕터 ii 결과 카드 stagger fly-in**: 초기 `translateX(28px) + opacity 0` → 시야 진입 시 `.v-results.shown` 추가되며 nth-of-type 0.20/0.45/0.70s 딜레이로 우→좌 슬라이드 인. 그 후 bar fill 350ms + 200ms stagger 로 차오름.
+- **챕터 ii TOP MATCH 뱃지 bounce**: `@keyframes rank-bounce` 2.4s, scale 1 ↔ 1.08, 1초 딜레이 후 무한.
+- **챕터 iii primary chip 펄스**: `@keyframes chip-pulse` 2.6s, ring box-shadow 0 → 5px → 0 (rgba 29,78,216 페이드). 사용 중인 경험이 살아있음 표시.
+- **챕터 iv 펜타곤 scale-in from center**: `radar-avg/me` 가 `transform: scale(0) → scale(1)` (transform-origin 120px 120px, transform-box: view-box) + opacity. avg 0.3s 딜레이, me 0.9s 딜레이. 5 vertex dot 은 nth-of-type circle 별 1.55s → 2.15s 0.15s 간격 pop-in. me polygon 은 reveal 끝나고 2.5s 후부터 `@keyframes radar-breathe` 6s 무한 drop-shadow 펄스로 살아있는 느낌.
+- 모든 모션은 `@media (prefers-reduced-motion: reduce)` 가드 — 접근성 OK.
+
+**(6)차 — 김국민 캐릭터 시각화 + 신규 색 제거** (누적):
+
+- 사용자 — "폰트나 배경 함부로 바꾸지 말라, 김국민 캐릭터화시켜서 스토리 따라가는 구성".
+- 새로 도입했던 신규 색 정리: macOS 윈도우 dots (`#FFB3B3`/`#FFD580`/`#B3E6B3`) → 모두 `--rule-soft` 중립 회색. 에디터 status pulse dot 초록 (`#6cbf6c`) → `--ink-blue`. 에디터 head / foot 의 sky-tint 그라데이션 backgrounds 제거 → border 만 유지.
+- 김국민 SVG 아바타 도입 (`.kk-avatar`): 32×32 viewBox 안에 외곽 링 + 내부 head circle + shoulder Q curve. 색은 `--ink-blue` 한 톤만 사용해 폰트·배경 추가 색 없음. `kk-avatar-lg` 64×64 변형.
+- 셋업 인트로 (`.kk-intro`): 큰 아바타 + 이름 (`김국민`, display font) + 부제 (`소프트웨어학부 4학년 · 취준`, uppercase eyebrow). `<p class="why-lead">` 는 첫 줄의 이름·역할 부분을 캐릭터 블록에 넘겨 짧아짐.
+- 각 챕터 (`.flow-text` 최상단, meta 위): 작은 아바타 + Fraunces 이탤릭 speech bubble (`<span class="kk-narrator-bubble">`) 로 1인칭 quote 노출:
+  - i. `"일단 다 적어보자."`
+  - ii. `"이걸 쓰면 되겠다."`
+  - iii. `"초안 한 줄이 안 써진다."`
+  - iv. `"이제 보낼 수 있겠다."`
+- 막연 → 발견 → 막힘 → 확신 의 감정 아크가 캐릭터의 1인칭 보이스로 시각적으로 따라감. 우측 visual 은 그 보이스가 시스템에 닿았을 때의 결과 (STAR 카드 / 결과 카드 / 에디터 / 펜타곤).
+
+**(4~5)차 — 챕터별 동적·스토리 시각요소** (누적):
+
+- 챕터 i: 카드마다 점선 구분선 아래 카테고리 태그 pill (`협업 / 리더십`, `리더십 / 운영`, `기술 / 성과`) — 5축 radar 의 카테고리와 호응. 카드 hover spread 효과 그대로.
+- 챕터 ii: Q 프롬프트 타이핑 애니메이션 (IO 기반, 32ms/char). 단조로운 막대 폐기 → **결과 카드 3장** (`.v-result`) — 챕터 i 카드들의 제목·태그가 그대로 들어가 매칭 결과처럼 보임. Top match (.top-match) 는 ink-blue 두꺼운 border + 라벨 앞 펄스 dot + 우측 큰 % 숫자 + `TOP MATCH` 뱃지 + sky 그라데이션 배경. hover 시 카드 살짝 우측 이동. 바 fill 은 카드 하단에 박힘.
+- 챕터 iii: 단순 v-ai 폐기 → **자소서 에디터 frame** (`.v-editor`). 헤더에 macOS 윈도우 dots (빨강/노랑/초록) + `자소서 — 문항 1 / 3` 탭 + `자동 저장됨` 펄스 indicator. 바디 안에 chip 행 + Q + Claude 응답 typing. 풋터에 글자수 카운터 + `재생성` / `저장(primary)` 액션 pill. 실제 제품 UI 처럼 보임.
+- 챕터 iv: 단조로운 3행 stat 바 폐기 → **5축 펜타곤 SVG 레이더** (240×240 viewBox, r=90, 3 grid ring + 5 axis line + 동기 평균 polygon dashed + 김국민 polygon solid + vertex dot 5개). IntersectionObserver 로 평균 → 김국민 → dot 순차 fade-in (지연 0.3/0.7/1.1s). 라벨: 프로젝트 / 동아리 / 인턴 / 자격증 / 공모전 (프로젝트·인턴 = strong 색). + 하단에 **`v-radar-rec` 추천 카드** (점선 border, 좌측 세로 라벨 `다음 학기 추천 경험` + 우측 → 화살표 리스트 2개). 펜타곤 reveal 끝나고 1.3s 뒤 fade-up.
+
+**(1~3)차 누적 — 통일된 단일 경험 관통 구조** (이번 회차 유지):
+- 김국민의 단일 경험 ("캡스톤 팀장 — 백엔드/프론트엔드 갈등 해결") 이 4 챕터 visual 을 관통:
+  - i. v-stack card-1 에 STAR (S/T/A/R 4줄) 등록.
+  - ii. Q 프롬프트(`"협업에서 갈등을 해결하거나 합의를 이끈 경험"`) → 그 카드가 94% top match — 동아리 71% / 삼성 SDS 38%.
+  - iii. v-ai prompt + Claude typing — 카드 1 의 STAR 를 1인칭으로 풀어 쓴 텍스트 그대로 (변경 없음, 자연 정합).
+  - iv. 5축 radar 가 김국민의 좌표를 동기 평균과 겹쳐 보임. `.v-stat-me::after` 의 `'나'` → `'김국민'` CSS 변경은 stat 폐기로 사실상 dead 됐지만 그대로 둠 (다른 페이지에서 재사용 가능).
+- **핵심 아이디어**: 김국민의 **단일 경험 ("캡스톤 팀장 — 백엔드/프론트엔드 갈등 해결")** 이 4 챕터 visual 을 관통:
+  - i. v-stack card-1 에 STAR (S: BE/FE 방향성 충돌 → T: 1주 합의 → A: 1:1 면담 + 회의 주도 → R: 합의·정상 완수) 등록.
+  - ii. v-bars 위에 Q 프롬프트(`"협업에서 갈등을 해결하거나 합의를 이끈 경험"`) + 그 카드가 94% 매칭으로 top — 동아리 71% / 삼성 SDS 38% 순. 4번째 "공모전 41%" 폐기 (카드에 없는 경험 ref 제거 — 일관성).
+  - iii. v-ai prompt + Claude 응답 typing — 이미 카드 1 의 STAR 를 1인칭으로 풀어 쓴 텍스트가 박혀 있어 그대로 유지 (이번에 변경 없음, 자연 정합).
+  - iv. v-stat 3행 비교 라벨/라벨링 김국민 명시 (`동기 평균 3.2 · 김국민 5`, `자격증 (보완 필요)`, `김국민 보유`) + `.v-stat-me::after` 의 `'나'` → `'김국민'` CSS 1줄 변경.
+- **변경 파일**:
+  - [`index.html`](../index.html) `#flow` 섹션 (라인 ~1460–1624) — 카피·메타만 수정, 디자인/구조 유지.
+    - eyebrow 의 `style="margin-bottom: 0;"` 제거 → 기본 spacing 복원.
+    - eyebrow 바로 아래 페르소나 셋업 `<p class="why-lead">` 추가 ("4학년 2학기, 김국민. 자소서 마감 D-7, 빈 화면 앞에 손이 멈췄다. *내가 3년 동안 뭘 했더라.* … 자소서 한 편을 완성하기까지의 일곱 날"). `why-lead` 재활용 — 신규 CSS 없음.
+    - 4 챕터 모두 `.flow-chapter-meta` 라벨에 **일자 아크** 부여: `i. RECORD · 첫째 날, 흩어진 3년을 모은다` / `ii. RETRIEVE · 셋째 날, 문항 앞에 카드가 떠오른다` / `iii. GENERATE · 다섯째 날, 첫 줄이 써진다` / `iv. COMPARE · 일곱째 날, 자기 좌표를 확인한다`.
+    - 4 챕터 `.flow-headline` 페르소나 시점으로 재작성:
+      - i. `흩어진 3년을 STAR로 묶는다.`
+      - ii. `막막한 문항 앞에서 꺼낼 카드가 보인다.`
+      - iii. `Claude가 김국민의 언어로 초안을 짓는다.` (유지)
+      - iv. `다 쓴 자소서, 익명으로 동료와 견준다.`
+    - 4 챕터 `.flow-desc` 전체 narrative 화 — 막연 → 보임 → 첫 줄 안 써짐 → 다듬음 → 좌표 확인 → "이제 보낼 수 있겠다" 감정 아크. 기술 키워드(STAR / cosine similarity / Titan Embed v2 / pgvector / Claude Sonnet 4.5 / 5축)는 desc 끝에 한 문장으로 압축해 유지.
+  - tags 4세트 (STAR / Category / Major, pgvector / Titan v2 / cosine, Claude Sonnet 4.5 / AWS Bedrock, Anonymous / 5-axis / PeersOrb) 무변경.
+- **검증**: 로컬 `python3 -m http.server` (launch.json `logi-landing`, 5174 fallback) 데스크탑 1280px 렌더 정상, 콘솔 에러 0건, accessibility snapshot 으로 셋업·4 챕터 메타·헤드라인·desc·tags 모두 의도대로 DOM 반영 확인.
+- **푸시 정책**: 사용자 명시 "우선 로컬에만 테스트" — push 보류.
+
+### 랜딩 전면 재설계 v2 — 미술관·스튜디오 톤 + Wanted Sans·Geist·Fraunces (2026-05-17)
+
+- **계기**: v1 (포스터 톤 카드 그리드) 에 대해 사용자 피드백 — "AI 만든 티 너무 나고 폰트도 별로고 임팩트 없다". 진단: 모든 카드가 동일 padding·radius (균일성이 의도가 아니라 게으름처럼 보임), 가운데 정렬 hero + 표준 SaaS 클리셰, 그라데이션 남발로 강조 사라짐, Pretendard 단독으로 한국 시스템 폰트 수준이라 그 자체로는 개성 없음.
+- **방향 (사용자와 단계별 합의)**:
+  - 임팩트 톤: 미술관·디자인 스튜디오 (Hyundai · Lusion light) 베이스 + 스튜디오 모션 (Active Theory · lusion.co) 하이브리드. 콘텐츠 압축, 풀블리드 색면, 비대칭, 거대 타이포에 베팅.
+  - 폰트 (내 결정, 사용자 위임): 한글 **Wanted Sans Variable** + 영문 디스플레이 **Geist** + 영문 이탤릭 액센트 **Fraunces**. 폰트 페어로 매거진 톤 한 스푼.
+  - 컬러 시스템: 라이트 `#c3e7fe` + `#91d5ff` 페어 유지하되, 그라데이션 줄이고 (액센트 텍스트·하단 줄 1곳만) **컬러 블록 (full-bleed sky / deep / white)** 위주로 운영. 코발트 `#1d4ed8` 는 sole accent 로 절제.
+- **레이아웃 원칙 (v1 의 패턴 폐기)**:
+  - **Hero 좌측 정렬** + 거대 헤드라인 (clamp 3rem → 11rem, Wanted Sans 800), `자소서가` 한 줄만 indent 7rem 으로 비대칭. 우측 작은 aside (소개 + CTA). 카드형 stat 그리드 폐기.
+  - Hero 우측 **거대 라이트블루 원형 색면** (`#sky-mass`) + 마우스 패럴랙스 (lerp easing 0.06). 별도 `.sky-ring` 디테일 (좌측 작은 원 + 내부 dot).
+  - **4 카드 그리드 → 풀블리드 4 섹션** (`.flow-step[data-bg="sky|white|deep|sky"]`). 각 섹션 `min-height: 100vh`, 좌측 텍스트 + 우측 비주얼. 좌측 거대 번호 (`.flow-num`, clamp 7rem → 18rem, opacity 0.08~0.12).
+  - **각 STEP 비주얼이 모두 다름** (균일성 폐기):
+    - STEP 01: STAR 카드 3장 스택 (회전 -6°/+2°/+8°, hover 시 분산)
+    - STEP 02: 미니멀 라인 유사도 바 (2px 트랙, Geist 큰 숫자)
+    - STEP 03: 매거진 톤 AI 인용 (Fraunces 이탤릭) + 답변 (Wanted Sans)
+    - STEP 04: 동료 비교 라인 통계 (얇은 트랙 + 짧은 마커)
+  - **WHY 섹션을 큰 인용구 한 줄로** 변경 — Fraunces 이탤릭 (clamp 1.8rem → 4rem) + 강조구 `"내가 그때 정확히 뭘 했더라?"` 에 sky-300 형광펜 underline.
+  - **Impact 거대 숫자** (Geist 200 weight, clamp 4rem → 11rem) 2x2 그리드, 셀 보더만으로 구분.
+  - **Team 카드 폐기 → 매거진 row list** (번호 · 이름 + 영문 + 역할 + 링크), Lead 만 작은 라벨.
+  - **마키 텍스트** (가로 흐르는 카테고리·기술 키워드) hero 하단에 추가 — Fraunces 이탤릭 한글 + Geist 산세리프 대문자 영문 페어로 매거진 인상.
+- **모션 (스튜디오 톤)**:
+  - Hero sky-mass: mousemove → translate3d lerp (0.06 ease). 스크롤 → opacity 감소.
+  - Topbar scrolled state (12px 이상 스크롤 시 배경 ON, 본문이 hero 색면 아래에서도 nav 가독성).
+  - **line-by-line reveal** (`.reveal-line > span` 110% translateY 클립으로 글자가 아래에서 올라오는 효과) — Hero 헤드라인에 적용.
+  - 카드 stack hover 분산, 통계 막대 / 카운트업 / 다이어그램 dasharray 흐름.
+- **변경 파일**:
+  - [`index.html`](../index.html) — 전면 재작성. 직전 v1 (1925줄, GitHub 다크 카드 그리드) → ~1300줄 (CSS 토큰 단순화, 균일 카드 / 그라데이션 / `.brand-mark` 등 v1 잔재 dead style 모두 제거).
+- **계속 적용된 항목** (v1 의 fix 그대로 유지):
+  - `html.js-ready .reveal` 가드 (JS 미동작 시 콘텐츠는 보임)
+  - `<link rel="stylesheet">` 에서 비표준 `as="style"` 제거
+  - `assets/logo.png` 를 nav 좌측 brand 로 사용 (다크 모드에서 brightness 1.5 + 라이트블루 drop-shadow)
+  - GitHub URL 오타 (`2026-capstone-2026-51` → `2026-capstone-51`) 모두 정정
+  - 메타 태그 (description / OG / Twitter / theme-color 라이트/다크 분리 / SVG favicon)
+  - `target="_blank"` 에 `rel="noopener"`
+  - 한혜민 GitHub `gksgpals` 채움. 나머지 3명은 placeholder ("준비 중" 텍스트).
+- **시연 환경**: 로컬 정적 서버 `python3 -m http.server 8000` 띄워서 http://localhost:8000 로 확인 중. master 에 push 안 함 (사용자 명시 — 로컬 확인 후 결정).
+- **남은 작업**:
+  - 팀원 4명 정보 받으면 `.team-row-links` placeholder 교체.
+  - 사용자 OK 시 push.
+
+### GitHub Pages 랜딩 전면 리디자인 — 포스터 톤 + 라이트/다크 토글 (2026-05-17)
+
+- **계기**: 기존 `index.html` (1732줄, GitHub 다크 톤) 이 "AI 가 대충 만든 티가 나고 색감이 포스터와 전혀 다르다" 는 사용자 피드백. 캡스톤 포스터 (`docs/poster.pdf`) 의 라이트블루 톤 (`#c3e7fe` + `#91d5ff`) 을 메인으로 가져가되 임팩트는 타이포·여백·모션으로 만드는 방향으로 전면 재설계.
+- **디자인 결정 (사용자와 단계별 합의)**:
+  - 무드: 에디토리얼/매거진 → 포스터 분석 후 "학술 리서치 + 클린 SaaS" 톤으로 수정
+  - 컬러 (라이트): `#c3e7fe` + `#91d5ff` 베이비블루 페어 + `#1d4ed8` 코발트블루 액센트 + 화이트 베이스
+  - 컬러 (다크): 깊은 네이비 베이스 (`#050b18` / `#0a1322`) + 라이트블루 글로우 — 내가 정함 (사용자가 "조화롭게 인상깊고 이쁘게" 위임)
+  - 폰트: Pretendard Variable (CDN: jsdelivr/orioncactus)
+  - 구조: 포스터 6섹션을 웹으로 확장 (Hero → Abstract → Main Features → Service Architecture → Expected Impact → Team)
+  - 모션: 풍부 (스크롤 reveal, 카운트업, 그라데이션 라인 흐름, AI 타이핑, 파티클 캔버스, 카드 호버, 플로팅 orb)
+- **변경 파일**:
+  - [`index.html`](../index.html) — **전면 교체** (1732줄 → 신규 작성). 인라인 CSS 디자인 토큰 시스템 (`:root[data-theme="light|dark"]` 변수 2세트) + 6 섹션 + 인라인 SVG 아키텍처 다이어그램 + 인라인 JS (테마 토글 / 파티클 캔버스 / IntersectionObserver 4종 / 카운트업 / 타이핑).
+- **수정한 버그·이슈** (이전 분석에서 발견한 것들):
+  1. GitHub URL 오타 3곳 (`kookmin-sw/2026-capstone-2026-51` → `kookmin-sw/2026-capstone-51`)
+  2. 메타 태그 부재 → `description` / OG / Twitter Card / `theme-color` / 인라인 SVG favicon 추가
+  3. `target="_blank"` 에 `rel="noopener"` 추가
+  4. 한혜민 GitHub 핸들 placeholder → `gksgpals` 채움 (사용자 본인, 메모리에서 확인)
+- **포스터 톤 매칭**: 헤더 박스의 라이트블루 그라데이션 → `eyebrow` 라벨 / `feat-tag` / `stack-card-head` 의 코발트 + sky-100 톤으로 변환. 포스터의 "모니터 목업 4개" → `feat-card` 4개에 각각 mock UI (경험 목록 / 유사도 바 / AI 타이핑 / 통계 비교) 로 재해석. 포스터의 AWS 다이어그램 → 인라인 SVG (1000×460 viewBox) 다이어그램 + 흐르는 dasharray 애니메이션.
+- **다크 모드 동작**: localStorage `logi-theme` 키에 저장. 최초 방문 시 `prefers-color-scheme` 따라감. 우상단 토글 버튼으로 즉시 전환 (CSS 변수만 바뀌므로 깜빡임 없음). 캔버스 파티클 색상도 테마에 맞게 동기화.
+- **접근성**: 모든 `section` 에 `aria-labelledby`, `aria-hidden` 적절히 부여. `prefers-reduced-motion` 처리. 키보드 포커스 시각 가능. 컬러 콘트라스트 ink-900/ink-500 페어로 AA 보장 (라이트), 다크는 ink-900 / ink-500 모두 sky 톤으로 보정.
+- **반응형**: 960px 이하에서 grid 1열 / 2열 변환, 640px 이하에서 nav-links 숨김 + hero stats 2x2.
+- **푸시 정책**: 사용자가 명시적으로 "깃허브에 바로 올리지 말고 우선 작업은 내 로컬에서 하자" — `git push` 안 함. master 브랜치 working tree 에만 반영.
+- **건드리지 않은 항목**:
+  - `docs/PROJECT_STATUS.md` 본 항목 외엔 손대지 않음.
+  - `backend/` 전체 (frontend-only 정책).
+  - `_config.yml` (Jekyll `jekyll-theme-slate` — `.html` 직접 서빙에는 영향 없음).
+  - `assets/logo.png` (README 용 — 페이지에는 SVG 데이터 URI favicon 으로 대체).
+  - 김민재·도승준 팀원 정보 → 사용자가 "다음 차례에 전체 팀원 정보 알려주겠다" 한 상태라 placeholder 유지.
+- **남은 작업**:
+  - 팀원 정보 (김민재·도승준·한혜민 이메일, 김민재·도승준 GitHub) 받으면 4 카드 placeholder → 실제 정보로 교체.
+  - GitHub Pages 캐시 새로고침은 사용자가 push 결정 후.
+  - 백엔드의 `backend/src/main/java/...` 경로에 macOS Finder 가 만든 ` 2.java` 접미 중복 파일 20개 추적 안 됨 상태 — 프론트 작업과 무관하지만 시연 전 정리 권장 (read-only 정책상 본 작업에서 손대지 않음).
+- **후속 수정 (같은 세션, 사용자가 "빈 화면" 보고)**:
+  1. **빈 화면 원인**: 모든 hero 요소에 `.reveal { opacity: 0 }` 가 깔려있는데, JS 의 IntersectionObserver 가 어떤 이유로든 실행 못 하면 영구 숨김. → `html.js-ready .reveal { opacity: 0 }` 가드로 변경. JS 최상단에서 `document.documentElement.classList.add('js-ready')` 호출. JS 실패 시에도 콘텐츠는 보임.
+  2. `<link rel="stylesheet" as="style" ...>` 의 비표준 `as` 속성 제거 (rel="stylesheet" 에서는 무시되지만 일부 strict 환경에서 stylesheet 무시 가능성 제거).
+  3. **로고 통합**: 사용자가 새 로고 첨부 (말풍선+펜 아이콘 + "LogI" 워드마크). nav 의 인라인 그라데이션 박스 + "LogI" 텍스트 조합을 `<img src="assets/logo.png" alt="LogI" class="brand-logo">` 한 줄로 교체. `.brand-logo` 스타일 추가 (height 30px, hover translateY, 다크 모드 brightness 1.15 + 라이트블루 drop-shadow). 기존 `.brand-mark` CSS 는 남겨둠 (재사용 가능, 미사용 dead style 이지만 후속 디자인 변경 시 활용 여지).
+
+### README 에 캡스톤 포스터 섹션 추가 (2026-05-17)
+
+- **계기**: README 초안이 텍스트·다이어그램 중심이라 "한 화면에 감 잡기" 가 어려움. 사용자가 캡스톤 포스터 PDF + 같은 내용 PNG 첨부, 인라인 임베드 + PDF 원본 다운로드 패턴 채택.
+- **변경 파일**:
+  - [`docs/poster.png`](../docs/poster.png) (신규, 1.28 MB) — GitHub 인라인 렌더용. README 에서 `width="720"` 으로 표시.
+  - [`docs/poster.pdf`](../docs/poster.pdf) (신규, 1.70 MB) — 원본 PDF (인쇄·고해상도 다운로드용).
+  - [`README.md`](../README.md) — "프로젝트 소개" 와 "우리가 해결하려는 문제" 사이에 `## 포스터` 섹션 추가. 이미지를 PDF 링크로 감싸 클릭 시 원본 열림.
+- **포스터 컨텐츠** (참고): ABSTRACT(배경·목표·해결방향) / MAIN FEATURES 4종 UI 스크린샷(경험 등록·경험 추천·자소서 생성·통계) / SERVICE ARCHITECTURE (AWS Cloud: SQS·Lambda·Bedrock Titan v2·React EC2·Spring Boot EC2·S3·PostgreSQL·Bedrock Claude Sonnet) / EXPECTED IMPACT / QR + KMU + AWS 로고.
+- **위치 선택 이유**: 텍스트 소개로 hook 한 뒤 포스터로 시각화 → 핵심 기능 / 아키텍처 텍스트 섹션은 그대로 유지 (포스터 = 한눈 요약, 텍스트 = 자세히 / 설치 가이드).
+- **건드리지 않은 항목**: 핵심 기능·시스템 아키텍처 텍스트 섹션 (포스터와 중복되지만, 검색·복사·하이라이트 가능한 텍스트로도 남겨두는 게 README 표준).
+
+### 루트 README.md 신규 작성 + 로고 자산 추가 (2026-05-17)
+
+- **계기**: 루트 `README.md` 가 GitHub 클래스룸 템플릿 잔재(`Welcome to GitHub` / "캡스톤 팀 생성을 축하합니다" 등) 그대로였음. 사용자가 로고 PNG 첨부와 함께 정식 README 작성 요청.
+- **변경 파일**:
+  - [`assets/logo.png`](../assets/logo.png) (신규) — `~/Desktop/logi/logo_transparent.png` (179 KB, 배경 투명 처리본) 을 레포 루트 `assets/` 로 복사. README 헤더 이미지로 참조. 루트 `assets/` 디렉토리 자체가 신규 (frontend/src/assets 는 옛 정리에서 제거됨).
+  - [`README.md`](../README.md) (전면 교체) — 템플릿 폐기, 다음 구조로 작성:
+    1. 헤더: 로고 + 태그라인("나의 경험이 자소서가 되다") + 4종 shields.io 배지 (Capstone / React 19 / Spring Boot 3.5 / Claude Sonnet)
+    2. 프로젝트 소개 (STAR 기록 → AI 추천 → 초안 생성 → 익명 비교)
+    3. 우리가 해결하려는 문제 — `index.html` 의 4개 Problem/Limitation/Solution/Information 카드를 표로 압축
+    4. 핵심 기능 4종 — 경험 자산화 / 스마트 매칭 / AI 초안 / 익명 비교 통계
+    5. 시스템 아키텍처 ASCII 다이어그램 (Frontend → Backend → PG+pgvector / SQS / S3 / Bedrock 분기)
+    6. 기술 스택 — Frontend / Backend / 인증 3블록 표
+    7. 실행 방법 — frontend `npm run dev` (port 3000 강제 이유 명시) / backend `./gradlew bootRun`
+    8. 팀 소개 표 — 김문기(Backend Lead, Kimmoongi0320) / 김민재(Backend) / 도승준(Frontend) / 한혜민(Frontend, gksgpals). 다른 멤버 GitHub 핸들 모름 → "—" 로 표시
+    9. 링크 — 팀페이지 / 레포 / Swagger
+    10. 라이센스 — 국민대 2026 캡스톤 학습용
+- **컨텐츠 출처**: `index.html` (랜딩페이지의 4 problem 카드, 4 solution 카드, 팀 카드, 기술 흐름 단계), 루트 `CLAUDE.md` (프로젝트 요지·기술 스택), `frontend/CLAUDE.md` (실행 명령·포트 정책·OAuth 흐름).
+- **언어**: 한국어 (프로젝트 UI 카피와 일관).
+- **건드리지 않은 항목**: `index.html` (이미 잘 짜인 랜딩페이지 — GitHub Pages 진입점), `_config.yml`, `frontend/README.md` (Vite 기본 README — 별도 정리 대상), 루트 `CLAUDE.md`.
+
 ### 자소서 4개 페이지 mock → 실 API 전환 (Essays / EssayView / EssayEdit / Write) (2026-05-16)
 
 - **계기**: 시연 D-6 (5/22). 백엔드 9개 essay 엔드포인트 + react-query hook 모두 준비된 상태에서 자소서 4개 페이지가 친구 mock 그대로였음. 사용자 결정으로 시연 전 전환 진행 (작업 방식: "하나씩 → 자동 진행").

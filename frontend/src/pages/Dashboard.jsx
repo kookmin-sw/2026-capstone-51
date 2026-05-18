@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FolderOpen, Users } from 'lucide-react';
+import { Plus, FolderOpen, Users, ChevronRight } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
 import HeroBanner from '../components/dashboard/HeroBanner';
 import PeersOrb from '../components/PeersOrb';
@@ -83,49 +83,59 @@ export default function Dashboard() {
     <>
       <Crumbs items={['대시보드']} />
       <HeroBanner name={user?.userName} hasProfile={true} />
+      <DashboardToc />
       <div className="grid gap-4">
-        <PeersOrb
-          axes={peerAxes}
-          sub={user?.major ? `${user.major} · 익명 집계` : '익명 집계'}
-          warning={peerWarning}
-        />
+        <div id="section-peers" className="scroll-mt-4 min-w-0">
+          <PeersOrb
+            axes={peerAxes}
+            sub={user?.major ? `${user.major} · 익명 집계` : '익명 집계'}
+            warning={peerWarning}
+          />
+        </div>
 
-        {myRoadmap.length > 0 ? (
-          <RoadmapCard
-            title="나의 학창시절 로드맵"
-            items={myRoadmap}
-            showNowMarker
-            rangeStart={myRange?.start}
-            rangeEnd={myRange?.end}
-          />
-        ) : (
-          <EmptyRoadmapCard
-            title="나의 학창시절 로드맵"
-            icon={FolderOpen}
-            message="아직 등록한 경험이 없어서 로드맵을 표시할 수 없어요."
-            cta="경험을 등록하러 가볼까요?"
-          />
-        )}
+        <div id="section-my-roadmap" className="scroll-mt-4 min-w-0">
+          {myRoadmap.length > 0 ? (
+            <RoadmapCard
+              title="나의 학창시절 로드맵"
+              items={myRoadmap}
+              showNowMarker
+              rangeStart={myRange?.start}
+              rangeEnd={myRange?.end}
+            />
+          ) : (
+            <EmptyRoadmapCard
+              title="나의 학창시절 로드맵"
+              icon={FolderOpen}
+              message="아직 등록한 경험이 없어서 로드맵을 표시할 수 없어요."
+              cta="경험을 등록하러 가볼까요?"
+            />
+          )}
+        </div>
 
-        {senior && (senior.items?.length ?? 0) > 0 ? (
-          <RoadmapCard
-            title="취업 선배의 로드맵 비교"
-            carousel={{
-              list: seniorList,
-              idx: seniorIdx,
-              onChange: setSeniorIdx,
-            }}
-            items={senior.items}
-            rangeStart={seniorRange?.start}
-            rangeEnd={seniorRange?.end}
-          />
-        ) : (
-          <EmptyRoadmapCard
-            title="취업 선배의 로드맵 비교"
-            icon={Users}
-            message="아직 데이터가 없어서 로드맵을 표시할 수 없어요."
-          />
-        )}
+        <div id="section-senior-roadmap" className="scroll-mt-4 min-w-0">
+          {senior && (senior.items?.length ?? 0) > 0 ? (
+            <RoadmapCard
+              title="취업 선배의 로드맵 비교"
+              carousel={{
+                list: seniorList,
+                idx: seniorIdx,
+                onChange: setSeniorIdx,
+              }}
+              items={senior.items}
+              rangeStart={seniorRange?.start}
+              rangeEnd={seniorRange?.end}
+              seniorName={
+                senior.userName ? `취업선배 ${senior.userName}` : undefined
+              }
+            />
+          ) : (
+            <EmptyRoadmapCard
+              title="취업 선배의 로드맵 비교"
+              icon={Users}
+              message="아직 데이터가 없어서 로드맵을 표시할 수 없어요."
+            />
+          )}
+        </div>
       </div>
     </>
   );
@@ -159,6 +169,48 @@ function computeRange(items, enrollmentYear) {
     start: { y: startY, m: 1 },
     end: { y: maxEnd, m: 12 },
   };
+}
+
+/**
+ * 대시보드 상단 목차 — HeroBanner 와 본문 사이에 위치.
+ * 같은 페이지 내 anchor 로 부드럽게 스크롤. 라우팅은 발생하지 않음.
+ */
+function DashboardToc() {
+  const items = [
+    { id: 'section-peers', label: '내 동기들은 뭐하고 있을까?' },
+    { id: 'section-my-roadmap', label: '나의 학창시절 로드맵' },
+    { id: 'section-senior-roadmap', label: '취업 선배의 로드맵 비교' },
+  ];
+  const scrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  return (
+    <section className="bg-paper border border-border rounded-lg p-4 mb-4 min-w-0">
+      <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500 mb-2">
+        목차
+      </div>
+      <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {items.map((it, i) => (
+          <li key={it.id}>
+            <button
+              type="button"
+              onClick={() => scrollTo(it.id)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md border border-transparent hover:bg-ink-50 hover:border-ink-150 transition-colors text-left"
+            >
+              <span className="text-[11px] font-bold text-primary-700 tabular-nums shrink-0">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="text-[13px] font-semibold text-ink-900 truncate flex-1">
+                {it.label}
+              </span>
+              <ChevronRight size={14} className="text-ink-400 shrink-0" />
+            </button>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
 }
 
 /**

@@ -32,6 +32,7 @@ export default function Combobox({
   allowClear = false,
   searchable = true,
   forceDirection,
+  compact = false,
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -94,8 +95,9 @@ export default function Combobox({
       } else {
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
-          // 검색바(~52) + 옵션 영역 max-h-48(192) ≈ 약 244px 필요
-          const DROPDOWN_H = searchable ? 244 : 192;
+          // 검색바(~52) + 옵션 영역 (compact: max-h-32(128), default: max-h-48(192))
+          const listH = compact ? 128 : 192;
+          const DROPDOWN_H = searchable ? listH + 52 : listH;
           const below = window.innerHeight - rect.bottom;
           const above = rect.top;
           setDirection(below < DROPDOWN_H && above > below ? 'up' : 'down');
@@ -193,7 +195,10 @@ export default function Combobox({
           )}
           <ul
             ref={listRef}
-            className="max-h-48 overflow-y-auto py-1"
+            className={cn(
+              'overflow-y-auto py-1',
+              compact ? 'max-h-32' : 'max-h-48'
+            )}
             tabIndex={-1}
           >
             {filtered.length === 0 ? (

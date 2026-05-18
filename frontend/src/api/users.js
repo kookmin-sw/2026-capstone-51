@@ -127,8 +127,8 @@ function buildRoadmap(userExperiences) {
 function buildSeniors(graduateUserExperiences) {
   if (!Array.isArray(graduateUserExperiences)) return [];
   return graduateUserExperiences
-    .map((g, i) => ({
-      name: `선배 ${i + 1}`,
+    .map((g) => ({
+      userName: g.userName ?? '',
       co: '',
       year: '',
       items: buildRoadmap(g),
