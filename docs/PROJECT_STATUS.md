@@ -16,6 +16,23 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 랜딩 카피·Architecture 다이어그램 정돈 — Claude→LLM 일반화, 3년 제거, EC2·RDS 명시 (2026-05-18)
+
+- **계기**: 사용자 — "Claude AI 라는 용어를 전부 LLM 으로 바꿔주고, 3년치/3년 동안 같은 시간 한정 표현을 그냥 경험으로 바꾸고, Architecture 그림에 RDS 랑 EC2 추가해줘."
+- 의도: (1) 모델 종속(Claude / Sonnet 4.5)을 표기상 제거해 추후 모델 교체에 둔감하게. (2) 학번/시점에 따라 어색한 "3년" 표현 일반화. (3) 호스팅 인프라(EC2·RDS)를 다이어그램에 노출.
+- 수정 ([index.html](../index.html)):
+  - **Claude → LLM** (9곳): meta description, why-card 카피("Claude AI"→"LLM"), flow 챕터 iii headline / desc / flow-tag / v-ai-meta, arch-lead, Architecture SVG 의 `Bedrock Claude / Sonnet 4.5` → `Bedrock LLM / text generation`, 스택 칩 `Claude Sonnet 4.5` → `LLM`, impact 카드 iii 카피. 한국어 조사도 받침에 맞춰 정리(`Claude가` → `LLM이`).
+  - **3년 / 3년치 제거** (5곳): why-lead `"내가 3년 동안 뭘 했더라"` → `"내가 뭘 했더라"`, flow 챕터 i 메타 `흩어진 3년을 모은다` → `흩어진 경험을 모은다`, 헤드라인 `흩어진 3년을 STAR로 묶는다` → `흩어진 경험을 STAR로`, impact-lead `흩어진 3년이 자산이 되고` → `흩어진 경험이 자산이 되고`, impact 카드 i `3년치 경험이 카드로` → `경험이 카드로`.
+  - **Architecture SVG 노드 라벨 확장**:
+    - Spring Boot 박스 (다크 accent, x=350 y=120 w=160 h=64) 텍스트 3줄로: `EC2 · Spring Boot` (12px) / `Java 21 · Backend` (10px) / `t3.small · ap-northeast-2` (9px, opacity 0.75). y 좌표 142/160/174로 분배.
+    - PostgreSQL 박스 (라이트, x=350 y=220 w=160 h=58) 텍스트 3줄로: `RDS · PostgreSQL` (11px) / `+ pgvector (1024d)` (10px) / `db.t3.micro` (9px, opacity 0.75). y 좌표 242/258/271.
+    - 박스 사이즈·연결선(`path d=...`) 좌표는 그대로 유지 → 레이아웃 안 깨짐.
+- **커밋 분리** (3개, master에 푸시 완료):
+  - `67d8e00 chore(landing): Claude 표기를 LLM으로 일반화`
+  - `ecf0c3e copy(landing): 카피에서 '3년/3년치' 제거하고 일반 '경험'으로 통일`
+  - `f904690 feat(landing): Architecture 다이어그램에 EC2·RDS 호스팅 노드 명시`
+- **검증**: 로컬 preview (5174) 에서 `body.innerText` grep — Claude/Sonnet 0건, 3년 0건, LLM 9건, EC2 1건, RDS 1건. 콘솔 에러 0. SVG `<text>` 노드 확인으로 EC2·Spring Boot, RDS·PostgreSQL 라벨 DOM에 반영됨.
+
 ### 랜딩 페이지 좌우 패딩 정돈 — 헤더-본문 정렬 (2026-05-18)
 
 - **계기**: 사용자 — "헤더부터 해서 전체 페이지 좌우 패딩이 너무 꽉차있어서 너무 답답해보여". 와이드 모니터에서 로고가 화면 왼쪽 끝에 거의 붙어 있고 nav가 오른쪽 끝에 붙어 있어 풀블리드처럼 보이는 게 원인.
