@@ -16,6 +16,97 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### Flow 섹션 — 김국민 스토리 + 챕터별 동적 요소 보강 (2026-05-18)
+
+- **계기**: 사용자 — "내용만 변화시키고 싶다 → 김국민이 자소서 쓰는 흐름으로 스토리라인". (1) quote 한 줄 끼움 → 시각상 안 변해 거절. (2) 카피 전면 재작성 + 일자 아크 → 우측 visual 데이터 불일치. (3) visual 데이터 통합. (4) "단조롭게 구성하지 말고 동적으로" 피드백 → **챕터별 어울리는 동적 요소까지 보강**.
+
+**(9)차 — Impact 섹션 4행 텍스트 → 2x2 비주얼 카드 그리드로 재구성** (이번 회차):
+
+- 사용자 — "(8차의) D-7~D-0 줄 레이아웃 존나 구린데, 시각적으로 이쁘게 + 쓸데없는 내용 아닌 + 동적으로". → 4행 텍스트 폐기, **2x2 카드 그리드 + 카드마다 before→after 미니 SVG 비주얼**.
+- 카드 구조 (각각): 헤더 (`D-7~D-0` huge ink-blue 라벨 + 우측 `I. RECORD · 첫째 날` 등 uppercase 메타) + 비주얼 row (3-col grid: before mini SVG · → arrow · after mini SVG) + 3-col labels (before 텍스트 · → · after 텍스트) + 점선 위 한 줄 takeaway (`<strong>` 강조구).
+- 4 미니 비주얼:
+  - D-7: 흩어진 dots (7개, continuous `m-scatter` 4.5s drift) → STAR 카드 3장 스택 (회전, hover 시 spread)
+  - D-5: 떠다니는 `?` (Fraunces italic, `m-q-float` 3.2s rotate+scale) → 3 ranked 추천 바 (top-match highlighted)
+  - D-3: 깜빡이는 cursor `m-cursor` 1s + 빈 박스 외곽 → 4 lines 단락 (hover 시 stroke-dashoffset 재그리기)
+  - D-0: 펄싱 single dot (`m-dot-pulse` 2.4s scale) → 5축 펜타곤 (dashed 평균 + ink-blue solid 김국민 + 5 vertex dots, `m-poly-glow` 4.5s drop-shadow)
+- 우측 → arrow `arrow-pulse` 2.4s 좌우 1인치 미세 흔들림.
+- 카드 자체는 IntersectionObserver 가 `.impact-grid` 에 `.shown` 추가 → 4 카드가 0/0.15/0.3/0.45s 딜레이로 stagger fade+slide-up.
+- 카드 hover 시 border 가 ink-blue 로 + box-shadow + 미니 SVG 의 hover 인터랙션 (STAR stack spread, mini-lines redraw).
+- `@media (prefers-reduced-motion: reduce)` 가드.
+- 폰트·배경 변경 0. 색은 ink-blue / sky-100 / rule-soft 단일 팔레트.
+
+**(8)차 — 추천 라벨 가로 정리 + Impact 7일 재구성 + 아바타 사람화** (누적):
+
+- 사용자 — (1) 추천 카드 세로 라벨 글자 거꿀로 보임 (writing-mode + rotate(180) 조합 글자 순서 역전), (2) Impact 의 `1,024d / 4 / 5축 / STAR` 강조가 스토리와 무관해 의미 없음, (3) 김국민 아바타 더 사람화.
+- **추천 라벨 가로 전환**: `.v-radar-rec` 를 `flex-direction: column` 으로, 라벨은 `writing-mode: horizontal-tb` + `border-bottom` 으로 카드 상단 eyebrow 처럼 배치. `transform: rotate(180deg)` 제거.
+- **Impact 섹션 4행을 김국민 7일 before→after 로 교체**:
+  - 헤드라인: `김국민의 일곱 날, 이렇게 달라진다.`
+  - 리드: 4 챕터 변화를 한 문장으로 압축 + `마감 D-7 부터 D-0 까지` 마감카운트 도입.
+  - 4 행 모두 좌측 huge `D-7 / D-5 / D-3 / D-0` (마감 카운트다운, 챕터 첫째날/셋째날/다섯째날/일곱째날과 정합) + key `흩어진 기억 → 자산` / `막막한 문항 → 후보 카드` / `빈 화면 → 첫 줄` / `혼자 쓰기 → 좌표 확인` + desc 김국민 시점 설명.
+- **아바타 사람화**: 기존 ring + head + shoulders 만 있던 미니멀 추상 SVG 에 **머리(`kk-hair` arc) + 두 눈(`kk-eye` 점) + 입(`kk-mouth` 선)** 추가. ring fill 을 paper 로 줘 안쪽 face 가 깔끔. 챕터별 mouth/eye 차별로 표정 부여:
+  - 셋업: 미세 미소 호 (relaxed)
+  - i. (막연): 일자 입 + 점 눈
+  - ii. (깨달음): 작은 O 입 (open circle)
+  - iii. (집중/막힘): 좁은 일자 입 + `kk-eye-line` 선 눈 (squint)
+  - iv. (확신): 와이드 미소 호
+- 폰트·배경 변경 0, 색은 ink-blue / sky-300 단일 톤 유지.
+
+**(7)차 — 모션 보강 (정적 → 동적)** (누적):
+- 사용자 — "존나 정적인데 좀더 시각적으로 동적으로 만들어봐". 폰트·배경 변경 금지 룰 그대로 유지하면서 모션만 추가.
+- **김국민 아바타 5개 전부 continuous breathing**: `@keyframes kk-breathe` (translateY 0 ↔ -3px). 셋업 lg 아바타 4s, 챕터 narrator 아바타 3.4s — 위상이 어긋나 페이지 전체가 미세하게 호흡함.
+- **챕터 i v-stack 자동 순환**: JS interval 3.6s, IntersectionObserver 가 시야 안일 때만 동작 (out-of-view 이면 timer 해제). hover 시 일시정지. 카드 3장이 v-card-1/2/3 클래스를 순환적으로 swap 하면서 기존 `transition: transform 0.7s` 가 부드럽게 이동.
+- **챕터 ii 결과 카드 stagger fly-in**: 초기 `translateX(28px) + opacity 0` → 시야 진입 시 `.v-results.shown` 추가되며 nth-of-type 0.20/0.45/0.70s 딜레이로 우→좌 슬라이드 인. 그 후 bar fill 350ms + 200ms stagger 로 차오름.
+- **챕터 ii TOP MATCH 뱃지 bounce**: `@keyframes rank-bounce` 2.4s, scale 1 ↔ 1.08, 1초 딜레이 후 무한.
+- **챕터 iii primary chip 펄스**: `@keyframes chip-pulse` 2.6s, ring box-shadow 0 → 5px → 0 (rgba 29,78,216 페이드). 사용 중인 경험이 살아있음 표시.
+- **챕터 iv 펜타곤 scale-in from center**: `radar-avg/me` 가 `transform: scale(0) → scale(1)` (transform-origin 120px 120px, transform-box: view-box) + opacity. avg 0.3s 딜레이, me 0.9s 딜레이. 5 vertex dot 은 nth-of-type circle 별 1.55s → 2.15s 0.15s 간격 pop-in. me polygon 은 reveal 끝나고 2.5s 후부터 `@keyframes radar-breathe` 6s 무한 drop-shadow 펄스로 살아있는 느낌.
+- 모든 모션은 `@media (prefers-reduced-motion: reduce)` 가드 — 접근성 OK.
+
+**(6)차 — 김국민 캐릭터 시각화 + 신규 색 제거** (누적):
+
+- 사용자 — "폰트나 배경 함부로 바꾸지 말라, 김국민 캐릭터화시켜서 스토리 따라가는 구성".
+- 새로 도입했던 신규 색 정리: macOS 윈도우 dots (`#FFB3B3`/`#FFD580`/`#B3E6B3`) → 모두 `--rule-soft` 중립 회색. 에디터 status pulse dot 초록 (`#6cbf6c`) → `--ink-blue`. 에디터 head / foot 의 sky-tint 그라데이션 backgrounds 제거 → border 만 유지.
+- 김국민 SVG 아바타 도입 (`.kk-avatar`): 32×32 viewBox 안에 외곽 링 + 내부 head circle + shoulder Q curve. 색은 `--ink-blue` 한 톤만 사용해 폰트·배경 추가 색 없음. `kk-avatar-lg` 64×64 변형.
+- 셋업 인트로 (`.kk-intro`): 큰 아바타 + 이름 (`김국민`, display font) + 부제 (`소프트웨어학부 4학년 · 취준`, uppercase eyebrow). `<p class="why-lead">` 는 첫 줄의 이름·역할 부분을 캐릭터 블록에 넘겨 짧아짐.
+- 각 챕터 (`.flow-text` 최상단, meta 위): 작은 아바타 + Fraunces 이탤릭 speech bubble (`<span class="kk-narrator-bubble">`) 로 1인칭 quote 노출:
+  - i. `"일단 다 적어보자."`
+  - ii. `"이걸 쓰면 되겠다."`
+  - iii. `"초안 한 줄이 안 써진다."`
+  - iv. `"이제 보낼 수 있겠다."`
+- 막연 → 발견 → 막힘 → 확신 의 감정 아크가 캐릭터의 1인칭 보이스로 시각적으로 따라감. 우측 visual 은 그 보이스가 시스템에 닿았을 때의 결과 (STAR 카드 / 결과 카드 / 에디터 / 펜타곤).
+
+**(4~5)차 — 챕터별 동적·스토리 시각요소** (누적):
+
+- 챕터 i: 카드마다 점선 구분선 아래 카테고리 태그 pill (`협업 / 리더십`, `리더십 / 운영`, `기술 / 성과`) — 5축 radar 의 카테고리와 호응. 카드 hover spread 효과 그대로.
+- 챕터 ii: Q 프롬프트 타이핑 애니메이션 (IO 기반, 32ms/char). 단조로운 막대 폐기 → **결과 카드 3장** (`.v-result`) — 챕터 i 카드들의 제목·태그가 그대로 들어가 매칭 결과처럼 보임. Top match (.top-match) 는 ink-blue 두꺼운 border + 라벨 앞 펄스 dot + 우측 큰 % 숫자 + `TOP MATCH` 뱃지 + sky 그라데이션 배경. hover 시 카드 살짝 우측 이동. 바 fill 은 카드 하단에 박힘.
+- 챕터 iii: 단순 v-ai 폐기 → **자소서 에디터 frame** (`.v-editor`). 헤더에 macOS 윈도우 dots (빨강/노랑/초록) + `자소서 — 문항 1 / 3` 탭 + `자동 저장됨` 펄스 indicator. 바디 안에 chip 행 + Q + Claude 응답 typing. 풋터에 글자수 카운터 + `재생성` / `저장(primary)` 액션 pill. 실제 제품 UI 처럼 보임.
+- 챕터 iv: 단조로운 3행 stat 바 폐기 → **5축 펜타곤 SVG 레이더** (240×240 viewBox, r=90, 3 grid ring + 5 axis line + 동기 평균 polygon dashed + 김국민 polygon solid + vertex dot 5개). IntersectionObserver 로 평균 → 김국민 → dot 순차 fade-in (지연 0.3/0.7/1.1s). 라벨: 프로젝트 / 동아리 / 인턴 / 자격증 / 공모전 (프로젝트·인턴 = strong 색). + 하단에 **`v-radar-rec` 추천 카드** (점선 border, 좌측 세로 라벨 `다음 학기 추천 경험` + 우측 → 화살표 리스트 2개). 펜타곤 reveal 끝나고 1.3s 뒤 fade-up.
+
+**(1~3)차 누적 — 통일된 단일 경험 관통 구조** (이번 회차 유지):
+- 김국민의 단일 경험 ("캡스톤 팀장 — 백엔드/프론트엔드 갈등 해결") 이 4 챕터 visual 을 관통:
+  - i. v-stack card-1 에 STAR (S/T/A/R 4줄) 등록.
+  - ii. Q 프롬프트(`"협업에서 갈등을 해결하거나 합의를 이끈 경험"`) → 그 카드가 94% top match — 동아리 71% / 삼성 SDS 38%.
+  - iii. v-ai prompt + Claude typing — 카드 1 의 STAR 를 1인칭으로 풀어 쓴 텍스트 그대로 (변경 없음, 자연 정합).
+  - iv. 5축 radar 가 김국민의 좌표를 동기 평균과 겹쳐 보임. `.v-stat-me::after` 의 `'나'` → `'김국민'` CSS 변경은 stat 폐기로 사실상 dead 됐지만 그대로 둠 (다른 페이지에서 재사용 가능).
+- **핵심 아이디어**: 김국민의 **단일 경험 ("캡스톤 팀장 — 백엔드/프론트엔드 갈등 해결")** 이 4 챕터 visual 을 관통:
+  - i. v-stack card-1 에 STAR (S: BE/FE 방향성 충돌 → T: 1주 합의 → A: 1:1 면담 + 회의 주도 → R: 합의·정상 완수) 등록.
+  - ii. v-bars 위에 Q 프롬프트(`"협업에서 갈등을 해결하거나 합의를 이끈 경험"`) + 그 카드가 94% 매칭으로 top — 동아리 71% / 삼성 SDS 38% 순. 4번째 "공모전 41%" 폐기 (카드에 없는 경험 ref 제거 — 일관성).
+  - iii. v-ai prompt + Claude 응답 typing — 이미 카드 1 의 STAR 를 1인칭으로 풀어 쓴 텍스트가 박혀 있어 그대로 유지 (이번에 변경 없음, 자연 정합).
+  - iv. v-stat 3행 비교 라벨/라벨링 김국민 명시 (`동기 평균 3.2 · 김국민 5`, `자격증 (보완 필요)`, `김국민 보유`) + `.v-stat-me::after` 의 `'나'` → `'김국민'` CSS 1줄 변경.
+- **변경 파일**:
+  - [`index.html`](../index.html) `#flow` 섹션 (라인 ~1460–1624) — 카피·메타만 수정, 디자인/구조 유지.
+    - eyebrow 의 `style="margin-bottom: 0;"` 제거 → 기본 spacing 복원.
+    - eyebrow 바로 아래 페르소나 셋업 `<p class="why-lead">` 추가 ("4학년 2학기, 김국민. 자소서 마감 D-7, 빈 화면 앞에 손이 멈췄다. *내가 3년 동안 뭘 했더라.* … 자소서 한 편을 완성하기까지의 일곱 날"). `why-lead` 재활용 — 신규 CSS 없음.
+    - 4 챕터 모두 `.flow-chapter-meta` 라벨에 **일자 아크** 부여: `i. RECORD · 첫째 날, 흩어진 3년을 모은다` / `ii. RETRIEVE · 셋째 날, 문항 앞에 카드가 떠오른다` / `iii. GENERATE · 다섯째 날, 첫 줄이 써진다` / `iv. COMPARE · 일곱째 날, 자기 좌표를 확인한다`.
+    - 4 챕터 `.flow-headline` 페르소나 시점으로 재작성:
+      - i. `흩어진 3년을 STAR로 묶는다.`
+      - ii. `막막한 문항 앞에서 꺼낼 카드가 보인다.`
+      - iii. `Claude가 김국민의 언어로 초안을 짓는다.` (유지)
+      - iv. `다 쓴 자소서, 익명으로 동료와 견준다.`
+    - 4 챕터 `.flow-desc` 전체 narrative 화 — 막연 → 보임 → 첫 줄 안 써짐 → 다듬음 → 좌표 확인 → "이제 보낼 수 있겠다" 감정 아크. 기술 키워드(STAR / cosine similarity / Titan Embed v2 / pgvector / Claude Sonnet 4.5 / 5축)는 desc 끝에 한 문장으로 압축해 유지.
+  - tags 4세트 (STAR / Category / Major, pgvector / Titan v2 / cosine, Claude Sonnet 4.5 / AWS Bedrock, Anonymous / 5-axis / PeersOrb) 무변경.
+- **검증**: 로컬 `python3 -m http.server` (launch.json `logi-landing`, 5174 fallback) 데스크탑 1280px 렌더 정상, 콘솔 에러 0건, accessibility snapshot 으로 셋업·4 챕터 메타·헤드라인·desc·tags 모두 의도대로 DOM 반영 확인.
+- **푸시 정책**: 사용자 명시 "우선 로컬에만 테스트" — push 보류.
+
 ### 랜딩 전면 재설계 v2 — 미술관·스튜디오 톤 + Wanted Sans·Geist·Fraunces (2026-05-17)
 
 - **계기**: v1 (포스터 톤 카드 그리드) 에 대해 사용자 피드백 — "AI 만든 티 너무 나고 폰트도 별로고 임팩트 없다". 진단: 모든 카드가 동일 padding·radius (균일성이 의도가 아니라 게으름처럼 보임), 가운데 정렬 hero + 표준 SaaS 클리셰, 그라데이션 남발로 강조 사라짐, Pretendard 단독으로 한국 시스템 폰트 수준이라 그 자체로는 개성 없음.
