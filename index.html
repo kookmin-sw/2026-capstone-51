@@ -19,10 +19,21 @@
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2391d5ff'/%3E%3Ctext x='32' y='46' font-family='Single Day,cursive' font-size='38' font-weight='400' text-anchor='middle' fill='%23061734'%3EL%3C/text%3E%3C/svg%3E" />
 
-  <!-- 한글 Nanum Pen Script (펜글씨) + 영문 Caveat 700 (굵은 마커 손글씨) — 이미지 톤 매칭 -->
+  <!-- 한글 — 나눔손글씨 다행체 (자유로운 손글씨 흐름, noonnu jsdelivr CDN) / 영문 — Caveat -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Nanum+Pen+Script&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap" rel="stylesheet" />
+
+  <style>
+    @font-face {
+      font-family: 'NanumDaHaeng';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/naverfont_02@1.0/Daheng.woff') format('woff');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
 
   <style>
     :root[data-theme="light"] {
@@ -51,9 +62,9 @@
       --rule-hair: rgba(6,23,52,0.06);
 
       /* 손글씨 — 헤드라인 / 본문은 Pretendard */
-      --font-display: 'Caveat', 'Nanum Pen Script', cursive;
-      --font-script:  'Caveat', 'Nanum Pen Script', cursive;
-      --font-body:    'Caveat', 'Nanum Pen Script', cursive;
+      --font-display: 'Caveat', 'NanumDaHaeng', cursive;
+      --font-script:  'Caveat', 'NanumDaHaeng', cursive;
+      --font-body:    'Caveat', 'NanumDaHaeng', cursive;
 
       --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
     }
@@ -82,8 +93,8 @@
       --rule-soft: rgba(243,248,255,0.12);
       --rule-hair: rgba(243,248,255,0.06);
 
-      --font-display: 'Caveat', 'Nanum Pen Script', cursive;
-      --font-script:  'Caveat', 'Nanum Pen Script', cursive;
+      --font-display: 'Caveat', 'NanumDaHaeng', cursive;
+      --font-script:  'Caveat', 'NanumDaHaeng', cursive;
       --font-body:    'Pretendard Variable', Pretendard, sans-serif;
 
       --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
