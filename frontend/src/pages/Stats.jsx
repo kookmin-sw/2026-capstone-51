@@ -263,6 +263,32 @@ function TopRankerPanel({ rankers, isMock }) {
 }
 
 /* ---------- Gap recommendation cards ---------- */
+/**
+ * 자격증(LICENSE/cert) 카테고리의 recommendedItems 만 정렬.
+ *  - difficulty: high(0) > medium(1) > low(2) > NULL/기타(3)
+ *  - 동일 난이도면 name 사전순(한국어 locale)
+ * 그 외 카테고리는 백엔드가 내려준 순서 그대로 유지.
+ */
+const DIFFICULTY_ORDER = { high: 0, medium: 1, low: 2 };
+
+const isCertType = (type) => {
+  const t = String(type ?? '').toLowerCase();
+  return t === 'license' || t === 'cert' || type === '자격증';
+};
+
+const orderRecommendedItems = (items, type) => {
+  const arr = Array.isArray(items) ? items : [];
+  if (!isCertType(type)) return arr;
+  return [...arr].sort((a, b) => {
+    const aKey = String(a?.difficulty ?? '').toLowerCase();
+    const bKey = String(b?.difficulty ?? '').toLowerCase();
+    const aOrd = DIFFICULTY_ORDER[aKey] ?? 3;
+    const bOrd = DIFFICULTY_ORDER[bKey] ?? 3;
+    if (aOrd !== bOrd) return aOrd - bOrd;
+    return String(a?.name ?? '').localeCompare(String(b?.name ?? ''), 'ko');
+  });
+};
+
 function GapRecommendCard({ weakPoints }) {
   if (!weakPoints || weakPoints.length === 0) {
     // weakPoints 자체가 비어 있으면 카드 섹션 자체를 숨긴다.
@@ -314,17 +340,19 @@ function GapRecommendCard({ weakPoints }) {
               </div>
             ) : (
               <div className="flex flex-col">
-                {wp.recommendedItems.map((it, j) => (
-                  <div
-                    key={j}
-                    className="text-[12px] text-ink-900 py-2 border-t border-ink-100 flex items-center gap-2"
-                  >
-                    <span className="w-[18px] h-[18px] rounded bg-ink-100 text-ink-500 grid place-items-center text-[10px] font-bold shrink-0">
-                      {j + 1}
-                    </span>
-                    <span>{it}</span>
-                  </div>
-                ))}
+                {orderRecommendedItems(wp.recommendedItems, wp.type).map(
+                  (it, j) => (
+                    <div
+                      key={j}
+                      className="text-[12px] text-ink-900 py-2 border-t border-ink-100 flex items-center gap-2"
+                    >
+                      <span className="w-[18px] h-[18px] rounded bg-ink-100 text-ink-500 grid place-items-center text-[10px] font-bold shrink-0">
+                        {j + 1}
+                      </span>
+                      <span className="flex-1 break-keep">{it?.name}</span>
+                    </div>
+                  )
+                )}
               </div>
             )}
           </div>
