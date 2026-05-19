@@ -1,11 +1,14 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Paperclip, FileText, X as XIcon } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { DIFFICULTY_LABEL, DIFFICULTY_TONE } from '../../lib/enums';
 import {
   useUploadCertificateUrl,
   putPdfToS3,
   useCertificationCatalog,
 } from '../../api/queries/useCertificates';
+import Autocomplete from '../Autocomplete';
+import { CERTIFICATE_CATALOG_MOCK } from '../../data/certificate-catalog-mock';
 
 /**
  * 자격증 신규/수정 공용 폼.
@@ -46,13 +49,38 @@ export default function CertificateForm({
   const fileInputRef = useRef(null);
   const errors = submitted ? validate(form) : {};
   const uploadUrl = useUploadCertificateUrl();
-  const { data: catalog = [] } = useCertificationCatalog();
+  const { data: catalogFromApi = [] } = useCertificationCatalog();
+  // DEV 환경에서 카탈로그가 비어있으면 mock 으로 fallback — 백엔드 403 동안에도
+  // 자동완성 UI 시각 확인 가능. 백엔드 픽스되면 mock 무시되고 실 데이터 사용.
+  const catalog =
+    catalogFromApi.length > 0
+      ? catalogFromApi
+      : import.meta.env.DEV
+        ? CERTIFICATE_CATALOG_MOCK
+        : [];
   const existingFileUrl = initialValue?.fileUrl ?? '';
+
+  // Autocomplete 옵션 변환 — 자격증명 라벨, 발급기관 부제, 난이도 뱃지.
+  const catalogOptions = useMemo(
+    () =>
+      catalog.map((c) => ({
+        value: c.name,
+        label: c.name,
+        sub: c.issuingOrganization || undefined,
+        badge: c.difficulty
+          ? {
+              label: DIFFICULTY_LABEL[c.difficulty] ?? c.difficulty,
+              tone: DIFFICULTY_TONE[c.difficulty] ?? 'gray',
+            }
+          : undefined,
+      })),
+    [catalog]
+  );
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   // 자격증명 입력 — 카탈로그 정확 매칭 시 발급기관 자동 채움 (이미 적어둔 값은 보존).
-  // datalist 선택/자유 입력 둘 다 onChange 로만 들어와 동일 처리.
+  // Autocomplete 옵션 선택/자유 입력 둘 다 onChange 로 들어와 동일 처리.
   const onCertificateNameChange = (v) => {
     setForm((f) => {
       const next = { ...f, certificateName: v };
@@ -151,16 +179,12 @@ export default function CertificateForm({
       <Section title="기본 정보">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="자격증명" required error={errors.certificateName}>
-            <input
-              className={cn(
-                'field text-[14px] py-2.5',
-                errors.certificateName && 'border-red-500 focus:border-red-500'
-              )}
-              placeholder="자격증명을 입력하세요"
-              list="cert-catalog-list"
-              autoComplete="off"
+            <Autocomplete
               value={form.certificateName}
-              onChange={(e) => onCertificateNameChange(e.target.value)}
+              onChange={onCertificateNameChange}
+              options={catalogOptions}
+              placeholder="자격증명을 입력하세요"
+              hasError={!!errors.certificateName}
             />
           </Field>
           <Field label="발급 기관" required error={errors.issuingOrganization}>
@@ -323,13 +347,6 @@ export default function CertificateForm({
           {uploading ? 'PDF 업로드 중…' : isPending ? '저장 중…' : submitLabel}
         </button>
       </div>
-
-      {/* 자격증명 input 의 자동완성 데이터 소스. 빈 카탈로그면 datalist 도 빈 채라 자유 입력만 가능. */}
-      <datalist id="cert-catalog-list">
-        {catalog.map((c) => (
-          <option key={c.certificationCatalogId} value={c.name} />
-        ))}
-      </datalist>
     </form>
   );
 }
