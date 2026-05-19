@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Paperclip, FileText, X as XIcon } from 'lucide-react';
 import { cn } from '../../lib/cn';
-import { DIFFICULTY_LABEL, DIFFICULTY_TONE } from '../../lib/enums';
 import {
   useUploadCertificateUrl,
   putPdfToS3,
@@ -60,19 +59,15 @@ export default function CertificateForm({
         : [];
   const existingFileUrl = initialValue?.fileUrl ?? '';
 
-  // Autocomplete 옵션 변환 — 자격증명 라벨, 발급기관 부제, 난이도 뱃지.
+  // Autocomplete 옵션 변환 — 자격증명 라벨 + 발급기관 부제.
+  // 난이도(difficulty)는 등록 단계 UX 와 안 맞아 표시 안 함 (채용사이트 표준 답습).
+  // 통계 페이지의 "부족한 자격증 추천" 같은 맥락에서만 활용.
   const catalogOptions = useMemo(
     () =>
       catalog.map((c) => ({
         value: c.name,
         label: c.name,
         sub: c.issuingOrganization || undefined,
-        badge: c.difficulty
-          ? {
-              label: DIFFICULTY_LABEL[c.difficulty] ?? c.difficulty,
-              tone: DIFFICULTY_TONE[c.difficulty] ?? 'gray',
-            }
-          : undefined,
       })),
     [catalog]
   );
@@ -185,6 +180,11 @@ export default function CertificateForm({
               options={catalogOptions}
               placeholder="자격증명을 입력하세요"
               hasError={!!errors.certificateName}
+              emptyText={
+                form.certificateName.trim()
+                  ? `'${form.certificateName.trim()}' 와 일치하는 자격증이 없어요. 그대로 등록할 수 있어요.`
+                  : undefined
+              }
             />
           </Field>
           <Field label="발급 기관" required error={errors.issuingOrganization}>
