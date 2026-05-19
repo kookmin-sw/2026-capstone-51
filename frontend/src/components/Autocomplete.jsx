@@ -49,9 +49,11 @@ export default function Autocomplete({
 
   // 옵션이 진짜로 있을 때 + minChars 충족 시에만 popover 띄움.
   // emptyText 가 주어졌으면 매칭 0 이어도 안내문 표시.
+  // 카탈로그 자체가 0 개면 emptyText 와 무관하게 popover 안 띄움 (자유 입력 모드).
   const showPopover =
     open &&
     (value?.length ?? 0) >= minChars &&
+    options.length > 0 &&
     (filtered.length > 0 || !!emptyText);
 
   // 외부 클릭/Esc 로 닫기
@@ -161,8 +163,8 @@ export default function Autocomplete({
           id="autocomplete-listbox"
           role="listbox"
           className={cn(
-            'absolute z-30 w-full bg-paper border border-ink-200 rounded-md shadow-lg overflow-hidden',
-            direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
+            'absolute z-30 w-full bg-paper border border-ink-200 rounded-lg shadow-lg overflow-hidden',
+            direction === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
           )}
         >
           <ul
@@ -171,7 +173,7 @@ export default function Autocomplete({
             tabIndex={-1}
           >
             {filtered.length === 0 ? (
-              <li className="px-3 py-3 text-[12.5px] text-ink-400 text-center break-keep">
+              <li className="px-3.5 py-3 text-[12px] text-ink-500 break-keep leading-relaxed">
                 {emptyText}
               </li>
             ) : (
@@ -190,16 +192,23 @@ export default function Autocomplete({
                     }}
                     onMouseEnter={() => setActive(i)}
                     className={cn(
-                      'w-full text-left px-3 py-2 cursor-pointer break-keep flex items-center justify-between gap-3 transition-colors',
-                      i === active && 'bg-ink-100'
+                      'w-full text-left px-3.5 py-2.5 cursor-pointer break-keep flex items-center justify-between gap-3 transition-colors relative border-l-2 border-transparent',
+                      i === active && 'bg-primary-50/60 border-l-primary-500'
                     )}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-[13.5px] font-semibold text-ink-900 truncate">
-                        {o.label}
+                      <div
+                        className={cn(
+                          'text-[13.5px] truncate',
+                          i === active
+                            ? 'text-primary-900 font-bold'
+                            : 'text-ink-900 font-semibold'
+                        )}
+                      >
+                        {renderHighlight(o.label, value)}
                       </div>
                       {o.sub && (
-                        <div className="text-[11.5px] text-ink-500 truncate mt-0.5">
+                        <div className="text-[11.5px] text-ink-500 truncate mt-1 leading-snug">
                           {o.sub}
                         </div>
                       )}
@@ -222,5 +231,26 @@ export default function Autocomplete({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * 매칭된 검색어 부분을 primary 톤으로 강조. 대소문자 무시 substring 한 곳만 강조.
+ * 검색어 빈 문자열이면 그대로 반환.
+ */
+function renderHighlight(text, query) {
+  const q = (query ?? '').trim();
+  if (!q) return text;
+  const lower = text.toLowerCase();
+  const idx = lower.indexOf(q.toLowerCase());
+  if (idx < 0) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <span className="text-primary-700 font-bold">
+        {text.slice(idx, idx + q.length)}
+      </span>
+      {text.slice(idx + q.length)}
+    </>
   );
 }
