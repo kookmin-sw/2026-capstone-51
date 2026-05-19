@@ -77,3 +77,19 @@ export async function putPdfToS3(
     throw new Error(`S3 업로드 실패 (HTTP ${res.status})`);
   }
 }
+
+/* ─────────────────── CertificationCatalog (자격증 마스터) ─────────────────── */
+// 백엔드 `certification` 도메인 — 사용자 자격증(`certificate`) 과 별도. 인증 불요 마스터 데이터.
+//   GET /certification-catalog → [{ certificationCatalogId, name, issuingOrganization, difficulty }]
+
+/**
+ * 자격증 카탈로그 전체 조회. 자격증 폼 자동완성 데이터 소스.
+ * 마스터 데이터라 세션 동안 한 번만 fetch (staleTime / gcTime: Infinity).
+ */
+export const useCertificationCatalog = () =>
+  useQuery({
+    queryKey: qk.certificationCatalog(),
+    queryFn: () => api.get('/certification-catalog').then((r) => r.data ?? []),
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
