@@ -17,6 +17,7 @@ import {
   jobSecondOptions,
   jobThirdOptions,
   humanizeEnum,
+  kookminDeptLabel,
 } from '../lib/enums';
 
 /**
@@ -282,7 +283,7 @@ export default function Info() {
                       hasError={!!errors.major}
                     />
                   ) : (
-                    <ReadOnly value={data.major} />
+                    <ReadOnly value={kookminDeptLabel(data.major)} />
                   )}
                 </Field>
                 <Field label="부전공" error={errors.minor}>
@@ -297,7 +298,7 @@ export default function Info() {
                       hasError={!!errors.minor}
                     />
                   ) : (
-                    <ReadOnly value={data.minor} fallback="없음" />
+                    <ReadOnly value={kookminDeptLabel(data.minor)} fallback="없음" />
                   )}
                 </Field>
               </Grid>
