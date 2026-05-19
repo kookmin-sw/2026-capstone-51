@@ -79,8 +79,15 @@ export async function putPdfToS3(
 }
 
 /* ─────────────────── CertificationCatalog (자격증 마스터) ─────────────────── */
-// 백엔드 `certification` 도메인 — 사용자 자격증(`certificate`) 과 별도. 인증 불요 마스터 데이터.
+// 백엔드 `certification` 도메인 — 사용자 자격증(`certificate`) 과 별도 마스터 데이터.
 //   GET /certification-catalog → [{ certificationCatalogId, name, issuingOrganization, difficulty }]
+//
+// **axios 인터셉터 우회 (fetch 직접 호출)**: 카탈로그는 인증 흐름과 독립적이라
+// 401/403 을 받아도 reissue/logout 으로 이어지면 안 됨. axios 인스턴스를 쓰면
+// 글로벌 인터셉터가 401/403 시 reissue → 실패 시 tokenStore.clear() 까지 가는데,
+// 카탈로그 호출이 사용자 세션을 끊는 부작용은 부적절. 4xx 는 모두 빈 배열로
+// swallow → 폼은 자유 입력 모드로 fallback. 백엔드가 인증 게이트를 제거하면
+// (마스터 데이터라 익명 허용이 자연스러움) 그대로 정상 동작.
 
 /**
  * 자격증 카탈로그 전체 조회. 자격증 폼 자동완성 데이터 소스.
@@ -89,7 +96,17 @@ export async function putPdfToS3(
 export const useCertificationCatalog = () =>
   useQuery({
     queryKey: qk.certificationCatalog(),
-    queryFn: () => api.get('/certification-catalog').then((r) => r.data ?? []),
+    queryFn: async () => {
+      const base = import.meta.env.VITE_API_URL ?? '';
+      const token = localStorage.getItem('accessToken');
+      const res = await fetch(`${base}/certification-catalog`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return [];
+      const body = await res.json().catch(() => null);
+      return Array.isArray(body?.data) ? body.data : [];
+    },
     staleTime: Infinity,
     gcTime: Infinity,
+    retry: false,
   });
