@@ -9,6 +9,7 @@ import {
   EXPERIENCE_CATEGORY_LABEL,
   EXPERIENCE_CATEGORY_OPTIONS,
   EXPERIENCE_CATEGORY_TONE,
+  kookminDeptLabel,
 } from '../lib/enums';
 
 /**
@@ -172,7 +173,7 @@ function ExpRow({ index, item }) {
           {item.relatedMajor && (
             <>
               <span className="text-ink-300">·</span>
-              <span>관련 전공 {item.relatedMajor}</span>
+              <span>관련 전공 {kookminDeptLabel(item.relatedMajor)}</span>
             </>
           )}
         </div>

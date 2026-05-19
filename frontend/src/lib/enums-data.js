@@ -1,8 +1,10 @@
 /**
  * 백엔드 enum 데이터 — 자동 생성된 정적 리스트.
  *
- * KookminDepartment: backend Java enum 의 한국어 풀네임 ('단과대학 학과명' 또는 '단과대학').
- *   백엔드 @JsonValue 직렬화 결과와 일치 — 프론트가 보낼 때 정확히 이 문자열을 써야 함.
+ * KookminDepartment: backend Java enum 의 **enum 키(영문)** 를 value 로 사용.
+ *   - value: 백엔드에 보낼 enum 식별자 (예: 'SW_SOFTWARE')
+ *   - college / department: 한국어 표기 (UI 라벨/그룹 용)
+ *   사용자 / 경험 모두 동일한 enum 키를 보내 백엔드 저장 형식을 통일.
  *
  * JobFirst/Second/Third: 한국 표준직업분류 enum. enum 이름 자체가 직렬화 값 (한국어 + 언더스코어).
  *   3 단 트리 — JobSecond 는 JobFirst 로, JobThird 는 JobSecond 로 필터링.
@@ -12,248 +14,60 @@
  */
 
 export const KOOKMIN_DEPARTMENTS = [
-  {
-    value: '글로벌인문·지역대학 한국어문학부',
-    college: '글로벌인문·지역대학',
-    department: '한국어문학부',
-  },
-  {
-    value: '글로벌인문·지역대학 영어영문학부',
-    college: '글로벌인문·지역대학',
-    department: '영어영문학부',
-  },
-  {
-    value: '글로벌인문·지역대학 중어중문학과',
-    college: '글로벌인문·지역대학',
-    department: '중어중문학과',
-  },
-  {
-    value: '글로벌인문·지역대학 한국역사학과',
-    college: '글로벌인문·지역대학',
-    department: '한국역사학과',
-  },
-  {
-    value: '사회과학대학 행정학과',
-    college: '사회과학대학',
-    department: '행정학과',
-  },
-  {
-    value: '사회과학대학 정치외교학과',
-    college: '사회과학대학',
-    department: '정치외교학과',
-  },
-  {
-    value: '사회과학대학 사회학과',
-    college: '사회과학대학',
-    department: '사회학과',
-  },
-  {
-    value: '사회과학대학 미디어·광고학부',
-    college: '사회과학대학',
-    department: '미디어·광고학부',
-  },
-  {
-    value: '사회과학대학 교육학과',
-    college: '사회과학대학',
-    department: '교육학과',
-  },
-  {
-    value: '사회과학대학 러시아·유라시아학과',
-    college: '사회과학대학',
-    department: '러시아·유라시아학과',
-  },
-  {
-    value: '사회과학대학 동아시아국제학부',
-    college: '사회과학대학',
-    department: '동아시아국제학부',
-  },
-  { value: '법과대학 법학부', college: '법과대학', department: '법학부' },
-  {
-    value: '법과대학 기업융합법학과',
-    college: '법과대학',
-    department: '기업융합법학과',
-  },
-  { value: '경상대학 경제학과', college: '경상대학', department: '경제학과' },
-  {
-    value: '경상대학 국제통상학과',
-    college: '경상대학',
-    department: '국제통상학과',
-  },
-  {
-    value: '공과대학 신소재공학부',
-    college: '공과대학',
-    department: '신소재공학부',
-  },
-  {
-    value: '공과대학 기계공학부',
-    college: '공과대학',
-    department: '기계공학부',
-  },
-  {
-    value: '공과대학 건설시스템공학부',
-    college: '공과대학',
-    department: '건설시스템공학부',
-  },
-  {
-    value: '공과대학 전자공학부',
-    college: '공과대학',
-    department: '전자공학부',
-  },
-  {
-    value: '조형대학 공업디자인학과',
-    college: '조형대학',
-    department: '공업디자인학과',
-  },
-  {
-    value: '조형대학 시각디자인학과',
-    college: '조형대학',
-    department: '시각디자인학과',
-  },
-  {
-    value: '조형대학 금속공예학과',
-    college: '조형대학',
-    department: '금속공예학과',
-  },
-  {
-    value: '조형대학 도자공예학과',
-    college: '조형대학',
-    department: '도자공예학과',
-  },
-  {
-    value: '조형대학 의상디자인학과',
-    college: '조형대학',
-    department: '의상디자인학과',
-  },
-  {
-    value: '조형대학 공간디자인학과',
-    college: '조형대학',
-    department: '공간디자인학과',
-  },
-  {
-    value: '조형대학 영상디자인학과',
-    college: '조형대학',
-    department: '영상디자인학과',
-  },
-  {
-    value: '조형대학 자동차·운송디자인학과',
-    college: '조형대학',
-    department: '자동차·운송디자인학과',
-  },
-  {
-    value: '조형대학 AI디자인학과',
-    college: '조형대학',
-    department: 'AI디자인학과',
-  },
-  {
-    value: '과학기술대학 산림환경시스템학과',
-    college: '과학기술대학',
-    department: '산림환경시스템학과',
-  },
-  {
-    value: '과학기술대학 임산생명공학과',
-    college: '과학기술대학',
-    department: '임산생명공학과',
-  },
-  {
-    value: '과학기술대학 나노전자물리학과',
-    college: '과학기술대학',
-    department: '나노전자물리학과',
-  },
-  {
-    value: '과학기술대학 응용화학부',
-    college: '과학기술대학',
-    department: '응용화학부',
-  },
-  {
-    value: '과학기술대학 식품영양학과',
-    college: '과학기술대학',
-    department: '식품영양학과',
-  },
-  {
-    value: '과학기술대학 정보보안암호수학과',
-    college: '과학기술대학',
-    department: '정보보안암호수학과',
-  },
-  {
-    value: '과학기술대학 융합바이오공학과',
-    college: '과학기술대학',
-    department: '융합바이오공학과',
-  },
-  { value: '예술대학 음악학부', college: '예술대학', department: '음악학부' },
-  { value: '예술대학 미술학부', college: '예술대학', department: '미술학부' },
-  {
-    value: '예술대학 공연예술학부',
-    college: '예술대학',
-    department: '공연예술학부',
-  },
-  {
-    value: '체육대학 스포츠교육학과',
-    college: '체육대학',
-    department: '스포츠교육학과',
-  },
-  {
-    value: '체육대학 스포츠산업레저학과',
-    college: '체육대학',
-    department: '스포츠산업레저학과',
-  },
-  {
-    value: '체육대학 스포츠건강재활학과',
-    college: '체육대학',
-    department: '스포츠건강재활학과',
-  },
-  { value: '경영대학 경영학부', college: '경영대학', department: '경영학부' },
-  {
-    value: '경영대학 기업경영학부',
-    college: '경영대학',
-    department: '기업경영학부',
-  },
-  {
-    value: '경영대학 경영정보학부',
-    college: '경영대학',
-    department: '경영정보학부',
-  },
-  {
-    value: '경영대학 AI빅데이터융합경영학과',
-    college: '경영대학',
-    department: 'AI빅데이터융합경영학과',
-  },
-  {
-    value: '경영대학 회계세무학과',
-    college: '경영대학',
-    department: '회계세무학과',
-  },
-  {
-    value: '소프트웨어융합대학 소프트웨어학부',
-    college: '소프트웨어융합대학',
-    department: '소프트웨어학부',
-  },
-  {
-    value: '소프트웨어융합대학 인공지능학부',
-    college: '소프트웨어융합대학',
-    department: '인공지능학부',
-  },
-  { value: '건축대학 건축학부', college: '건축대학', department: '건축학부' },
-  {
-    value: '자동차모빌리티대학 자동차공학과',
-    college: '자동차모빌리티대학',
-    department: '자동차공학과',
-  },
-  {
-    value: '자동차모빌리티대학 자동차IT융합학과',
-    college: '자동차모빌리티대학',
-    department: '자동차IT융합학과',
-  },
-  {
-    value: '자동차모빌리티대학 미래모빌리티학과',
-    college: '자동차모빌리티대학',
-    department: '미래모빌리티학과',
-  },
-  { value: '미래융합대학', college: '미래융합대학', department: null },
-  {
-    value: 'KMU International Business School',
-    college: 'KMU International Business School',
-    department: null,
-  },
+  { value: 'GLOBAL_KOREAN_LANGUAGE', college: '글로벌인문·지역대학', department: '한국어문학부' },
+  { value: 'GLOBAL_ENGLISH', college: '글로벌인문·지역대학', department: '영어영문학부' },
+  { value: 'GLOBAL_CHINESE_LANGUAGE', college: '글로벌인문·지역대학', department: '중어중문학과' },
+  { value: 'GLOBAL_KOREAN_HISTORY', college: '글로벌인문·지역대학', department: '한국역사학과' },
+  { value: 'SOCIAL_PUBLIC_ADMIN', college: '사회과학대학', department: '행정학과' },
+  { value: 'SOCIAL_POLITICAL_SCIENCE', college: '사회과학대학', department: '정치외교학과' },
+  { value: 'SOCIAL_SOCIOLOGY', college: '사회과학대학', department: '사회학과' },
+  { value: 'SOCIAL_MEDIA_ADVERTISING', college: '사회과학대학', department: '미디어·광고학부' },
+  { value: 'SOCIAL_EDUCATION', college: '사회과학대학', department: '교육학과' },
+  { value: 'SOCIAL_RUSSIAN_EURASIAN', college: '사회과학대학', department: '러시아·유라시아학과' },
+  { value: 'SOCIAL_EAST_ASIAN_INTL', college: '사회과학대학', department: '동아시아국제학부' },
+  { value: 'LAW_LAW', college: '법과대학', department: '법학부' },
+  { value: 'LAW_CORPORATE_LAW', college: '법과대학', department: '기업융합법학과' },
+  { value: 'BUSINESS_ECONOMICS', college: '경상대학', department: '경제학과' },
+  { value: 'BUSINESS_INTERNATIONAL_TRADE', college: '경상대학', department: '국제통상학과' },
+  { value: 'ENG_NEW_MATERIALS', college: '공과대학', department: '신소재공학부' },
+  { value: 'ENG_MECHANICAL', college: '공과대학', department: '기계공학부' },
+  { value: 'ENG_CONSTRUCTION_SYSTEMS', college: '공과대학', department: '건설시스템공학부' },
+  { value: 'ENG_ELECTRONICS', college: '공과대학', department: '전자공학부' },
+  { value: 'DESIGN_INDUSTRIAL', college: '조형대학', department: '공업디자인학과' },
+  { value: 'DESIGN_VISUAL', college: '조형대학', department: '시각디자인학과' },
+  { value: 'DESIGN_METAL_CRAFT', college: '조형대학', department: '금속공예학과' },
+  { value: 'DESIGN_CERAMICS', college: '조형대학', department: '도자공예학과' },
+  { value: 'DESIGN_FASHION', college: '조형대학', department: '의상디자인학과' },
+  { value: 'DESIGN_SPATIAL', college: '조형대학', department: '공간디자인학과' },
+  { value: 'DESIGN_VIDEO', college: '조형대학', department: '영상디자인학과' },
+  { value: 'DESIGN_AUTO_TRANSPORT', college: '조형대학', department: '자동차·운송디자인학과' },
+  { value: 'DESIGN_AI', college: '조형대학', department: 'AI디자인학과' },
+  { value: 'CST_FOREST_ENVIRONMENT', college: '과학기술대학', department: '산림환경시스템학과' },
+  { value: 'CST_FOREST_BIOTECH', college: '과학기술대학', department: '임산생명공학과' },
+  { value: 'CST_NANO_PHYSICS', college: '과학기술대학', department: '나노전자물리학과' },
+  { value: 'CST_APPLIED_CHEMISTRY', college: '과학기술대학', department: '응용화학부' },
+  { value: 'CST_FOOD_NUTRITION', college: '과학기술대학', department: '식품영양학과' },
+  { value: 'CST_INFO_SECURITY_MATH', college: '과학기술대학', department: '정보보안암호수학과' },
+  { value: 'CST_CONVERGENCE_BIO', college: '과학기술대학', department: '융합바이오공학과' },
+  { value: 'ART_MUSIC', college: '예술대학', department: '음악학부' },
+  { value: 'ART_FINE_ARTS', college: '예술대학', department: '미술학부' },
+  { value: 'ART_PERFORMING', college: '예술대학', department: '공연예술학부' },
+  { value: 'SPORTS_EDUCATION', college: '체육대학', department: '스포츠교육학과' },
+  { value: 'SPORTS_INDUSTRY_LEISURE', college: '체육대학', department: '스포츠산업레저학과' },
+  { value: 'SPORTS_HEALTH_REHAB', college: '체육대학', department: '스포츠건강재활학과' },
+  { value: 'BIZ_MANAGEMENT', college: '경영대학', department: '경영학부' },
+  { value: 'BIZ_CORPORATE_MGMT', college: '경영대학', department: '기업경영학부' },
+  { value: 'BIZ_MGMT_INFO', college: '경영대학', department: '경영정보학부' },
+  { value: 'BIZ_AI_BIGDATA', college: '경영대학', department: 'AI빅데이터융합경영학과' },
+  { value: 'BIZ_ACCOUNTING_TAX', college: '경영대학', department: '회계세무학과' },
+  { value: 'SW_SOFTWARE', college: '소프트웨어융합대학', department: '소프트웨어학부' },
+  { value: 'SW_AI', college: '소프트웨어융합대학', department: '인공지능학부' },
+  { value: 'ARCH_ARCHITECTURE', college: '건축대학', department: '건축학부' },
+  { value: 'AUTO_ENGINEERING', college: '자동차모빌리티대학', department: '자동차공학과' },
+  { value: 'AUTO_IT_CONVERGENCE', college: '자동차모빌리티대학', department: '자동차IT융합학과' },
+  { value: 'AUTO_FUTURE_MOBILITY', college: '자동차모빌리티대학', department: '미래모빌리티학과' },
+  { value: 'FUTURE_CONVERGENCE', college: '미래융합대학', department: null },
+  { value: 'KIBS', college: 'KMU International Business School', department: null },
 ];
 
 export const JOB_TREE_BACKEND = {
