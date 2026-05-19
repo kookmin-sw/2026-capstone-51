@@ -1,8 +1,5 @@
 package com.github.logi.domain.user.entity;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.Arrays;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -96,17 +93,8 @@ public enum KookminDepartment {
     private final String college;
     private final String department;
 
-    @JsonValue
     public String getFullName() {
         if (department == null) return college;
         return college + " " + department;
-    }
-
-    @JsonCreator
-    public static KookminDepartment from(String value) {
-        return Arrays.stream(values())
-                .filter(d -> d.getFullName().equals(value))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown department: " + value));
     }
 }
