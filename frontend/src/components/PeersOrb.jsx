@@ -10,8 +10,10 @@
 * 한 카테고리의 경험 누적이 보통 20개 이하이므로 축 max=25 로 정의.
 * 5축 파라미터(label/me/peers)는 절대 변경하지 않고, 시각화만 입체로 바꿉니다.
 */
-const MAX_VALUE = 25;
-const RING_LEVELS = [0.2, 0.4, 0.6, 0.8, 1]; // 5/10/15/20/25
+// 축의 최대값. 데이터 분포(me/peers 모두 보통 0~10 범위) 에 맞게 10 으로 설정.
+// 10 초과는 norm 함수가 외곽 링에 클램프 처리.
+const MAX_VALUE = 10;
+const RING_LEVELS = [0.2, 0.4, 0.6, 0.8, 1]; // 2/4/6/8/10
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
@@ -35,8 +37,11 @@ export default function PeersOrb({
     const N = axes.length;
 
     const SPHERE_R = 2.5;
-    const CHART_R = 1.7;
-    const LABEL_R = 2.15;
+    // 차트(5축 펜타곤) 반지름. 유리 구체(SPHERE_R) 안에서 차지하는 비율을 결정.
+    // 이전엔 1.7 — 구체의 68% 만 차지해서 데이터 도형이 작아 보임. 2.3 으로 키워 ~92% 까지 차게 함.
+    const CHART_R = 2.3;
+    // 카테고리 라벨(대내활동 등) 거리. 차트 외곽보다 살짝 바깥에 두어 도형과 겹치지 않게.
+    const LABEL_R = 2.6;
 
     const angleAt = (i) => Math.PI / 2 - (i * 2 * Math.PI) / N;
     const pointAt = (i, value) => {
