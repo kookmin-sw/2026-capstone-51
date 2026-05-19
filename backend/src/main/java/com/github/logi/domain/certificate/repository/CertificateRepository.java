@@ -16,36 +16,21 @@ public interface CertificateRepository extends JpaRepository<Certificate, UUID> 
 
     void deleteAllByUser(User user);
 
-    // major + state 기준 평균 자격증 수
-    @Query("""
-            SELECT CASE WHEN COUNT(DISTINCT c.user) = 0 THEN 0.0 ELSE COUNT(c) * 1.0 / COUNT(DISTINCT c.user) END AS avg
-            FROM Certificate c
-            JOIN c.user u
-            WHERE u.major = :major AND u.state = :state
-            """)
-    Double findLicenseAvgByMajorAndState(
+    // major + state 기준 자격증 총합
+    @Query("SELECT COUNT(c) FROM Certificate c JOIN c.user u WHERE u.major = :major AND u.state = :state")
+    Long countLicenseTotalByMajorAndState(
             @Param("major") KookminDepartment major,
             @Param("state") State state
     );
 
-    @Query("""
-            SELECT CASE WHEN COUNT(DISTINCT c.user) = 0 THEN 0.0 ELSE COUNT(c) * 1.0 / COUNT(DISTINCT c.user) END AS avg
-            FROM Certificate c
-            JOIN c.user u
-            WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
-            """)
-    Double findLicenseAvgByMajorAndSchoolNum(
+    @Query("SELECT COUNT(c) FROM Certificate c JOIN c.user u WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%")
+    Long countLicenseTotalByMajorAndSchoolNum(
             @Param("major") KookminDepartment major,
             @Param("schoolNumPrefix") String schoolNumPrefix
     );
 
-    @Query("""
-            SELECT CASE WHEN COUNT(DISTINCT c.user) = 0 THEN 0.0 ELSE COUNT(c) * 1.0 / COUNT(DISTINCT c.user) END AS avg
-            FROM Certificate c
-            JOIN c.user u
-            WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
-            """)
-    Double findLicenseAvgByMajorAndWorker(
+    @Query("SELECT COUNT(c) FROM Certificate c JOIN c.user u WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER")
+    Long countLicenseTotalByMajorAndWorker(
             @Param("major") KookminDepartment major
     );
 

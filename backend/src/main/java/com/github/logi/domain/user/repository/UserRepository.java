@@ -4,6 +4,7 @@ import com.github.logi.domain.user.entity.JobFirst;
 import com.github.logi.domain.user.entity.JobSecond;
 import com.github.logi.domain.user.entity.JobThird;
 import com.github.logi.domain.user.entity.KookminDepartment;
+import com.github.logi.domain.user.entity.State;
 import com.github.logi.domain.user.entity.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,14 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
+
+    long countByMajorAndState(KookminDepartment major, State state);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%")
+    long countByMajorAndSchoolNumPrefix(
+            @Param("major") KookminDepartment major,
+            @Param("schoolNumPrefix") String schoolNumPrefix
+    );
 
     @Query("""
             SELECT u FROM User u
