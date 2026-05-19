@@ -135,23 +135,33 @@ export const useUpdateEssayQuestion = () => {
 // 아래 3 종은 백엔드 상태를 변경하지 않고 결과만 반환하므로 캐시 invalidate 불필요.
 // 호출부가 받은 값을 자체 state 로 들고 화면에 반영. 저장은 useCreateEssayQuestion / useUpdateEssayQuestion 으로.
 
+// LLM(Bedrock) 호출은 프롬프트/모델 부하에 따라 기본 15초 timeout 을 종종 초과.
+// 이 3 종에만 per-request timeout 을 60초로 올려 hang 처럼 보이는 false-timeout 방지.
+const LLM_TIMEOUT_MS = 60_000;
+
 /** POST /essays/recommend — body: { question } */
 export const useRecommendExperiences = () =>
   useMutation({
     mutationFn: (body) =>
-      api.post('/essays/recommend', body).then((r) => r.data),
+      api
+        .post('/essays/recommend', body, { timeout: LLM_TIMEOUT_MS })
+        .then((r) => r.data),
   });
 
 /** POST /essays/generate — body: { essayId, questionId } */
 export const useGenerateAnswer = () =>
   useMutation({
     mutationFn: (body) =>
-      api.post('/essays/generate', body).then((r) => r.data),
+      api
+        .post('/essays/generate', body, { timeout: LLM_TIMEOUT_MS })
+        .then((r) => r.data),
   });
 
 /** POST /essays/regenerate — body: { essayId, questionId, currentResponse, questionReq } */
 export const useRegenerateAnswer = () =>
   useMutation({
     mutationFn: (body) =>
-      api.post('/essays/regenerate', body).then((r) => r.data),
+      api
+        .post('/essays/regenerate', body, { timeout: LLM_TIMEOUT_MS })
+        .then((r) => r.data),
   });
