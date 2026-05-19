@@ -4,6 +4,7 @@ import { cn } from '../../lib/cn';
 import {
   useUploadCertificateUrl,
   putPdfToS3,
+  useCertificationCatalog,
 } from '../../api/queries/useCertificates';
 
 /**
@@ -45,9 +46,23 @@ export default function CertificateForm({
   const fileInputRef = useRef(null);
   const errors = submitted ? validate(form) : {};
   const uploadUrl = useUploadCertificateUrl();
+  const { data: catalog = [] } = useCertificationCatalog();
   const existingFileUrl = initialValue?.fileUrl ?? '';
 
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // 자격증명 입력 — 카탈로그 정확 매칭 시 발급기관 자동 채움 (이미 적어둔 값은 보존).
+  // datalist 선택/자유 입력 둘 다 onChange 로만 들어와 동일 처리.
+  const onCertificateNameChange = (v) => {
+    setForm((f) => {
+      const next = { ...f, certificateName: v };
+      const matched = catalog.find((c) => c.name === v);
+      if (matched && !f.issuingOrganization.trim()) {
+        next.issuingOrganization = matched.issuingOrganization ?? '';
+      }
+      return next;
+    });
+  };
 
   // 파일 검증 + state 반영. <input> 픽 / drop 양쪽에서 공통 사용.
   const acceptFile = (f) => {
@@ -142,8 +157,10 @@ export default function CertificateForm({
                 errors.certificateName && 'border-red-500 focus:border-red-500'
               )}
               placeholder="자격증명을 입력하세요"
+              list="cert-catalog-list"
+              autoComplete="off"
               value={form.certificateName}
-              onChange={(e) => update('certificateName', e.target.value)}
+              onChange={(e) => onCertificateNameChange(e.target.value)}
             />
           </Field>
           <Field label="발급 기관" required error={errors.issuingOrganization}>
@@ -306,6 +323,13 @@ export default function CertificateForm({
           {uploading ? 'PDF 업로드 중…' : isPending ? '저장 중…' : submitLabel}
         </button>
       </div>
+
+      {/* 자격증명 input 의 자동완성 데이터 소스. 빈 카탈로그면 datalist 도 빈 채라 자유 입력만 가능. */}
+      <datalist id="cert-catalog-list">
+        {catalog.map((c) => (
+          <option key={c.certificationCatalogId} value={c.name} />
+        ))}
+      </datalist>
     </form>
   );
 }
