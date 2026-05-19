@@ -16,6 +16,25 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 백엔드 RequestMapping 픽스 반영 — mock fallback 정리 + 실 카탈로그 110종 연동 (2026-05-19)
+
+- **계기**: 직전 회차에서 진단·요청한 백엔드 `CertificationCatalogController` 의 `@RequestMapping` `/api` 중복 prefix 오타가 백엔드 커밋 [b0e1cf6](https://github.com/kookmin-sw/2026-capstone-51/commit/b0e1cf6) `feat: Request 경로 수정` 로 픽스됨. `@RequestMapping("/api/certification-catalog")` → `@RequestMapping("/certification-catalog")` 단순 한 줄 수정.
+- **확인**:
+  - Swagger 에 `/certification-catalog` 단일 path 로 정상 노출 (옛 `/api/certification-catalog` 사라짐).
+  - `GET https://api.logi.p-e.kr/api/certification-catalog` + 토큰 → **200, 자격증 110종 정상 반환**.
+  - 인증 없이는 여전히 403 — 카탈로그가 마스터 데이터인데도 인증 게이트가 유지된 상태. 단 우리 프론트는 protected 페이지 안에서만 호출하니 영향 없음.
+- **수정**:
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx) — DEV 환경 mock fallback 분기 제거. `useCertificationCatalog()` 결과를 곧바로 `catalog` 로 사용 (`{ data: catalog = [] }`). `CERTIFICATE_CATALOG_MOCK` import 도 함께 제거.
+  - **삭제** `src/data/certificate-catalog-mock.js` — 백엔드 픽스 완료로 임시 mock 더 이상 필요 없음. 실 데이터 110종이 더 풍부함.
+  - `useCertificationCatalog` 의 fetch 우회는 **유지** — 카탈로그 호출이 사용자 세션을 끊는 부작용을 차단하는 의미적 가드라 백엔드 픽스와 별개로 가치 있음.
+- **검증** (localhost:3000):
+  - HMR 통과, 콘솔 에러 0건.
+  - `/my-certificates/new` 에 '정' 입력 → 9행 매칭 (정보처리기사·정보처리산업기사·정보보안기사·정보보안산업기사·정보통신기사 등). mock 이었으면 1행(정보처리기사)뿐이라 실 데이터로 동작하는 게 명확.
+- **커밋 분리** (1개):
+  - `chore(frontend): 백엔드 RequestMapping 픽스 반영 — 임시 mock 카탈로그 + DEV fallback 분기 제거`
+- **남은 일**:
+  - (선택) 백엔드 팀에 카탈로그 익명 허용 요청 — 마스터 데이터라 인증 게이트 없는 게 자연스럽지만 우리 프론트엔 영향 없으니 굳이 안 해도 OK.
+
 ### 자동완성 디자인 2차 손질 — 채용사이트 패턴 답습 + 백엔드 RequestMapping 오타 발견 (2026-05-19)
 
 - **계기 1 (디자인)**: 사용자 — "드랍다운 디자인 존나 구려, 실제 기업 채용사이트(잡코리아/사람인/원티드/LinkedIn) 가 자격증 어떻게 입력받는지 참고해서 다시 디자인". 직전 회차의 Autocomplete 가 컴포넌트 자체는 OK 였지만 옵션 행 UI 가 채용 맥락과 안 맞음 — 특히 난이도 뱃지(상/중/하) 는 자격증 등록 UI 에 없는 요소(사용자에게 우월/열등감 줄 수 있음), 매칭 검색어 highlight 도 없었음.

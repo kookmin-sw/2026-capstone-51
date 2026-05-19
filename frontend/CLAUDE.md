@@ -173,8 +173,7 @@ src/
 │   └── enums.js          # 백엔드 ↔ 프론트 enum 매핑 (ExperienceCategory, State, Progress 등)
 ├── data/                 # 정적 mock / 토큰
 │   ├── sidebar.js        # NAV, RELATED_SITES
-│   ├── dashboard.js      # CAT_LABELS, CAT_COLORS — Roadmap/Stats 시각화 색상 토큰. PEER_AXES — PeersOrb fallback (백엔드 peerAxes 비어 올 때만 사용, 빨간 경고 함께)
-│   └── certificate-catalog-mock.js  # **임시 파일**. 백엔드 /certification-catalog 403 동안 DEV 환경 자동완성 시각 확인용 mock 자격증 8종. 백엔드 픽스 + 시각 검증 끝나면 삭제 예정
+│   └── dashboard.js      # CAT_LABELS, CAT_COLORS — Roadmap/Stats 시각화 색상 토큰. PEER_AXES — PeersOrb fallback (백엔드 peerAxes 비어 올 때만 사용, 빨간 경고 함께)
 ├── components/
 │   ├── Layout.jsx        # Sidebar + Outlet 셸 (max-width 1100)
 │   ├── ProtectedRoute.jsx# useAuth.isAuthenticated 가드. 미인증 → /landing replace
@@ -191,7 +190,7 @@ src/
 │   ├── DatePicker.jsx    # 커스텀 캘린더 popover. day/month/year drill-down (헤더 클릭으로 view 전환). 'YYYY-MM-DD' 입출력. min/max 모든 view 적용, allowClear, forceDirection, viewport 자동 펼침
 │   ├── PeersOrb.jsx      # Three.js 5축 입체 레이더 — 나/동기/선배 3개 prism, 색 커스텀(localStorage 영속), stepped pyramid 중첩 (아래 참조)
 │   ├── experience/       # ExperienceForm.jsx (신규/수정 공용 폼, swagger ExperienceRequest 정합. 관련 전공은 KOOKMIN_DEPT_OPTIONS Combobox 단일 선택, 빈값 비허용)
-│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부. 자격증명 input 은 `useCertificationCatalog()` + 커스텀 `<Autocomplete>` 자동완성 — 옵션 행은 자격증명(매칭 부분 highlight) + 발급기관 부제목만 표시(난이도는 등록 UI 와 안 맞아 제거, 통계 추천 카드에서만 사용). 매칭 정확 시 발급기관 자동 채움(이미 적은 값은 보존), 카탈로그에 없는 자유 입력도 허용 + 안내문 노출. DEV 환경에서 카탈로그 비면 `data/certificate-catalog-mock.js` 로 fallback — 백엔드 `/certification-catalog` 403/매핑 픽스 후 mock 제거 예정)
+│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부. 자격증명 input 은 `useCertificationCatalog()` + 커스텀 `<Autocomplete>` 자동완성 — 옵션 행은 자격증명(매칭 부분 highlight) + 발급기관 부제목만 표시(난이도는 등록 UI 와 안 맞아 제거, 통계 추천 카드에서만 사용). 매칭 정확 시 발급기관 자동 채움(이미 적은 값은 보존), 카탈로그에 없는 자유 입력도 허용 + 안내문 노출. 백엔드 마스터 110종 자격증을 실시간으로 매칭)
 │   ├── essay/            # EssayMetaForm.jsx (회사·직무·요구사항), QuestionEditor.jsx (문항 편집기 — 추천/생성/재생성/저장 통합)
 │   └── dashboard/        # HeroBanner, RoadmapCard, Roadmap, CategoryLegend (친구 패턴)
 ├── pages/

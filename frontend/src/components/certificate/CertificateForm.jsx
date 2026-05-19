@@ -7,7 +7,6 @@ import {
   useCertificationCatalog,
 } from '../../api/queries/useCertificates';
 import Autocomplete from '../Autocomplete';
-import { CERTIFICATE_CATALOG_MOCK } from '../../data/certificate-catalog-mock';
 
 /**
  * 자격증 신규/수정 공용 폼.
@@ -48,15 +47,7 @@ export default function CertificateForm({
   const fileInputRef = useRef(null);
   const errors = submitted ? validate(form) : {};
   const uploadUrl = useUploadCertificateUrl();
-  const { data: catalogFromApi = [] } = useCertificationCatalog();
-  // DEV 환경에서 카탈로그가 비어있으면 mock 으로 fallback — 백엔드 403 동안에도
-  // 자동완성 UI 시각 확인 가능. 백엔드 픽스되면 mock 무시되고 실 데이터 사용.
-  const catalog =
-    catalogFromApi.length > 0
-      ? catalogFromApi
-      : import.meta.env.DEV
-        ? CERTIFICATE_CATALOG_MOCK
-        : [];
+  const { data: catalog = [] } = useCertificationCatalog();
   const existingFileUrl = initialValue?.fileUrl ?? '';
 
   // Autocomplete 옵션 변환 — 자격증명 라벨 + 발급기관 부제.
