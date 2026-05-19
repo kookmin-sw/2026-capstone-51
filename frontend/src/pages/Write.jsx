@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ArrowLeft, Check, Plus } from 'lucide-react';
 import Crumbs from '../components/Crumbs';
 import { Card } from '../components/Card';
 import Button from '../components/Button';
 import QuestionEditor from '../components/essay/QuestionEditor';
+import QuestionEditCard from '../components/essay/QuestionEditCard';
 import { useCreateEssay, useUpdateEssayMeta } from '../api/queries/useEssays';
+import { useExperiences } from '../api/queries/useExperiences';
 import { toast } from '../store/useToast';
 
 /* ------------------------------------------------------------------ *
@@ -121,6 +123,13 @@ export default function Write() {
             setSavedQuestions((prev) => [...prev, q]);
             setEditorBusy(false);
           }}
+          onQuestionUpdated={(updated) =>
+            setSavedQuestions((prev) =>
+              prev.map((it) =>
+                it.questionId === updated.questionId ? updated : it
+              )
+            )
+          }
           onGenerationStart={() => setEditorBusy(true)}
           onBack={() => {
             // step 1 로 돌아갈 땐 일단 lock 해제. 다시 step 2 로 와서 새 editor 를 열면
@@ -211,6 +220,7 @@ function Step2({
   savedQuestions,
   editorBusy,
   onQuestionSaved,
+  onQuestionUpdated,
   onGenerationStart,
   onBack,
   onFinish,
@@ -219,6 +229,36 @@ function Step2({
   const [open, setOpen] = useState(false);
   // 저장 후 editor 강제 리마운트해서 모든 내부 state 초기화 (다음 추가 때 fresh).
   const [editorKey, setEditorKey] = useState(0);
+
+  // 표시용 enrich — savedQuestions 의 relatedExperience(ID만) 를
+  // 사용자의 전체 경험 목록에서 lookup 해 relatedExperiences(full info) 로 변환.
+  // 공용 QuestionEditCard 가 EssayEdit 의 GET 응답 shape 을 기대하므로 맞춰줌.
+  // ?? [] 를 useMemo 안으로 옮겨 deps 의 reference 가 매 렌더 변하지 않게 함
+  // (react-hooks/exhaustive-deps 경고 회피).
+  const expListData = useExperiences().data;
+  const expById = useMemo(() => {
+    const m = new Map();
+    for (const e of expListData ?? []) m.set(e.experienceId, e);
+    return m;
+  }, [expListData]);
+  const enrichedQuestions = useMemo(
+    () =>
+      savedQuestions.map((q) => {
+        const ids = (q.relatedExperiences ?? q.relatedExperience ?? []).map(
+          (e) => e.experienceId
+        );
+        const relatedExperiences = ids.map((id) => {
+          const e = expById.get(id);
+          return {
+            experienceId: id,
+            experienceTitle: e?.experienceTitle ?? '',
+            experienceCategory: e?.experienceCategory ?? null,
+          };
+        });
+        return { ...q, relatedExperiences };
+      }),
+    [savedQuestions, expById]
+  );
 
   const handleSaved = (q) => {
     onQuestionSaved(q);
@@ -242,11 +282,17 @@ function Step2({
         </div>
       </Card>
 
-      {/* 저장된 문항 */}
-      {savedQuestions.length > 0 && (
+      {/* 저장된 문항 — 자소서 수정 페이지와 동일한 QuestionEditCard 사용. */}
+      {enrichedQuestions.length > 0 && (
         <div className="flex flex-col gap-3 mb-4">
-          {savedQuestions.map((q, i) => (
-            <SavedQuestionCard key={q.questionId} q={q} index={i} />
+          {enrichedQuestions.map((q, i) => (
+            <QuestionEditCard
+              key={q.questionId}
+              q={q}
+              index={i}
+              essayId={essayId}
+              onUpdated={onQuestionUpdated}
+            />
           ))}
         </div>
       )}
@@ -294,27 +340,6 @@ function Step2({
   );
 }
 
-/* -------- 저장된 문항 카드 (읽기 전용) -------- */
-function SavedQuestionCard({ q, index }) {
-  return (
-    <Card>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="w-6 h-6 rounded-full bg-primary-900 text-white grid place-items-center text-[11px] font-bold">
-          Q{index + 1}
-        </span>
-        <span className="text-[11px] text-ink-500 font-semibold">
-          {q.maxLength}자 이내 · 저장 완료
-        </span>
-      </div>
-      <div className="text-[13.5px] font-bold text-ink-900 mb-1.5 leading-relaxed">
-        {q.question}
-      </div>
-      <div className="text-[12.5px] text-ink-600 line-clamp-3 break-keep whitespace-pre-line">
-        {q.response}
-      </div>
-    </Card>
-  );
-}
 
 /* ============================ 보조 ============================ */
 
