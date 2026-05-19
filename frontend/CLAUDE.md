@@ -186,12 +186,12 @@ src/
 │   ├── Modal.jsx         # open/onClose/title/sub/footer/width/hideClose 슬롯. backdrop click + 우상단 X + Esc 키로 닫힘. 열린 동안 body 스크롤 잠금. 현재 Info.jsx 회원 탈퇴 확인 모달에서 사용
 │   ├── Badge.jsx         # tone: gray|navy|green|red|amber — 디자인 시스템(현재 미사용, 보존)
 │   ├── Combobox.jsx      # 검색 가능한 커스텀 드롭다운. searchable/forceDirection prop 으로 검색·펼침 방향 제어. ↑↓ Enter 키보드 nav, allowClear, viewport 자동 위/아래 펼침
-│   ├── Autocomplete.jsx  # 자유 입력 허용 자동완성 input. Combobox 와 달리 options 에 없는 값도 그대로 유지. 옵션 데이터 모양 `{value, label, sub?, badge?: {label, tone}}` — 행에 부제목·뱃지 표시. onMouseDown+preventDefault 로 select 가 input blur 먼저 발생해 닫히는 버그 회피. role=combobox + aria-autocomplete=list 접근성
+│   ├── Autocomplete.jsx  # 자유 입력 허용 자동완성 input. Combobox 와 달리 options 에 없는 값도 그대로 유지. 옵션 데이터 모양 `{value, label, sub?, badge?: {label, tone}}` — 행에 부제목·뱃지 표시. 검색어 매칭 부분은 primary 톤 highlight, active row 는 primary-50 배경 + 좌측 2px accent strip. emptyText prop 주면 매칭 0일 때 안내문 노출, 옵션 카탈로그 자체가 0개면 emptyText 와 무관하게 popover 안 띄움 (자유 입력 모드). onMouseDown+preventDefault 로 select 가 input blur 먼저 발생해 닫히는 버그 회피. role=combobox + aria-autocomplete=list 접근성
 │   ├── DeptCascadeSelect.jsx # 단과대 → 학과 2단계 cascade (둘 다 Combobox). value 는 백엔드 직렬화 값 그대로
 │   ├── DatePicker.jsx    # 커스텀 캘린더 popover. day/month/year drill-down (헤더 클릭으로 view 전환). 'YYYY-MM-DD' 입출력. min/max 모든 view 적용, allowClear, forceDirection, viewport 자동 펼침
 │   ├── PeersOrb.jsx      # Three.js 5축 입체 레이더 — 나/동기/선배 3개 prism, 색 커스텀(localStorage 영속), stepped pyramid 중첩 (아래 참조)
 │   ├── experience/       # ExperienceForm.jsx (신규/수정 공용 폼, swagger ExperienceRequest 정합. 관련 전공은 KOOKMIN_DEPT_OPTIONS Combobox 단일 선택, 빈값 비허용)
-│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부. 자격증명 input 은 `useCertificationCatalog()` + 커스텀 `<Autocomplete>` 자동완성 (옵션 행에 발급기관 부제목 + 난이도 뱃지), 카탈로그 정확 매칭 시 발급기관 자동 채움(이미 적은 값은 보존), 카탈로그에 없는 자유 입력도 허용. DEV 환경에서 카탈로그 비면 `data/certificate-catalog-mock.js` 로 fallback — 백엔드 `/certification-catalog` 403 픽스 후 mock 제거 예정)
+│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부. 자격증명 input 은 `useCertificationCatalog()` + 커스텀 `<Autocomplete>` 자동완성 — 옵션 행은 자격증명(매칭 부분 highlight) + 발급기관 부제목만 표시(난이도는 등록 UI 와 안 맞아 제거, 통계 추천 카드에서만 사용). 매칭 정확 시 발급기관 자동 채움(이미 적은 값은 보존), 카탈로그에 없는 자유 입력도 허용 + 안내문 노출. DEV 환경에서 카탈로그 비면 `data/certificate-catalog-mock.js` 로 fallback — 백엔드 `/certification-catalog` 403/매핑 픽스 후 mock 제거 예정)
 │   ├── essay/            # EssayMetaForm.jsx (회사·직무·요구사항), QuestionEditor.jsx (문항 편집기 — 추천/생성/재생성/저장 통합)
 │   └── dashboard/        # HeroBanner, RoadmapCard, Roadmap, CategoryLegend (친구 패턴)
 ├── pages/

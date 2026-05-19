@@ -16,6 +16,34 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자동완성 디자인 2차 손질 — 채용사이트 패턴 답습 + 백엔드 RequestMapping 오타 발견 (2026-05-19)
+
+- **계기 1 (디자인)**: 사용자 — "드랍다운 디자인 존나 구려, 실제 기업 채용사이트(잡코리아/사람인/원티드/LinkedIn) 가 자격증 어떻게 입력받는지 참고해서 다시 디자인". 직전 회차의 Autocomplete 가 컴포넌트 자체는 OK 였지만 옵션 행 UI 가 채용 맥락과 안 맞음 — 특히 난이도 뱃지(상/중/하) 는 자격증 등록 UI 에 없는 요소(사용자에게 우월/열등감 줄 수 있음), 매칭 검색어 highlight 도 없었음.
+- **계기 2 (백엔드)**: Swagger (`/api/v3/api-docs`) 까서 자격증 path 확인 결과 다른 컨트롤러와 inconsistent — `/certificates`, `/experiences` 등은 `@RequestMapping` 에 `/api` 없이 등록(context-path `/api` 와 합쳐서 외부 `/api/certificates`)인데 새 카탈로그 컨트롤러만 `@RequestMapping("/api/certification-catalog")` 라 외부 URL 이 `/api/api/certification-catalog` 가 됨. 실제로 `https://api.logi.p-e.kr/api/api/certification-catalog` 로 호출하면 **200 + 자격증 110개 정상 반환**. 즉 직전 회차의 가설("SecurityConfig 화이트리스트 누락")은 틀렸고 진짜 원인은 컨트롤러 매핑의 `/api` 중복 prefix.
+- **수정 (디자인)**:
+  - [src/components/Autocomplete.jsx](../frontend/src/components/Autocomplete.jsx)
+    - 매칭 검색어 highlight 추가 (`renderHighlight` 헬퍼) — substring 매칭 부분 `text-primary-700 font-bold`.
+    - active row 톤 정리 — `bg-ink-100` → `bg-primary-50/60` + 좌측 2px `border-l-primary-500` accent strip, active 자격증명은 `text-primary-900 font-bold`.
+    - input ↔ popover 간격 `mt-1` → `mt-1.5`, 행 패딩 `py-2` → `py-2.5`, popover `rounded-md` → `rounded-lg`.
+    - empty state 정렬 — 가운데 정렬 → 왼쪽 정렬(`text-center` 제거) + 한 문장 leading-relaxed.
+    - 옵션 카탈로그 자체가 0 개일 땐 emptyText 무시하고 popover 안 띄움 (자유 입력 모드 보장).
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx)
+    - `catalogOptions` 에서 `badge: { label: DIFFICULTY_LABEL[d], tone: DIFFICULTY_TONE[d] }` 제거 — 자격증 등록 UI 에서 난이도 표시 안 함. 난이도는 통계 "부족한 자격증 추천" 카드 같은 맥락에서만 활용.
+    - `emptyText` prop 추가 — 매칭 0 일 때 `'XXX' 와 일치하는 자격증이 없어요. 그대로 등록할 수 있어요.` 안내. 사용자 자유 입력을 정당화.
+    - `DIFFICULTY_LABEL/TONE` import 제거.
+- **검증** (localhost:3000):
+  - HMR 통과, 콘솔 에러 0건.
+  - `/my-certificates/new` 에 '정' 입력 → "**정**보처리기사" highlight 확인, active row 가 primary-50 배경 + 좌측 strip, 행에 뱃지 없음. '능' 입력 → "컴퓨터활용**능**력 1급/2급" 2행 + 동일 강조. 매칭 없는 'xyzxyz' 입력 → 한 줄 안내문 노출.
+  - 스크린샷으로 popover 시각 확인 완료.
+- **백엔드 팀 액션 요청** (사용자가 직접 전달 예정):
+  - `CertificationCatalogController` 의 `@RequestMapping("/api/certification-catalog")` → `@RequestMapping("/certification-catalog")` 로 수정. context-path `/api` 와 중복 prefix 제거. 픽스되면 프론트 호출(`/certification-catalog`) 자동으로 200, 자동완성에 실 자격증 110개 잡힘.
+- **커밋 분리** (3개):
+  - `style(frontend): Autocomplete 옵션 행 디자인 손질 — 검색어 highlight, primary accent active row, empty state 좌측 정렬`
+  - `feat(frontend): 자격증 폼 자동완성에서 난이도 뱃지 제거 + 매칭 없을 때 안내문 추가`
+  - `docs(status): 자동완성 디자인 2차 손질 + 백엔드 RequestMapping 오타 발견 기록`
+- **TODO**:
+  - 백엔드 RequestMapping 픽스 + 재배포 후: `data/certificate-catalog-mock.js` 삭제 + CertificateForm 의 DEV fallback 분기 제거.
+
 ### 자격증 폼 자동완성 디자인 개선 — native datalist → 커스텀 Autocomplete 컴포넌트 (2026-05-19)
 
 - **계기**: 사용자 — "드랍다운 디자인이 존나 구려 UX도 별로". 직전 회차에서 native `<datalist>` 로 자동완성 붙였는데 OS/브라우저 기본 UI 라 디자인 시스템과 따로 놀고 옵션 행에 부가 정보(발급기관·난이도)도 못 보여주는 한계.
