@@ -130,7 +130,7 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 **도메인 훅** — [`src/api/queries/`](2026-capstone-51/frontend/src/api/queries/)
 
 - `keys.js` — queryKey 팩토리 (`qk.me()`, `qk.dashboard()`, `qk.stats(groupBy)`, `qk.experiences.one(id)` ...).
-- `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. **스웨거 28개 엔드포인트 1:1 매핑** (2026-05-10 백엔드 신규 4종 추가 후).
+- `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. **스웨거 28개 엔드포인트 1:1 매핑** (2026-05-10 백엔드 신규 4종 추가 후). `useCertificates.js` 에는 사용자 자격증 CRUD 외에 `useCertificationCatalog()` (마스터 카탈로그 `GET /certification-catalog`, `staleTime: Infinity`) 도 함께 둠 — 백엔드는 `certification` 도메인이 별도지만 프론트는 한 파일에서 도메인 섹션 주석으로 분리. **카탈로그 훅만 axios 인스턴스 대신 native `fetch` 직접 호출** — 글로벌 인터셉터의 401/403 reissue chain 이 발동해 마스터 데이터 호출이 사용자 세션을 끊는 부작용을 차단. 4xx 는 모두 빈 배열로 swallow.
 - `useMe.js` 의 `useMyStats(groupBy)` — `/users/me/stats?groupBy=` (groupBy: STATE|SCHOOL_NUM|WORKER). Dashboard 는 친구 패턴(`getMyDashboard()` 직접 fetch)을 그대로 사용 — react-query 안 거침.
 - `useEssays.js` 의 `useEssay(id)` 안에 `normalizeEssayDetail()` 어댑터 — 백엔드 `EssayDetailResponse` 의 `requirement`/`modifiedDate` 를 `globalReq`/`updatedAt` 으로 통일. 호출부는 둘 다 같은 키로만.
 
@@ -141,7 +141,7 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 
 **enum 어댑터** — [`src/lib/enums.js`](2026-capstone-51/frontend/src/lib/enums.js) + [`src/lib/enums-data.js`](2026-capstone-51/frontend/src/lib/enums-data.js)
 
-- `ExperienceCategory` 백엔드↔프론트 매핑, `Progress`/`State` 한글 라벨, 통계 groupBy.
+- `ExperienceCategory` 백엔드↔프론트 매핑, `Progress`/`State`/`Difficulty` 한글 라벨, 통계 groupBy. `DIFFICULTY_LABEL` (HIGH→상/MEDIUM→중/LOW→하) + `DIFFICULTY_TONE` (red/amber/gray) 은 백엔드 `CertificationCatalog.difficulty` 와 통계 `WeakPoint.recommendedItems[i].difficulty` 양쪽에서 사용.
 - `STATS_BACK_TO_FRONT` / `pickStat(statistics, 'avg'|'userCount'|'myCount')` — 백엔드 `Statistics` 5축 (`partTime/external/internal/license/intern`) → 프론트 5축 (`parttime/activity/internal/cert/intern`) 매핑. Dashboard / Stats 가 모두 사용.
 - `weakPointLabel(type)` — `WeakPoint.type` 을 한글 카테고리 라벨로 정규화 (enum 키 / 한글 / stats 키 모두 수용).
 - `KookminDepartment` (54 개) — `KOOKMIN_DEPT_OPTIONS` (`{value, label, group}`) + `KOOKMIN_COLLEGES` (15). value 는 백엔드 직렬화 값(`"단과대학 학과명"`) 그대로라 select 의 value 로 그대로 PUT.
@@ -185,11 +185,12 @@ src/
 │   ├── Modal.jsx         # open/onClose/title/sub/footer/width/hideClose 슬롯. backdrop click + 우상단 X + Esc 키로 닫힘. 열린 동안 body 스크롤 잠금. 현재 Info.jsx 회원 탈퇴 확인 모달에서 사용
 │   ├── Badge.jsx         # tone: gray|navy|green|red|amber — 디자인 시스템(현재 미사용, 보존)
 │   ├── Combobox.jsx      # 검색 가능한 커스텀 드롭다운. searchable/forceDirection prop 으로 검색·펼침 방향 제어. ↑↓ Enter 키보드 nav, allowClear, viewport 자동 위/아래 펼침
+│   ├── Autocomplete.jsx  # 자유 입력 허용 자동완성 input. Combobox 와 달리 options 에 없는 값도 그대로 유지. 옵션 데이터 모양 `{value, label, sub?, badge?: {label, tone}}` — 행에 부제목·뱃지 표시. 검색어 매칭 부분은 primary 톤 highlight, active row 는 primary-50 배경 + 좌측 2px accent strip. emptyText prop 주면 매칭 0일 때 안내문 노출, 옵션 카탈로그 자체가 0개면 emptyText 와 무관하게 popover 안 띄움 (자유 입력 모드). onMouseDown+preventDefault 로 select 가 input blur 먼저 발생해 닫히는 버그 회피. role=combobox + aria-autocomplete=list 접근성
 │   ├── DeptCascadeSelect.jsx # 단과대 → 학과 2단계 cascade (둘 다 Combobox). value 는 백엔드 직렬화 값 그대로
 │   ├── DatePicker.jsx    # 커스텀 캘린더 popover. day/month/year drill-down (헤더 클릭으로 view 전환). 'YYYY-MM-DD' 입출력. min/max 모든 view 적용, allowClear, forceDirection, viewport 자동 펼침
 │   ├── PeersOrb.jsx      # Three.js 5축 입체 레이더 — 나/동기/선배 3개 prism, 색 커스텀(localStorage 영속), stepped pyramid 중첩 (아래 참조)
 │   ├── experience/       # ExperienceForm.jsx (신규/수정 공용 폼, swagger ExperienceRequest 정합. 관련 전공은 KOOKMIN_DEPT_OPTIONS Combobox 단일 선택, 빈값 비허용)
-│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부)
+│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부. 자격증명 input 은 `useCertificationCatalog()` + 커스텀 `<Autocomplete>` 자동완성 — 옵션 행은 자격증명(매칭 부분 highlight) + 발급기관 부제목만 표시(난이도는 등록 UI 와 안 맞아 제거, 통계 추천 카드에서만 사용). 매칭 정확 시 발급기관 자동 채움(이미 적은 값은 보존), 카탈로그에 없는 자유 입력도 허용 + 안내문 노출. 백엔드 마스터 110종 자격증을 실시간으로 매칭)
 │   ├── essay/            # EssayMetaForm.jsx (회사·직무·요구사항), QuestionEditor.jsx (문항 편집기 — 추천/생성/재생성/저장 통합)
 │   └── dashboard/        # HeroBanner, RoadmapCard, Roadmap, CategoryLegend (친구 패턴)
 ├── pages/

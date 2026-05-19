@@ -64,6 +64,22 @@ export const PROGRESS_TONE = {
   FAIL: 'red',
 };
 
+/* ──────────────────────── Difficulty (자격증 난이도) ──────────────────────── */
+// 백엔드 CertificationCatalog.difficulty: HIGH | MEDIUM | LOW.
+// `.badge-${tone}` primitive 와 일치하는 톤 (red/amber/gray).
+
+export const DIFFICULTY_LABEL = {
+  HIGH: '상',
+  MEDIUM: '중',
+  LOW: '하',
+};
+
+export const DIFFICULTY_TONE = {
+  HIGH: 'red',
+  MEDIUM: 'amber',
+  LOW: 'gray',
+};
+
 /* ───────────────────────── State (사용자 현재 상태) ───────────────────────── */
 // 백엔드: FRESH_MAN | SOPHOMORE | JUNIOR | SENIOR | JOBSEEKER | WORKER
 

@@ -39,14 +39,25 @@ public record UserStatsResponse(
 
     public record WeakPoint(
             String type,
-            List<String> recommendedItems
+            List<RecommendedCert> recommendedItems
     ) {
         public static WeakPoint of(ExperienceCategory category, List<String> items) {
-            return new WeakPoint(category.name(), items);
+            return new WeakPoint(category.name(), items.stream()
+                    .map(RecommendedCert::ofExperience)
+                    .toList());
         }
 
-        public static WeakPoint license(List<String> items) {
+        public static WeakPoint license(List<RecommendedCert> items) {
             return new WeakPoint("LICENSE", items);
+        }
+    }
+
+    public record RecommendedCert(
+            String name,
+            String difficulty
+    ) {
+        public static RecommendedCert ofExperience(String title) {
+            return new RecommendedCert(title, null);
         }
     }
 

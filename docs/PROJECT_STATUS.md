@@ -16,6 +16,97 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 백엔드 RequestMapping 픽스 반영 — mock fallback 정리 + 실 카탈로그 110종 연동 (2026-05-19)
+
+- **계기**: 직전 회차에서 진단·요청한 백엔드 `CertificationCatalogController` 의 `@RequestMapping` `/api` 중복 prefix 오타가 백엔드 커밋 [b0e1cf6](https://github.com/kookmin-sw/2026-capstone-51/commit/b0e1cf6) `feat: Request 경로 수정` 로 픽스됨. `@RequestMapping("/api/certification-catalog")` → `@RequestMapping("/certification-catalog")` 단순 한 줄 수정.
+- **확인**:
+  - Swagger 에 `/certification-catalog` 단일 path 로 정상 노출 (옛 `/api/certification-catalog` 사라짐).
+  - `GET https://api.logi.p-e.kr/api/certification-catalog` + 토큰 → **200, 자격증 110종 정상 반환**.
+  - 인증 없이는 여전히 403 — 카탈로그가 마스터 데이터인데도 인증 게이트가 유지된 상태. 단 우리 프론트는 protected 페이지 안에서만 호출하니 영향 없음.
+- **수정**:
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx) — DEV 환경 mock fallback 분기 제거. `useCertificationCatalog()` 결과를 곧바로 `catalog` 로 사용 (`{ data: catalog = [] }`). `CERTIFICATE_CATALOG_MOCK` import 도 함께 제거.
+  - **삭제** `src/data/certificate-catalog-mock.js` — 백엔드 픽스 완료로 임시 mock 더 이상 필요 없음. 실 데이터 110종이 더 풍부함.
+  - `useCertificationCatalog` 의 fetch 우회는 **유지** — 카탈로그 호출이 사용자 세션을 끊는 부작용을 차단하는 의미적 가드라 백엔드 픽스와 별개로 가치 있음.
+- **검증** (localhost:3000):
+  - HMR 통과, 콘솔 에러 0건.
+  - `/my-certificates/new` 에 '정' 입력 → 9행 매칭 (정보처리기사·정보처리산업기사·정보보안기사·정보보안산업기사·정보통신기사 등). mock 이었으면 1행(정보처리기사)뿐이라 실 데이터로 동작하는 게 명확.
+- **커밋 분리** (1개):
+  - `chore(frontend): 백엔드 RequestMapping 픽스 반영 — 임시 mock 카탈로그 + DEV fallback 분기 제거`
+- **남은 일**:
+  - (선택) 백엔드 팀에 카탈로그 익명 허용 요청 — 마스터 데이터라 인증 게이트 없는 게 자연스럽지만 우리 프론트엔 영향 없으니 굳이 안 해도 OK.
+
+### 자동완성 디자인 2차 손질 — 채용사이트 패턴 답습 + 백엔드 RequestMapping 오타 발견 (2026-05-19)
+
+- **계기 1 (디자인)**: 사용자 — "드랍다운 디자인 존나 구려, 실제 기업 채용사이트(잡코리아/사람인/원티드/LinkedIn) 가 자격증 어떻게 입력받는지 참고해서 다시 디자인". 직전 회차의 Autocomplete 가 컴포넌트 자체는 OK 였지만 옵션 행 UI 가 채용 맥락과 안 맞음 — 특히 난이도 뱃지(상/중/하) 는 자격증 등록 UI 에 없는 요소(사용자에게 우월/열등감 줄 수 있음), 매칭 검색어 highlight 도 없었음.
+- **계기 2 (백엔드)**: Swagger (`/api/v3/api-docs`) 까서 자격증 path 확인 결과 다른 컨트롤러와 inconsistent — `/certificates`, `/experiences` 등은 `@RequestMapping` 에 `/api` 없이 등록(context-path `/api` 와 합쳐서 외부 `/api/certificates`)인데 새 카탈로그 컨트롤러만 `@RequestMapping("/api/certification-catalog")` 라 외부 URL 이 `/api/api/certification-catalog` 가 됨. 실제로 `https://api.logi.p-e.kr/api/api/certification-catalog` 로 호출하면 **200 + 자격증 110개 정상 반환**. 즉 직전 회차의 가설("SecurityConfig 화이트리스트 누락")은 틀렸고 진짜 원인은 컨트롤러 매핑의 `/api` 중복 prefix.
+- **수정 (디자인)**:
+  - [src/components/Autocomplete.jsx](../frontend/src/components/Autocomplete.jsx)
+    - 매칭 검색어 highlight 추가 (`renderHighlight` 헬퍼) — substring 매칭 부분 `text-primary-700 font-bold`.
+    - active row 톤 정리 — `bg-ink-100` → `bg-primary-50/60` + 좌측 2px `border-l-primary-500` accent strip, active 자격증명은 `text-primary-900 font-bold`.
+    - input ↔ popover 간격 `mt-1` → `mt-1.5`, 행 패딩 `py-2` → `py-2.5`, popover `rounded-md` → `rounded-lg`.
+    - empty state 정렬 — 가운데 정렬 → 왼쪽 정렬(`text-center` 제거) + 한 문장 leading-relaxed.
+    - 옵션 카탈로그 자체가 0 개일 땐 emptyText 무시하고 popover 안 띄움 (자유 입력 모드 보장).
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx)
+    - `catalogOptions` 에서 `badge: { label: DIFFICULTY_LABEL[d], tone: DIFFICULTY_TONE[d] }` 제거 — 자격증 등록 UI 에서 난이도 표시 안 함. 난이도는 통계 "부족한 자격증 추천" 카드 같은 맥락에서만 활용.
+    - `emptyText` prop 추가 — 매칭 0 일 때 `'XXX' 와 일치하는 자격증이 없어요. 그대로 등록할 수 있어요.` 안내. 사용자 자유 입력을 정당화.
+    - `DIFFICULTY_LABEL/TONE` import 제거.
+- **검증** (localhost:3000):
+  - HMR 통과, 콘솔 에러 0건.
+  - `/my-certificates/new` 에 '정' 입력 → "**정**보처리기사" highlight 확인, active row 가 primary-50 배경 + 좌측 strip, 행에 뱃지 없음. '능' 입력 → "컴퓨터활용**능**력 1급/2급" 2행 + 동일 강조. 매칭 없는 'xyzxyz' 입력 → 한 줄 안내문 노출.
+  - 스크린샷으로 popover 시각 확인 완료.
+- **백엔드 팀 액션 요청** (사용자가 직접 전달 예정):
+  - `CertificationCatalogController` 의 `@RequestMapping("/api/certification-catalog")` → `@RequestMapping("/certification-catalog")` 로 수정. context-path `/api` 와 중복 prefix 제거. 픽스되면 프론트 호출(`/certification-catalog`) 자동으로 200, 자동완성에 실 자격증 110개 잡힘.
+- **커밋 분리** (3개):
+  - `style(frontend): Autocomplete 옵션 행 디자인 손질 — 검색어 highlight, primary accent active row, empty state 좌측 정렬`
+  - `feat(frontend): 자격증 폼 자동완성에서 난이도 뱃지 제거 + 매칭 없을 때 안내문 추가`
+  - `docs(status): 자동완성 디자인 2차 손질 + 백엔드 RequestMapping 오타 발견 기록`
+- **TODO**:
+  - 백엔드 RequestMapping 픽스 + 재배포 후: `data/certificate-catalog-mock.js` 삭제 + CertificateForm 의 DEV fallback 분기 제거.
+
+### 자격증 폼 자동완성 디자인 개선 — native datalist → 커스텀 Autocomplete 컴포넌트 (2026-05-19)
+
+- **계기**: 사용자 — "드랍다운 디자인이 존나 구려 UX도 별로". 직전 회차에서 native `<datalist>` 로 자동완성 붙였는데 OS/브라우저 기본 UI 라 디자인 시스템과 따로 놀고 옵션 행에 부가 정보(발급기관·난이도)도 못 보여주는 한계.
+- **수정**:
+  - **신규** [src/components/Autocomplete.jsx](../frontend/src/components/Autocomplete.jsx) — 자유 입력 허용 자동완성. Combobox 패턴 차용(키보드 ↑/↓/Enter/Esc, 외부 클릭/Esc 닫기, viewport 잔여 공간 기반 위/아래 자동 펼침)하되 트리거가 button 이 아닌 input 이라 자유 입력 가능. 옵션 데이터 모양: `{ value, label, sub?, badge?: { label, tone } }`. `onMouseDown + preventDefault` 로 input blur 가 select 보다 먼저 발생해 popover 가 닫히는 버그 회피. `role="combobox"` + `aria-autocomplete="list"` + `role="option"` 접근성.
+  - **신규** [src/data/certificate-catalog-mock.js](../frontend/src/data/certificate-catalog-mock.js) — 흔한 자격증 8개(정보처리기사·SQLD·ADsP·컴활 1/2급·TOEIC·OPIc·AWS SAA) mock. **임시 파일** — 백엔드 `/certification-catalog` 403 픽스 + 실 데이터로 시각 검증 완료 후 삭제 예정. 백엔드 응답 스키마(`CertificationCatalogResponse`) 와 정합.
+  - [src/api/queries/useCertificates.js](../frontend/src/api/queries/useCertificates.js) — `useCertificationCatalog` 를 axios 인스턴스 대신 native `fetch` 로 변경. **이유**: 카탈로그는 사용자 세션과 독립적인 마스터 데이터인데 axios 인스턴스를 쓰면 글로벌 인터셉터가 401/403 시 reissue → 실패 시 `tokenStore.clear()` 까지 가는 chain 이 작동. 카탈로그 호출이 사용자를 로그아웃시키는 부작용은 부적절. fetch 로 우회해 4xx 는 모두 빈 배열로 swallow. `retry: false` 도 함께. 백엔드가 인증 게이트 제거하면 그대로 정상 동작.
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx) — 자격증명 필드 `<input list="cert-catalog-list">` + `<datalist>` 를 `<Autocomplete>` 로 교체. 카탈로그 → Autocomplete 옵션 변환에서 `sub: issuingOrganization`(부제목), `badge: { label: DIFFICULTY_LABEL[difficulty], tone: DIFFICULTY_TONE[difficulty] }`(난이도 뱃지) 매핑. DEV 환경에서 카탈로그가 비어있으면(백엔드 403 동안) `CERTIFICATE_CATALOG_MOCK` 로 fallback — 백엔드 픽스되면 자동으로 실 데이터.
+- **검증** (localhost:3000, DEV 테스트 토큰):
+  - HMR 통과, 콘솔 에러 0건.
+  - `/my-certificates/new` 진입 후 `input[role="combobox"]` 에 'SQL' 입력 → "SQLD (SQL 개발자) / 한국데이터산업진흥원 / 중" 1행 매칭, '능' 입력 → "컴퓨터활용능력 1급(중), 2급(하)" 2행 매칭, '정' 입력 → "정보처리기사 / 한국산업인력공단 / 상" 매칭. 모두 발급기관 부제 + 난이도 뱃지(red/amber/gray) 정상 렌더.
+  - 스크린샷으로 popover 디자인(흰 배경 + border + shadow, 첫 옵션 active 하이라이트, 자격증명/발급기관/난이도 3-area 행 레이아웃) 시각 확인.
+- **커밋 분리** (5개, master 푸시 완료):
+  - `feat(frontend): 자유 입력 자동완성 Autocomplete 컴포넌트 추가`
+  - `chore(frontend): 자격증 카탈로그 임시 mock — 백엔드 403 동안 DEV 시각 확인용`
+  - `feat(frontend): 자격증 카탈로그 호출을 axios 우회(fetch)로 변경 — 401/403 logout 부작용 차단`
+  - `feat(frontend): 자격증 폼 자동완성을 native datalist → 커스텀 Autocomplete 으로 교체`
+  - `docs(status): 자격증 폼 자동완성 디자인 개선 회차 기록`
+- **TODO** (백엔드 픽스 후):
+  - `/certification-catalog` 인증 게이트 제거 또는 화이트리스트 등록 (백엔드 SecurityConfig)
+  - 실 데이터로 자동완성 검증 끝나면 `data/certificate-catalog-mock.js` + `CertificateForm.jsx` 의 DEV fallback 분기 제거
+
+### 자격증 카탈로그 API 연동 — 자격증 폼 자동완성 + 난이도 enum 헬퍼 (2026-05-19)
+
+- **계기**: 백엔드 [PR #68 (kookmin-sw/2026-capstone-51)](https://github.com/kookmin-sw/2026-capstone-51/pull/68) 머지 — `certification` 도메인 신설(기존 `certificate` 와 별도, 마스터 카탈로그)과 `GET /api/certification-catalog` 엔드포인트, 그리고 `UserStatsResponse.WeakPoint.recommendedItems` 가 `string[]` → `{name, difficulty}[]` 로 바뀜.
+- **이번 회차 범위**: 백엔드 카탈로그 API 연동 + 자격증 폼 자동완성 + 난이도(`HIGH/MEDIUM/LOW`) enum 매핑. **통계 페이지 `WeakPoint` Breaking 대응은 다음 회차** (담당 분리).
+- **수정**:
+  - [src/lib/enums.js](../frontend/src/lib/enums.js) — `DIFFICULTY_LABEL` (HIGH→상/MEDIUM→중/LOW→하), `DIFFICULTY_TONE` (red/amber/gray) 추가. 기존 `PROGRESS_LABEL/TONE` 패턴 답습, `.badge-${tone}` primitive 와 키 일치.
+  - [src/api/queries/keys.js](../frontend/src/api/queries/keys.js) — `qk.certificationCatalog()` 키 추가. 카탈로그는 사용자 자격증과 도메인이 달라 별도 키로 분리.
+  - [src/api/queries/useCertificates.js](../frontend/src/api/queries/useCertificates.js) — `useCertificationCatalog()` 훅 추가. `staleTime/gcTime: Infinity` — 마스터 데이터라 세션 1회만 fetch. 응답: `[{ certificationCatalogId, name, issuingOrganization, difficulty }]`. axios 인터셉터가 `ApiResponse.data` 자동 unwrap 하므로 `r.data` 가 바로 배열.
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx) — 자격증명 input 에 `list="cert-catalog-list"` + native `<datalist>` 결합. 사용자가 카탈로그에서 선택 또는 정확 매칭되는 텍스트 입력 시 `issuingOrganization` 자동 채움(단, 이미 사용자가 적어둔 값은 보존). 카탈로그에 없는 자격증도 자유 입력 그대로 허용 — 백엔드도 카탈로그 매칭은 `findByName` optional 이라 미스매치 등록을 막지 않음.
+- **자동완성 패턴 선택 이유**: 기존 [Combobox.jsx](../frontend/src/components/Combobox.jsx) 는 `options.value` 정확 매칭만 지원해 자유 입력 불가 → datalist 가 자유 입력 + 자동완성 둘 다 자연스럽게 처리. 키보드 nav·접근성은 브라우저 네이티브 무료. 단점은 드롭다운 스타일이 브라우저 기본값이라는 점인데 자격증명 한 필드라 비용 대비 효과 우선.
+- **검증** (로컬 dev 서버 localhost:3000):
+  - HMR 통과, 콘솔 에러 0건.
+  - DEV 토큰 주입 후 `/my-certificates/new` 진입 — `h1: "자격증 추가"`, `<input list="cert-catalog-list">` + `<datalist id="cert-catalog-list">` 모두 DOM 렌더 확인 (`document.querySelector('input[list="cert-catalog-list"]')` truthy, `document.getElementById('cert-catalog-list')` 존재).
+  - 네트워크에 `GET /api/certification-catalog` 실제 발사 확인. **현재 백엔드 응답 403** — CORS preflight(OPTIONS) 는 200 통과인데 GET 만 403. 백엔드 SecurityConfig 익명 허용 화이트리스트에 `/certification-catalog` 누락된 것으로 추정 (백엔드 팀 확인 필요). 프론트는 빈 배열 fallback 으로 자유 입력 모드 유지 — 정상 동작.
+- **커밋 분리** (3개 + 문서, master 푸시 완료):
+  - `feat(frontend): 자격증 난이도 enum 헬퍼(DIFFICULTY_LABEL/TONE) 추가`
+  - `feat(frontend): 자격증 카탈로그 API 훅·키 추가 (GET /certification-catalog)`
+  - `feat(frontend): 자격증 폼 자격증명 자동완성 (datalist + 발급기관 자동 채움)`
+  - `docs(status): 백엔드 PR #68 자격증 카탈로그 대응 작업 기록`
+- **다음 회차 후보** (담당 분리됨):
+  - Stats 페이지 `recommendedItems` Breaking 대응: `<span>{it.name}</span>` + LICENSE 카드에 `DIFFICULTY_LABEL/TONE` 활용한 난이도 뱃지.
+
 ### 랜딩 카피·Architecture 다이어그램 정돈 — Claude→LLM 일반화, 3년 제거, EC2·RDS 명시 (2026-05-18)
 
 - **계기**: 사용자 — "Claude AI 라는 용어를 전부 LLM 으로 바꿔주고, 3년치/3년 동안 같은 시간 한정 표현을 그냥 경험으로 바꾸고, Architecture 그림에 RDS 랑 EC2 추가해줘."

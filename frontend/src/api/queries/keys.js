@@ -17,6 +17,7 @@ export const qk = {
   certificates: {
     all: () => ['certificates'],
   },
+  certificationCatalog: () => ['certification-catalog'],
   essays: {
     all: () => ['essays'],
     one: (id) => ['essays', id],
