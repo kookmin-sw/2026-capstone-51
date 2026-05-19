@@ -205,23 +205,8 @@ function TopRankerPanel({ rankers, isMock }) {
           : '카테고리별 활동 수 — 한 명씩 비교'}
       </div>
 
-      {/* 탑 N 칩 — 클릭으로 직접 이동 */}
-      <div className="flex items-center gap-1.5 mb-3">
-        {rankers.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setIdx(i)}
-            className={
-              'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ' +
-              (i === safeIdx
-                ? 'bg-primary-900 text-white'
-                : 'bg-white border border-ink-200 text-ink-700 hover:bg-ink-50')
-            }
-          >
-            탑 {i + 1}
-          </button>
-        ))}
-      </div>
+      {/* 시상대 — 2위(좌) / 1위(중앙, 최고높이) / 3위(우). 각 블록 클릭으로 해당 랭커 선택. */}
+      <Podium rankers={rankers} activeIdx={safeIdx} onSelect={setIdx} />
 
       <div
         className="rounded-md p-3"
@@ -259,6 +244,80 @@ function TopRankerPanel({ rankers, isMock }) {
         })}
       </div>
     </div>
+  );
+}
+
+/* ---------- Podium (시상대) ---------- */
+/**
+ * 시상대 디자인 — 2위 좌, 1위 중앙(최고높이), 3위 우.
+ *  - 각 블록 클릭 시 onSelect(rankers 배열 idx) 호출.
+ *  - 활성 블록은 primary 색 + 사람 아이콘도 진한 navy 로 강조.
+ *  - rankers 배열 길이 < 3 이면 해당 슬롯은 비워둠 (placeholder div 로 자리만 유지).
+ */
+function Podium({ rankers, activeIdx, onSelect }) {
+  const positions = [
+    { rank: 2, idx: 1, height: 58 },
+    { rank: 1, idx: 0, height: 82 },
+    { rank: 3, idx: 2, height: 42 },
+  ];
+  return (
+    <div className="flex items-end justify-center gap-1 mb-3">
+      {positions.map((p) => {
+        const r = rankers[p.idx];
+        if (!r) {
+          return (
+            <div
+              key={p.rank}
+              style={{ width: 72, height: p.height + 36 }}
+              aria-hidden="true"
+            />
+          );
+        }
+        const isActive = activeIdx === p.idx;
+        return (
+          <button
+            key={p.rank}
+            type="button"
+            onClick={() => onSelect(p.idx)}
+            className="group flex flex-col items-center justify-end shrink-0 cursor-pointer"
+            aria-label={`${p.rank}등 ${r.userName ?? ''} 선택`}
+            aria-pressed={isActive}
+          >
+            <PersonIcon active={isActive} />
+            <div
+              className={
+                'flex items-center justify-center font-bold text-[16px] tabular-nums border-t border-l border-r rounded-t-sm transition-colors ' +
+                (isActive
+                  ? 'bg-primary-900 text-white border-primary-900 shadow-md'
+                  : 'bg-ink-100 text-ink-700 border-ink-200 group-hover:bg-ink-200')
+              }
+              style={{ width: 72, height: p.height }}
+            >
+              {p.rank}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PersonIcon({ active }) {
+  return (
+    <svg
+      width="20"
+      height="30"
+      viewBox="0 0 24 36"
+      className="mb-1 transition-colors"
+      style={{ color: active ? '#1B306F' : '#94a3b8' }}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="5.5" r="4" fill="currentColor" />
+      <path
+        d="M5 15 Q5 12 12 12 Q19 12 19 15 L19 23 L16 23 L16 34 L14 34 L14 24 L10 24 L10 34 L8 34 L8 23 L5 23 Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
 
