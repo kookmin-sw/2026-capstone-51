@@ -10,6 +10,7 @@ public record UserStatsResponse(
         List<RankedUser> topRankers
 ) {
 
+    @io.swagger.v3.oas.annotations.media.Schema(name = "UserStatsStatistics")
     public record Statistics(
             CategoryStat partTime,
             CategoryStat external,

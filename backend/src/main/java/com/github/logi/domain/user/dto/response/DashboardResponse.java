@@ -1,5 +1,7 @@
 package com.github.logi.domain.user.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -9,6 +11,7 @@ public record DashboardResponse(
         List<GraduateUserExperiences> graduateUserExperiences
 ) {
 
+    @Schema(name = "DashboardStatistics")
     public record Statistics(
             float partTimeAvg,
             float internAvg,
