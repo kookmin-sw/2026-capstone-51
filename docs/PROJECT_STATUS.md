@@ -16,6 +16,28 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자격증 카탈로그 API 연동 — 자격증 폼 자동완성 + 난이도 enum 헬퍼 (2026-05-19)
+
+- **계기**: 백엔드 [PR #68 (kookmin-sw/2026-capstone-51)](https://github.com/kookmin-sw/2026-capstone-51/pull/68) 머지 — `certification` 도메인 신설(기존 `certificate` 와 별도, 마스터 카탈로그)과 `GET /api/certification-catalog` 엔드포인트, 그리고 `UserStatsResponse.WeakPoint.recommendedItems` 가 `string[]` → `{name, difficulty}[]` 로 바뀜.
+- **이번 회차 범위**: 백엔드 카탈로그 API 연동 + 자격증 폼 자동완성 + 난이도(`HIGH/MEDIUM/LOW`) enum 매핑. **통계 페이지 `WeakPoint` Breaking 대응은 다음 회차** (담당 분리).
+- **수정**:
+  - [src/lib/enums.js](../frontend/src/lib/enums.js) — `DIFFICULTY_LABEL` (HIGH→상/MEDIUM→중/LOW→하), `DIFFICULTY_TONE` (red/amber/gray) 추가. 기존 `PROGRESS_LABEL/TONE` 패턴 답습, `.badge-${tone}` primitive 와 키 일치.
+  - [src/api/queries/keys.js](../frontend/src/api/queries/keys.js) — `qk.certificationCatalog()` 키 추가. 카탈로그는 사용자 자격증과 도메인이 달라 별도 키로 분리.
+  - [src/api/queries/useCertificates.js](../frontend/src/api/queries/useCertificates.js) — `useCertificationCatalog()` 훅 추가. `staleTime/gcTime: Infinity` — 마스터 데이터라 세션 1회만 fetch. 응답: `[{ certificationCatalogId, name, issuingOrganization, difficulty }]`. axios 인터셉터가 `ApiResponse.data` 자동 unwrap 하므로 `r.data` 가 바로 배열.
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx) — 자격증명 input 에 `list="cert-catalog-list"` + native `<datalist>` 결합. 사용자가 카탈로그에서 선택 또는 정확 매칭되는 텍스트 입력 시 `issuingOrganization` 자동 채움(단, 이미 사용자가 적어둔 값은 보존). 카탈로그에 없는 자격증도 자유 입력 그대로 허용 — 백엔드도 카탈로그 매칭은 `findByName` optional 이라 미스매치 등록을 막지 않음.
+- **자동완성 패턴 선택 이유**: 기존 [Combobox.jsx](../frontend/src/components/Combobox.jsx) 는 `options.value` 정확 매칭만 지원해 자유 입력 불가 → datalist 가 자유 입력 + 자동완성 둘 다 자연스럽게 처리. 키보드 nav·접근성은 브라우저 네이티브 무료. 단점은 드롭다운 스타일이 브라우저 기본값이라는 점인데 자격증명 한 필드라 비용 대비 효과 우선.
+- **검증** (로컬 dev 서버 localhost:3000):
+  - HMR 통과, 콘솔 에러 0건.
+  - DEV 토큰 주입 후 `/my-certificates/new` 진입 — `h1: "자격증 추가"`, `<input list="cert-catalog-list">` + `<datalist id="cert-catalog-list">` 모두 DOM 렌더 확인 (`document.querySelector('input[list="cert-catalog-list"]')` truthy, `document.getElementById('cert-catalog-list')` 존재).
+  - 네트워크에 `GET /api/certification-catalog` 실제 발사 확인. **현재 백엔드 응답 403** — CORS preflight(OPTIONS) 는 200 통과인데 GET 만 403. 백엔드 SecurityConfig 익명 허용 화이트리스트에 `/certification-catalog` 누락된 것으로 추정 (백엔드 팀 확인 필요). 프론트는 빈 배열 fallback 으로 자유 입력 모드 유지 — 정상 동작.
+- **커밋 분리** (3개 + 문서, master 푸시 완료):
+  - `feat(frontend): 자격증 난이도 enum 헬퍼(DIFFICULTY_LABEL/TONE) 추가`
+  - `feat(frontend): 자격증 카탈로그 API 훅·키 추가 (GET /certification-catalog)`
+  - `feat(frontend): 자격증 폼 자격증명 자동완성 (datalist + 발급기관 자동 채움)`
+  - `docs(status): 백엔드 PR #68 자격증 카탈로그 대응 작업 기록`
+- **다음 회차 후보** (담당 분리됨):
+  - Stats 페이지 `recommendedItems` Breaking 대응: `<span>{it.name}</span>` + LICENSE 카드에 `DIFFICULTY_LABEL/TONE` 활용한 난이도 뱃지.
+
 ### 랜딩 카피·Architecture 다이어그램 정돈 — Claude→LLM 일반화, 3년 제거, EC2·RDS 명시 (2026-05-18)
 
 - **계기**: 사용자 — "Claude AI 라는 용어를 전부 LLM 으로 바꿔주고, 3년치/3년 동안 같은 시간 한정 표현을 그냥 경험으로 바꾸고, Architecture 그림에 RDS 랑 EC2 추가해줘."
