@@ -130,7 +130,7 @@ Google Console 등록 redirect_uri 는 hash(`#`)를 받지 않아 pathname `/aut
 **도메인 훅** — [`src/api/queries/`](2026-capstone-51/frontend/src/api/queries/)
 
 - `keys.js` — queryKey 팩토리 (`qk.me()`, `qk.dashboard()`, `qk.stats(groupBy)`, `qk.experiences.one(id)` ...).
-- `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. **스웨거 28개 엔드포인트 1:1 매핑** (2026-05-10 백엔드 신규 4종 추가 후). `useCertificates.js` 에는 사용자 자격증 CRUD 외에 `useCertificationCatalog()` (마스터 카탈로그 `GET /certification-catalog`, `staleTime: Infinity`) 도 함께 둠 — 백엔드는 `certification` 도메인이 별도지만 프론트는 한 파일에서 도메인 섹션 주석으로 분리.
+- `useMe.js` / `useExperiences.js` / `useCertificates.js` / `useEssays.js` — 도메인별 react-query 훅. **스웨거 28개 엔드포인트 1:1 매핑** (2026-05-10 백엔드 신규 4종 추가 후). `useCertificates.js` 에는 사용자 자격증 CRUD 외에 `useCertificationCatalog()` (마스터 카탈로그 `GET /certification-catalog`, `staleTime: Infinity`) 도 함께 둠 — 백엔드는 `certification` 도메인이 별도지만 프론트는 한 파일에서 도메인 섹션 주석으로 분리. **카탈로그 훅만 axios 인스턴스 대신 native `fetch` 직접 호출** — 글로벌 인터셉터의 401/403 reissue chain 이 발동해 마스터 데이터 호출이 사용자 세션을 끊는 부작용을 차단. 4xx 는 모두 빈 배열로 swallow.
 - `useMe.js` 의 `useMyStats(groupBy)` — `/users/me/stats?groupBy=` (groupBy: STATE|SCHOOL_NUM|WORKER). Dashboard 는 친구 패턴(`getMyDashboard()` 직접 fetch)을 그대로 사용 — react-query 안 거침.
 - `useEssays.js` 의 `useEssay(id)` 안에 `normalizeEssayDetail()` 어댑터 — 백엔드 `EssayDetailResponse` 의 `requirement`/`modifiedDate` 를 `globalReq`/`updatedAt` 으로 통일. 호출부는 둘 다 같은 키로만.
 
@@ -173,7 +173,8 @@ src/
 │   └── enums.js          # 백엔드 ↔ 프론트 enum 매핑 (ExperienceCategory, State, Progress 등)
 ├── data/                 # 정적 mock / 토큰
 │   ├── sidebar.js        # NAV, RELATED_SITES
-│   └── dashboard.js      # CAT_LABELS, CAT_COLORS — Roadmap/Stats 시각화 색상 토큰. PEER_AXES — PeersOrb fallback (백엔드 peerAxes 비어 올 때만 사용, 빨간 경고 함께)
+│   ├── dashboard.js      # CAT_LABELS, CAT_COLORS — Roadmap/Stats 시각화 색상 토큰. PEER_AXES — PeersOrb fallback (백엔드 peerAxes 비어 올 때만 사용, 빨간 경고 함께)
+│   └── certificate-catalog-mock.js  # **임시 파일**. 백엔드 /certification-catalog 403 동안 DEV 환경 자동완성 시각 확인용 mock 자격증 8종. 백엔드 픽스 + 시각 검증 끝나면 삭제 예정
 ├── components/
 │   ├── Layout.jsx        # Sidebar + Outlet 셸 (max-width 1100)
 │   ├── ProtectedRoute.jsx# useAuth.isAuthenticated 가드. 미인증 → /landing replace
@@ -185,11 +186,12 @@ src/
 │   ├── Modal.jsx         # open/onClose/title/sub/footer/width/hideClose 슬롯. backdrop click + 우상단 X + Esc 키로 닫힘. 열린 동안 body 스크롤 잠금. 현재 Info.jsx 회원 탈퇴 확인 모달에서 사용
 │   ├── Badge.jsx         # tone: gray|navy|green|red|amber — 디자인 시스템(현재 미사용, 보존)
 │   ├── Combobox.jsx      # 검색 가능한 커스텀 드롭다운. searchable/forceDirection prop 으로 검색·펼침 방향 제어. ↑↓ Enter 키보드 nav, allowClear, viewport 자동 위/아래 펼침
+│   ├── Autocomplete.jsx  # 자유 입력 허용 자동완성 input. Combobox 와 달리 options 에 없는 값도 그대로 유지. 옵션 데이터 모양 `{value, label, sub?, badge?: {label, tone}}` — 행에 부제목·뱃지 표시. onMouseDown+preventDefault 로 select 가 input blur 먼저 발생해 닫히는 버그 회피. role=combobox + aria-autocomplete=list 접근성
 │   ├── DeptCascadeSelect.jsx # 단과대 → 학과 2단계 cascade (둘 다 Combobox). value 는 백엔드 직렬화 값 그대로
 │   ├── DatePicker.jsx    # 커스텀 캘린더 popover. day/month/year drill-down (헤더 클릭으로 view 전환). 'YYYY-MM-DD' 입출력. min/max 모든 view 적용, allowClear, forceDirection, viewport 자동 펼침
 │   ├── PeersOrb.jsx      # Three.js 5축 입체 레이더 — 나/동기/선배 3개 prism, 색 커스텀(localStorage 영속), stepped pyramid 중첩 (아래 참조)
 │   ├── experience/       # ExperienceForm.jsx (신규/수정 공용 폼, swagger ExperienceRequest 정합. 관련 전공은 KOOKMIN_DEPT_OPTIONS Combobox 단일 선택, 빈값 비허용)
-│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부. 자격증명 input 은 `useCertificationCatalog()` + native `<datalist>` 자동완성, 카탈로그 정확 매칭 시 발급기관 자동 채움(이미 적은 값은 보존), 카탈로그에 없는 자유 입력도 허용)
+│   ├── certificate/      # CertificateForm.jsx (신규/수정 공용 폼, swagger CertificateRequest 정합 + 유효기간 토글 + PDF 증빙 첨부 — 새로 첨부 시 POST /certificates/upload-url → presigned PUT 으로 S3 직접 업로드 → fileKey 본 요청에 첨부. 자격증명 input 은 `useCertificationCatalog()` + 커스텀 `<Autocomplete>` 자동완성 (옵션 행에 발급기관 부제목 + 난이도 뱃지), 카탈로그 정확 매칭 시 발급기관 자동 채움(이미 적은 값은 보존), 카탈로그에 없는 자유 입력도 허용. DEV 환경에서 카탈로그 비면 `data/certificate-catalog-mock.js` 로 fallback — 백엔드 `/certification-catalog` 403 픽스 후 mock 제거 예정)
 │   ├── essay/            # EssayMetaForm.jsx (회사·직무·요구사항), QuestionEditor.jsx (문항 편집기 — 추천/생성/재생성/저장 통합)
 │   └── dashboard/        # HeroBanner, RoadmapCard, Roadmap, CategoryLegend (친구 패턴)
 ├── pages/

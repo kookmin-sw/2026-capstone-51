@@ -16,6 +16,28 @@
 
 ## 최근 작업 단위 (가장 최근부터)
 
+### 자격증 폼 자동완성 디자인 개선 — native datalist → 커스텀 Autocomplete 컴포넌트 (2026-05-19)
+
+- **계기**: 사용자 — "드랍다운 디자인이 존나 구려 UX도 별로". 직전 회차에서 native `<datalist>` 로 자동완성 붙였는데 OS/브라우저 기본 UI 라 디자인 시스템과 따로 놀고 옵션 행에 부가 정보(발급기관·난이도)도 못 보여주는 한계.
+- **수정**:
+  - **신규** [src/components/Autocomplete.jsx](../frontend/src/components/Autocomplete.jsx) — 자유 입력 허용 자동완성. Combobox 패턴 차용(키보드 ↑/↓/Enter/Esc, 외부 클릭/Esc 닫기, viewport 잔여 공간 기반 위/아래 자동 펼침)하되 트리거가 button 이 아닌 input 이라 자유 입력 가능. 옵션 데이터 모양: `{ value, label, sub?, badge?: { label, tone } }`. `onMouseDown + preventDefault` 로 input blur 가 select 보다 먼저 발생해 popover 가 닫히는 버그 회피. `role="combobox"` + `aria-autocomplete="list"` + `role="option"` 접근성.
+  - **신규** [src/data/certificate-catalog-mock.js](../frontend/src/data/certificate-catalog-mock.js) — 흔한 자격증 8개(정보처리기사·SQLD·ADsP·컴활 1/2급·TOEIC·OPIc·AWS SAA) mock. **임시 파일** — 백엔드 `/certification-catalog` 403 픽스 + 실 데이터로 시각 검증 완료 후 삭제 예정. 백엔드 응답 스키마(`CertificationCatalogResponse`) 와 정합.
+  - [src/api/queries/useCertificates.js](../frontend/src/api/queries/useCertificates.js) — `useCertificationCatalog` 를 axios 인스턴스 대신 native `fetch` 로 변경. **이유**: 카탈로그는 사용자 세션과 독립적인 마스터 데이터인데 axios 인스턴스를 쓰면 글로벌 인터셉터가 401/403 시 reissue → 실패 시 `tokenStore.clear()` 까지 가는 chain 이 작동. 카탈로그 호출이 사용자를 로그아웃시키는 부작용은 부적절. fetch 로 우회해 4xx 는 모두 빈 배열로 swallow. `retry: false` 도 함께. 백엔드가 인증 게이트 제거하면 그대로 정상 동작.
+  - [src/components/certificate/CertificateForm.jsx](../frontend/src/components/certificate/CertificateForm.jsx) — 자격증명 필드 `<input list="cert-catalog-list">` + `<datalist>` 를 `<Autocomplete>` 로 교체. 카탈로그 → Autocomplete 옵션 변환에서 `sub: issuingOrganization`(부제목), `badge: { label: DIFFICULTY_LABEL[difficulty], tone: DIFFICULTY_TONE[difficulty] }`(난이도 뱃지) 매핑. DEV 환경에서 카탈로그가 비어있으면(백엔드 403 동안) `CERTIFICATE_CATALOG_MOCK` 로 fallback — 백엔드 픽스되면 자동으로 실 데이터.
+- **검증** (localhost:3000, DEV 테스트 토큰):
+  - HMR 통과, 콘솔 에러 0건.
+  - `/my-certificates/new` 진입 후 `input[role="combobox"]` 에 'SQL' 입력 → "SQLD (SQL 개발자) / 한국데이터산업진흥원 / 중" 1행 매칭, '능' 입력 → "컴퓨터활용능력 1급(중), 2급(하)" 2행 매칭, '정' 입력 → "정보처리기사 / 한국산업인력공단 / 상" 매칭. 모두 발급기관 부제 + 난이도 뱃지(red/amber/gray) 정상 렌더.
+  - 스크린샷으로 popover 디자인(흰 배경 + border + shadow, 첫 옵션 active 하이라이트, 자격증명/발급기관/난이도 3-area 행 레이아웃) 시각 확인.
+- **커밋 분리** (5개, master 푸시 완료):
+  - `feat(frontend): 자유 입력 자동완성 Autocomplete 컴포넌트 추가`
+  - `chore(frontend): 자격증 카탈로그 임시 mock — 백엔드 403 동안 DEV 시각 확인용`
+  - `feat(frontend): 자격증 카탈로그 호출을 axios 우회(fetch)로 변경 — 401/403 logout 부작용 차단`
+  - `feat(frontend): 자격증 폼 자동완성을 native datalist → 커스텀 Autocomplete 으로 교체`
+  - `docs(status): 자격증 폼 자동완성 디자인 개선 회차 기록`
+- **TODO** (백엔드 픽스 후):
+  - `/certification-catalog` 인증 게이트 제거 또는 화이트리스트 등록 (백엔드 SecurityConfig)
+  - 실 데이터로 자동완성 검증 끝나면 `data/certificate-catalog-mock.js` + `CertificateForm.jsx` 의 DEV fallback 분기 제거
+
 ### 자격증 카탈로그 API 연동 — 자격증 폼 자동완성 + 난이도 enum 헬퍼 (2026-05-19)
 
 - **계기**: 백엔드 [PR #68 (kookmin-sw/2026-capstone-51)](https://github.com/kookmin-sw/2026-capstone-51/pull/68) 머지 — `certification` 도메인 신설(기존 `certificate` 와 별도, 마스터 카탈로그)과 `GET /api/certification-catalog` 엔드포인트, 그리고 `UserStatsResponse.WeakPoint.recommendedItems` 가 `string[]` → `{name, difficulty}[]` 로 바뀜.
