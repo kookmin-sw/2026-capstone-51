@@ -9,7 +9,7 @@ import CategoryLegend from '../components/dashboard/CategoryLegend';
 import { getMyDashboard } from '../api/users';
 import { logApiError } from '../api/auth';
 import { useMe } from '../api/queries/useMe';
-import { kookminDeptLabel } from '../lib/enums';
+import { kookminDeptFullLabel } from '../lib/enums';
 
 /**
  * 대시보드 — API(/users/me/dashboard)로 받은 데이터를 렌더.
@@ -89,7 +89,7 @@ export default function Dashboard() {
         <div id="section-peers" className="scroll-mt-4 min-w-0">
           <PeersOrb
             axes={peerAxes}
-            sub={user?.major ? `${kookminDeptLabel(user.major)} · 익명 집계` : '익명 집계'}
+            sub={user?.major ? `${kookminDeptFullLabel(user.major)} · 익명 집계` : '익명 집계'}
             warning={peerWarning}
           />
         </div>

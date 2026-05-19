@@ -165,6 +165,17 @@ const KOOKMIN_DEPT_LABEL = Object.fromEntries(
 export const kookminDeptLabel = (value) =>
   value ? (KOOKMIN_DEPT_LABEL[value] ?? value) : '';
 
+// enum key → '단과대학 학과' 풀 라벨 (예: '소프트웨어융합대학 소프트웨어학부').
+// 단과대만 있고 학과 없는 케이스(미래융합대학 등) 는 단과대명 그대로.
+const KOOKMIN_DEPT_FULL_LABEL = Object.fromEntries(
+  KOOKMIN_DEPARTMENTS.map((d) => [
+    d.value,
+    d.department ? `${d.college} ${d.department}` : d.college,
+  ])
+);
+export const kookminDeptFullLabel = (value) =>
+  value ? (KOOKMIN_DEPT_FULL_LABEL[value] ?? value) : '';
+
 // 단과대 그룹 순서 (KOOKMIN_DEPARTMENTS 등장 순서 유지).
 export const KOOKMIN_COLLEGES = (() => {
   const seen = new Set();
