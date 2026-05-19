@@ -1,6 +1,8 @@
 package com.github.logi.domain.user.service;
 
 import com.github.logi.domain.certificate.repository.CertificateRepository;
+import com.github.logi.domain.certification.entity.CertificationCatalog;
+import com.github.logi.domain.certification.repository.CertificationCatalogRepository;
 import com.github.logi.domain.experience.entity.ExperienceCategory;
 import com.github.logi.domain.experience.repository.ExperienceRepository;
 import com.github.logi.domain.user.dto.response.UserStatsResponse;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,6 +35,7 @@ public class UserStatsService {
 
     private final ExperienceRepository experienceRepository;
     private final CertificateRepository certificateRepository;
+    private final CertificationCatalogRepository certificationCatalogRepository;
     private final GroupStatsService groupStatsService;
 
     public UserStatsResponse getStats(User user, GroupBy groupBy) {
@@ -81,7 +85,7 @@ public class UserStatsService {
         checkExperienceWeakPoint(user, ctx, ExperienceCategory.INTERN, statistics.intern(), weakPoints);
 
         if (statistics.license().myCount() < statistics.license().avg()) {
-            List<String> recommendedCerts = fetchTopCertNames(user.getMajor(), ctx);
+            List<UserStatsResponse.RecommendedCert> recommendedCerts = fetchTopCertNames(user.getMajor(), ctx);
             weakPoints.add(WeakPoint.license(recommendedCerts));
         }
 
@@ -114,15 +118,27 @@ public class UserStatsService {
                 .toList();
     }
 
-    private List<String> fetchTopCertNames(KookminDepartment major, GroupContext ctx) {
+    private List<UserStatsResponse.RecommendedCert> fetchTopCertNames(KookminDepartment major, GroupContext ctx) {
         List<CertificateRepository.CertNameCountView> views = switch (ctx.groupBy()) {
-            case STATE -> certificateRepository.findTopCertNamesByMajorAndState(major, ctx.state());
+            case STATE    -> certificateRepository.findTopCertNamesByMajorAndState(major, ctx.state());
             case SCHOOL_NUM -> certificateRepository.findTopCertNamesByMajorAndSchoolNum(major, ctx.groupKey());
-            case WORKER -> certificateRepository.findTopCertNamesByMajorAndWorker(major);
+            case WORKER   -> certificateRepository.findTopCertNamesByMajorAndWorker(major);
         };
+
         return views.stream()
                 .limit(RECOMMEND_TOP_N)
-                .map(CertificateRepository.CertNameCountView::getName)
+                .map(v -> {
+                    String difficulty = certificationCatalogRepository
+                            .findByName(v.getName())
+                            .map(c -> c.getDifficulty().name())
+                            .orElse(null);
+                    return new UserStatsResponse.RecommendedCert(v.getName(), difficulty);
+                })
+                .sorted(Comparator.comparingInt(c -> switch (c.difficulty() != null ? c.difficulty() : "LOW") {
+                    case "HIGH"   -> 1;
+                    case "MEDIUM" -> 2;
+                    default       -> 3;
+                }))
                 .toList();
     }
 
