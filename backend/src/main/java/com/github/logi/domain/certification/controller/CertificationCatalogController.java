@@ -14,7 +14,7 @@ import java.util.List;
 
 @Tag(name = "CertificationCatalog", description = "자격증 목록 API")
 @RestController
-@RequestMapping("/api/certification-catalog")
+@RequestMapping("/certification-catalog")
 @RequiredArgsConstructor
 public class CertificationCatalogController {
 
