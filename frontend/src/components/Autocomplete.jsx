@@ -18,7 +18,9 @@ import { cn } from '../lib/cn';
  *      sub = 옵션 행 부제목(예: 발급기관), badge.tone = `.badge-${tone}` 키.
  *  - placeholder?, hasError?, disabled?
  *  - emptyText?: 매칭 결과 0 일 때 표시할 문구. 미지정 시 popover 자체를 안 띄움.
- *  - minChars?: 이 글자 수 이상 입력해야 popover 노출 (기본 0 — 빈 상태에서도 전체 옵션).
+ *  - minChars?: 이 글자 수 이상 입력해야 popover 노출 (기본 1 — 빈 input/focus 만으로는
+ *    popover 안 뜨고 사용자가 글자 입력 시작해야 매칭 결과 노출. 채용사이트 표준 패턴).
+ *    빈 상태에서도 전체 옵션을 보이려면 `minChars={0}` 으로 override.
  *
  * 키보드: ↑/↓ navigate, Enter 선택, Esc 닫기. 외부 클릭 시 닫힘.
  * Viewport 잔여 공간에 따라 위/아래 자동 펼침 (Combobox 패턴 차용).
@@ -32,7 +34,7 @@ export default function Autocomplete({
   hasError = false,
   disabled = false,
   emptyText,
-  minChars = 0,
+  minChars = 1,
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
