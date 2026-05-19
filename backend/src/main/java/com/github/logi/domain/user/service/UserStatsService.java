@@ -106,7 +106,7 @@ public class UserStatsService {
         KookminDepartment relatedMajor = user.getMajor();
         List<ExperienceRepository.TitleCountView> views = switch (ctx.groupBy()) {
             case STATE -> experienceRepository.findTopTitlesByMajorAndStateAndCategory(ctx.state(), category, user, relatedMajor, page);
-            case SCHOOL_NUM -> experienceRepository.findTopTitlesByMajorAndSchoolNumAndCategory(ctx.groupKey(), user.getState(), category, user, relatedMajor, page);
+            case SCHOOL_NUM -> experienceRepository.findTopTitlesByMajorAndSchoolNumAndCategory(ctx.groupKey(), category, user, relatedMajor, page);
             case WORKER -> experienceRepository.findTopTitlesByMajorAndWorkerAndCategory(category, user, relatedMajor, page);
         };
         return views.stream()

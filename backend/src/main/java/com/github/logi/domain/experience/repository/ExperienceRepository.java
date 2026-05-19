@@ -125,14 +125,12 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             FROM Experience e
             JOIN e.user u
             WHERE u.schoolNumber LIKE :schoolNumPrefix%
-              AND e.stateAtCreation = :state
               AND e.experienceCategory = :category
               AND e.user <> :me AND e.relatedMajor = :relatedMajor
             ORDER BY e.createdAt DESC
             """)
     List<TitleCountView> findTopTitlesByMajorAndSchoolNumAndCategory(
             @Param("schoolNumPrefix") String schoolNumPrefix,
-            @Param("state") State state,
             @Param("category") ExperienceCategory category,
             @Param("me") User me,
             @Param("relatedMajor") KookminDepartment relatedMajor,
