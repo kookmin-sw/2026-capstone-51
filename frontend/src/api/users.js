@@ -127,13 +127,15 @@ function buildRoadmap(userExperiences) {
     const list = userExperiences[historyKey];
     if (!Array.isArray(list)) continue;
     for (const it of list) {
-      const start = parseYm(it.startDate);
-      const end = parseYm(it.endDate);
+      const start = parseYmd(it.startDate);
+      const end = parseYmd(it.endDate);
       items.push({
         y: start.y,
         m: start.m,
+        d: start.d,
         endY: end.y || start.y,
         endM: end.m || start.m,
+        endD: end.d || start.d || 1,
         cat,
         title: it.name || '(제목 없음)',
         date: fmtRange(it.startDate, it.endDate),
@@ -141,7 +143,9 @@ function buildRoadmap(userExperiences) {
       });
     }
   }
-  return items.sort((a, b) => a.y - b.y || a.m - b.m);
+  return items.sort(
+    (a, b) => a.y - b.y || a.m - b.m || (a.d ?? 0) - (b.d ?? 0)
+  );
 }
 
 function buildSeniors(graduateUserExperiences) {
@@ -156,10 +160,14 @@ function buildSeniors(graduateUserExperiences) {
     .filter((s) => s.items.length > 0);
 }
 
-function parseYm(s) {
-  const m = /^(\d{4})-(\d{1,2})/.exec(s ?? '');
-  if (!m) return { y: 0, m: 0 };
-  return { y: Number(m[1]), m: Number(m[2]) };
+function parseYmd(s) {
+  const m = /^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/.exec(s ?? '');
+  if (!m) return { y: 0, m: 0, d: 0 };
+  return {
+    y: Number(m[1]),
+    m: Number(m[2]),
+    d: m[3] ? Number(m[3]) : 1,
+  };
 }
 
 function fmtRange(start, end) {
