@@ -20,42 +20,55 @@ export default function Roadmap({
 }) {
   const [hoverIdx, setHoverIdx] = useState(null);
 
-  // 월 단위 좌표 → [0, 1]. xPct는 해당 월의 중앙(±15일)을 쓰지 않고 월 시작을 기준으로 계산.
-  const ymToMonths = ({ y, m }) => y * 12 + (m - 1);
-  const startM = ymToMonths(rangeStart);
-  const endM = ymToMonths({ y: rangeEnd.y, m: rangeEnd.m + 1 }); // exclusive
+  // 일 단위 좌표 → [0, 1]. 월 안에서 일자에 따라 fractional offset 도 더해 정밀하게 위치.
+  // 한 달은 ~30일로 근사 (정확한 일수는 시각화 정밀도에 큰 영향 없음).
+  const ymdToMonths = ({ y, m, d = 1 }) =>
+    y * 12 + (m - 1) + Math.max(0, (d - 1)) / 30;
+  const startM = ymdToMonths(rangeStart);
+  const endM = ymdToMonths({ y: rangeEnd.y, m: rangeEnd.m + 1 }); // exclusive
   const span = Math.max(1, endM - startM);
-  const xPct = ({ y, m }) => ((y * 12 + (m - 1) - startM) / span) * 100;
+  const xPct = ({ y, m, d }) => ((ymdToMonths({ y, m, d }) - startM) / span) * 100;
 
-  // date 문자열에서 종료 시점을 파싱.
-  //   "23.03 ~ 23.12"   → { y: 2023, m: 12 }
-  //   "25.04 ~ 25.06"   → { y: 2025, m:  6 }
-  //   "23.09 취득"      → { y: 2023, m:  9 }
-  //   "24.11"           → { y: 2024, m: 11 }
-  // 종료가 없는 형태면 시작(item.y/m)을 그대로 반환.
-  function parseEndYM(it) {
-    const s = String(it.date || '');
-    const tilde = s.indexOf('~');
-    const tail = tilde >= 0 ? s.slice(tilde + 1) : s;
-    const m = tail.match(/(\d{2,4})\.(\d{1,2})/);
-    if (!m) return { y: it.y, m: it.m };
-    let yy = parseInt(m[1], 10);
-    if (yy < 100) yy += 2000;
-    return { y: yy, m: parseInt(m[2], 10) };
-  }
-
-  // 시간 순 정렬 + 인덱스. 마커 위치는 종료 시점 기준.
+  // 시간 순 정렬 + 인덱스. 마커 위치는 종료 시점(연·월·일) 기준.
+  // buildRoadmap 에서 endY/endM/endD 를 채워주므로 그대로 사용.
   const sorted = [...items]
     .map((it) => {
-      const end = parseEndYM(it);
-      return { ...it, _x: xPct(end), _endY: end.y, _endM: end.m };
+      const end = { y: it.endY ?? it.y, m: it.endM ?? it.m, d: it.endD ?? 1 };
+      return {
+        ...it,
+        _x: xPct(end),
+        _endY: end.y,
+        _endM: end.m,
+        _endD: end.d,
+      };
     })
-    .sort((a, b) => a._endY - b._endY || a._endM - b._endM);
+    .sort(
+      (a, b) =>
+        a._endY - b._endY || a._endM - b._endM || a._endD - b._endD
+    );
+
+  // 같은 종료일자(_x 가 동일) 항목들이 한 점에 겹쳐 안 보이는 문제 방지 —
+  // 중첩된 항목들만 트랙 위/아래로 교대 배치 (단일 항목은 트랙 위 그대로).
+  //   - _stackTotal: 같은 x 의 총 항목 수
+  //   - _stack:     같은 x 그룹 안에서의 인덱스 (0,1,2,...)
+  const xTotalCount = new Map();
+  sorted.forEach((it) => {
+    const key = it._x.toFixed(2);
+    xTotalCount.set(key, (xTotalCount.get(key) ?? 0) + 1);
+  });
+  const xStackCount = new Map();
+  sorted.forEach((it) => {
+    const key = it._x.toFixed(2);
+    const idx = xStackCount.get(key) ?? 0;
+    it._stack = idx;
+    it._stackTotal = xTotalCount.get(key);
+    xStackCount.set(key, idx + 1);
+  });
 
   // 연도 구분선: 매년 1월 1일. rangeStart가 1월 1일이므로 첫 구분선은 rangeStart.y+1부터.
   const yearDividers = [];
   for (let y = rangeStart.y + 1; y <= rangeEnd.y; y++) {
-    const startOfYear = ymToMonths({ y, m: 1 });
+    const startOfYear = ymdToMonths({ y, m: 1 });
     const left = ((startOfYear - startM) / span) * 100;
     yearDividers.push({ key: y, left });
   }
@@ -147,7 +160,6 @@ export default function Roadmap({
 
       {/* 마일스톤 점 + hover 시 칩 */}
       {sorted.map((it, i) => {
-        const above = i % 2 === 0; // 1번째(idx 0) 위, 2번째 아래 …
         const isOpen = hoverIdx === i;
         const color = CAT_COLORS[it.cat];
 
@@ -155,14 +167,26 @@ export default function Roadmap({
         const dotBg = color;
         const dotBorder = color;
 
-        // 칩 위치
+        // 단일 항목은 트랙 위에 정상 위치. 같은 x 가 2 개 이상이면 stack 인덱스 짝수=위 / 홀수=아래로 교대.
+        const stack = it._stack ?? 0;
+        const total = it._stackTotal ?? 1;
+        let dotTopOffset = 0;
+        let above = stack % 2 === 0; // 짝수 stack 은 위 (chip 도 위로), 홀수는 아래
+        if (total > 1) {
+          const step = Math.floor(stack / 2) + 1; // 1,1,2,2,...
+          dotTopOffset = (above ? -1 : 1) * step * 12;
+        } else {
+          above = i % 2 === 0; // 단일 항목은 기존 방식(인덱스 패리티로 chip 위/아래)
+        }
+
+        // 칩 위치 — above 따라 위/아래
         const chipTop = above ? 8 : trackY + 36;
         const connectorTop = above ? 30 : trackY + 4;
         const connectorH = above ? trackY - 30 - 4 : 28;
 
         return (
           <Fragment key={i}>
-            {/* 점 */}
+            {/* 점 — 중첩이면 위/아래 교대 배치, 단일이면 트랙 위. */}
             <button
               type="button"
               onMouseEnter={() => setHoverIdx(i)}
@@ -172,7 +196,7 @@ export default function Roadmap({
               className="absolute rounded-full"
               style={{
                 left: `${it._x}%`,
-                top: trackY - 5,
+                top: trackY - 5 + dotTopOffset,
                 transform: 'translateX(-50%)',
                 width: 11,
                 height: 11,
