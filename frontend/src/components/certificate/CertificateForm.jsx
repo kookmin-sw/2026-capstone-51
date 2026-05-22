@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Paperclip, FileText, X as XIcon } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import {
@@ -6,6 +6,7 @@ import {
   putPdfToS3,
   useCertificationCatalog,
 } from '../../api/queries/useCertificates';
+import Autocomplete from '../Autocomplete';
 
 /**
  * 자격증 신규/수정 공용 폼.
@@ -49,10 +50,23 @@ export default function CertificateForm({
   const { data: catalog = [] } = useCertificationCatalog();
   const existingFileUrl = initialValue?.fileUrl ?? '';
 
+  // Autocomplete 옵션 변환 — 자격증명 라벨 + 발급기관 부제.
+  // 난이도(difficulty)는 등록 단계 UX 와 안 맞아 표시 안 함 (채용사이트 표준 답습).
+  // 통계 페이지의 "부족한 자격증 추천" 같은 맥락에서만 활용.
+  const catalogOptions = useMemo(
+    () =>
+      catalog.map((c) => ({
+        value: c.name,
+        label: c.name,
+        sub: c.issuingOrganization || undefined,
+      })),
+    [catalog]
+  );
+
   const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   // 자격증명 입력 — 카탈로그 정확 매칭 시 발급기관 자동 채움 (이미 적어둔 값은 보존).
-  // datalist 선택/자유 입력 둘 다 onChange 로만 들어와 동일 처리.
+  // Autocomplete 옵션 선택/자유 입력 둘 다 onChange 로 들어와 동일 처리.
   const onCertificateNameChange = (v) => {
     setForm((f) => {
       const next = { ...f, certificateName: v };
@@ -151,16 +165,17 @@ export default function CertificateForm({
       <Section title="기본 정보">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="자격증명" required error={errors.certificateName}>
-            <input
-              className={cn(
-                'field text-[14px] py-2.5',
-                errors.certificateName && 'border-red-500 focus:border-red-500'
-              )}
-              placeholder="자격증명을 입력하세요"
-              list="cert-catalog-list"
-              autoComplete="off"
+            <Autocomplete
               value={form.certificateName}
-              onChange={(e) => onCertificateNameChange(e.target.value)}
+              onChange={onCertificateNameChange}
+              options={catalogOptions}
+              placeholder="자격증명을 입력하세요"
+              hasError={!!errors.certificateName}
+              emptyText={
+                form.certificateName.trim()
+                  ? `'${form.certificateName.trim()}' 와 일치하는 자격증이 없어요. 그대로 등록할 수 있어요.`
+                  : undefined
+              }
             />
           </Field>
           <Field label="발급 기관" required error={errors.issuingOrganization}>
@@ -323,13 +338,6 @@ export default function CertificateForm({
           {uploading ? 'PDF 업로드 중…' : isPending ? '저장 중…' : submitLabel}
         </button>
       </div>
-
-      {/* 자격증명 input 의 자동완성 데이터 소스. 빈 카탈로그면 datalist 도 빈 채라 자유 입력만 가능. */}
-      <datalist id="cert-catalog-list">
-        {catalog.map((c) => (
-          <option key={c.certificationCatalogId} value={c.name} />
-        ))}
-      </datalist>
     </form>
   );
 }

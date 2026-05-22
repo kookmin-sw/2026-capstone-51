@@ -65,6 +65,7 @@ export default function DeptCascadeSelect({
         placeholder="단과대 선택"
         searchPlaceholder="단과대 검색"
         hasError={hasError && !college}
+        allowClear={allowClear}
       />
       <Combobox
         value={value || ''}

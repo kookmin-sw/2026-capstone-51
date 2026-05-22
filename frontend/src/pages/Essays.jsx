@@ -32,13 +32,24 @@ export default function Essays() {
   const del = useDeleteEssay();
 
   const items = list.data ?? [];
-  const filtered = items.filter((e) => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return ((e.companyName ?? '') + ' ' + (e.wishJob ?? ''))
-      .toLowerCase()
-      .includes(q);
-  });
+  // 정렬:
+  //  1) progress 가 결과 대기(IN_PROGRESS) 가 아닌 항목(PASS/FAIL) 을 먼저
+  //  2) 같은 그룹 안에서는 updatedAt 내림차순 (최신 수정 먼저)
+  //  filter 의 결과 배열에 대해서만 sort — items 자체는 변형 안 함.
+  const filtered = items
+    .filter((e) => {
+      if (!query) return true;
+      const q = query.toLowerCase();
+      return ((e.companyName ?? '') + ' ' + (e.wishJob ?? ''))
+        .toLowerCase()
+        .includes(q);
+    })
+    .sort((a, b) => {
+      const aFinal = (a.progress ?? 'IN_PROGRESS') !== 'IN_PROGRESS';
+      const bFinal = (b.progress ?? 'IN_PROGRESS') !== 'IN_PROGRESS';
+      if (aFinal !== bFinal) return aFinal ? -1 : 1;
+      return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '');
+    });
 
   const setResult = (id, progress) => {
     setOpenId(null);

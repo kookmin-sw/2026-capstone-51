@@ -17,41 +17,41 @@ import java.util.UUID;
 public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
     List<Experience> findAllByUser(User user);
 
-    // major + state 기준 카테고리별 평균 경험 수 (STATE groupBy)
+    // major + state 기준 카테고리별 총 경험 수 (STATE groupBy)
     @Query("""
-            SELECT e.experienceCategory AS category, CASE WHEN COUNT(DISTINCT e.user) = 0 THEN 0.0 ELSE COUNT(e) * 1.0 / COUNT(DISTINCT e.user) END AS avg
+            SELECT e.experienceCategory AS category, COUNT(e) AS total
             FROM Experience e
             JOIN e.user u
             WHERE u.major = :major AND u.state = :state
             GROUP BY e.experienceCategory
             """)
-    List<CategoryAvgView> findCategoryAvgByMajorAndState(
+    List<CategoryTotalView> findCategoryTotalByMajorAndState(
             @Param("major") KookminDepartment major,
             @Param("state") State state
     );
 
-    // major + schoolNumber prefix 기준 카테고리별 평균 (SCHOOL_NUM groupBy)
+    // major + schoolNumber prefix 기준 카테고리별 총 경험 수 (SCHOOL_NUM groupBy)
     @Query("""
-            SELECT e.experienceCategory AS category, CASE WHEN COUNT(DISTINCT e.user) = 0 THEN 0.0 ELSE COUNT(e) * 1.0 / COUNT(DISTINCT e.user) END AS avg
+            SELECT e.experienceCategory AS category, COUNT(e) AS total
             FROM Experience e
             JOIN e.user u
             WHERE u.major = :major AND u.schoolNumber LIKE :schoolNumPrefix%
             GROUP BY e.experienceCategory
             """)
-    List<CategoryAvgView> findCategoryAvgByMajorAndSchoolNum(
+    List<CategoryTotalView> findCategoryTotalByMajorAndSchoolNum(
             @Param("major") KookminDepartment major,
             @Param("schoolNumPrefix") String schoolNumPrefix
     );
 
-    // major + WORKER 기준 카테고리별 평균 (WORKER groupBy)
+    // major + WORKER 기준 카테고리별 총 경험 수 (WORKER groupBy)
     @Query("""
-            SELECT e.experienceCategory AS category, CASE WHEN COUNT(DISTINCT e.user) = 0 THEN 0.0 ELSE COUNT(e) * 1.0 / COUNT(DISTINCT e.user) END AS avg
+            SELECT e.experienceCategory AS category, COUNT(e) AS total
             FROM Experience e
             JOIN e.user u
             WHERE u.major = :major AND u.state = com.github.logi.domain.user.entity.State.WORKER
             GROUP BY e.experienceCategory
             """)
-    List<CategoryAvgView> findCategoryAvgByMajorAndWorker(
+    List<CategoryTotalView> findCategoryTotalByMajorAndWorker(
             @Param("major") KookminDepartment major
     );
 
@@ -169,9 +169,9 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
             """)
     List<Experience> findAllByUserIn(@Param("users") List<User> users);
 
-    interface CategoryAvgView {
+    interface CategoryTotalView {
         ExperienceCategory getCategory();
-        Double getAvg();
+        Long getTotal();
     }
 
     interface CategoryMaxCountView {

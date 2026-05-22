@@ -13,6 +13,7 @@ import {
   EXPERIENCE_CATEGORY_TO_FRONT,
   EXPERIENCE_CATEGORY_LABEL,
   EXPERIENCE_CATEGORY_TONE,
+  kookminDeptLabel,
 } from '../lib/enums';
 import { toast } from '../store/useToast';
 
@@ -213,7 +214,7 @@ export default function ExperienceDetail() {
               기본 정보
             </h2>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px]">
-              <Item label="관련 전공" value={data.relatedMajor} />
+              <Item label="관련 전공" value={kookminDeptLabel(data.relatedMajor)} />
               <Item
                 label="진행 기간"
                 value={`${data.startDate} ~ ${data.endDate}`}

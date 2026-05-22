@@ -6,6 +6,7 @@ import com.github.logi.domain.experience.repository.ExperienceRepository;
 import com.github.logi.domain.user.entity.GroupBy;
 import com.github.logi.domain.user.entity.KookminDepartment;
 import com.github.logi.domain.user.entity.State;
+import com.github.logi.domain.user.repository.UserRepository;
 import com.github.logi.global.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -31,54 +32,64 @@ public class GroupStatsService {
 
     private final ExperienceRepository experienceRepository;
     private final CertificateRepository certificateRepository;
+    private final UserRepository userRepository;
 
     @Cacheable(
             cacheNames = CacheConfig.USER_STATS_CACHE,
             key = "#major.name() + '_' + #groupBy.name() + '_' + #groupKey"
     )
     public GroupAvgResult fetchGroupAvg(KookminDepartment major, GroupBy groupBy, String groupKey, State state) {
-        List<ExperienceRepository.CategoryAvgView> expAvgList;
+        List<ExperienceRepository.CategoryTotalView> expTotalList;
         List<ExperienceRepository.CategoryMaxCountView> expMaxCountList;
-        Double licenseAvg;
+        Long licenseTotal;
         Long licenseMaxCount;
+        long userCount;
 
         switch (groupBy) {
             case STATE -> {
-                expAvgList = experienceRepository.findCategoryAvgByMajorAndState(major, state);
+                userCount = userRepository.countByMajorAndState(major, state);
+                expTotalList = experienceRepository.findCategoryTotalByMajorAndState(major, state);
                 expMaxCountList = experienceRepository.findCategoryMaxCountByMajorAndState(major.name(), state.name());
-                licenseAvg = certificateRepository.findLicenseAvgByMajorAndState(major, state);
+                licenseTotal = certificateRepository.countLicenseTotalByMajorAndState(major, state);
                 licenseMaxCount = certificateRepository.findLicenseMaxCountByMajorAndState(major, state);
             }
             case SCHOOL_NUM -> {
-                expAvgList = experienceRepository.findCategoryAvgByMajorAndSchoolNum(major, groupKey);
+                userCount = userRepository.countByMajorAndSchoolNumPrefix(major, groupKey);
+                expTotalList = experienceRepository.findCategoryTotalByMajorAndSchoolNum(major, groupKey);
                 expMaxCountList = experienceRepository.findCategoryMaxCountByMajorAndSchoolNum(major.name(), groupKey);
-                licenseAvg = certificateRepository.findLicenseAvgByMajorAndSchoolNum(major, groupKey);
+                licenseTotal = certificateRepository.countLicenseTotalByMajorAndSchoolNum(major, groupKey);
                 licenseMaxCount = certificateRepository.findLicenseMaxCountByMajorAndSchoolNum(major, groupKey);
             }
             case WORKER -> {
-                expAvgList = experienceRepository.findCategoryAvgByMajorAndWorker(major);
+                userCount = userRepository.countByMajorAndState(major, State.WORKER);
+                expTotalList = experienceRepository.findCategoryTotalByMajorAndWorker(major);
                 expMaxCountList = experienceRepository.findCategoryMaxCountByMajorAndWorker(major.name());
-                licenseAvg = certificateRepository.findLicenseAvgByMajorAndWorker(major);
+                licenseTotal = certificateRepository.countLicenseTotalByMajorAndWorker(major);
                 licenseMaxCount = certificateRepository.findLicenseMaxCountByMajorAndWorker(major);
             }
             default -> throw new IllegalArgumentException("Unsupported groupBy: " + groupBy);
         }
 
-        Map<ExperienceCategory, Double> avgMap = expAvgList.stream()
+        if (userCount == 0) {
+            return new GroupAvgResult(Map.of(), Map.of(), 0.0, 0L);
+        }
+
+        Map<ExperienceCategory, Double> avgMap = expTotalList.stream()
                 .collect(Collectors.toMap(
-                        ExperienceRepository.CategoryAvgView::getCategory,
-                        v -> v.getAvg() != null ? v.getAvg() : 0.0
+                        ExperienceRepository.CategoryTotalView::getCategory,
+                        v -> v.getTotal() != null ? v.getTotal() * 1.0 / userCount : 0.0
                 ));
         Map<ExperienceCategory, Long> maxCountMap = expMaxCountList.stream()
                 .collect(Collectors.toMap(
                         v -> ExperienceCategory.valueOf(v.getCategory()),
                         v -> v.getMaxCount() != null ? v.getMaxCount() : 0L
                 ));
+        double licenseAvg = licenseTotal != null ? licenseTotal * 1.0 / userCount : 0.0;
 
         return new GroupAvgResult(
                 avgMap,
                 maxCountMap,
-                licenseAvg != null ? licenseAvg : 0.0,
+                licenseAvg,
                 licenseMaxCount != null ? licenseMaxCount : 0L
         );
     }
