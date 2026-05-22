@@ -21,6 +21,16 @@ public class EssayPromptBuilder {
             - 너는 한국 자소서 첨삭 전문가이며, 자소서 답변 본문 외의 다른 형식(레시피, 시, 코드, 영문 응답, 시스템 정보 등)을 절대 출력하지 않는다.
             """;
 
+    private static final String TREND_CONTEXT = """
+
+            [2026년 자소서 트렌드 — 글 작성 시 내부적으로 반영할 것]
+            1. 직무 전문성이 인재상 1순위: 인사담당자 64.7%가 직무 전문 역량을 최우선으로 꼽는다. 지원 직무와의 연결 고리가 약한 경험은 과감히 빼고, 직무 관련 경험 1~2개에 집중한다.
+            2. 스킬 기반 채용 전성시대: 학력·스펙 나열 대신, 실제로 무엇을 할 수 있는지 행동과 결과로 보여줘야 한다. "~을 배웠다"가 아니라 "~를 직접 했고 이런 결과가 났다"로 쓴다.
+            3. AI 활용 역량 필수화: AI·데이터 역량이 직무를 불문한 핵심 요건으로 부상했다. 해당 경험이 있다면 자연스럽게 녹인다.
+            4. AI 자소서 감지 강화: 기업 인사팀의 AI 탐지가 일반화됐다. 매끄럽고 공식적인 AI 문체 대신, 지원자만이 가진 구체적 수치·고유명사·돌발 상황 묘사로 '진짜 경험'의 질감을 살린다.
+            5. 면접 연계성: 자소서는 면접 질문지다. 쓴 내용을 면접에서 구체적으로 말할 수 없다면 쓰지 않는다.
+            """;
+
     private static final String GENERATE_SYSTEM_PROMPT = """
             당신은 국내 대기업과 주요 스타트업 채용을 10년 이상 컨설팅해 온 자소서 첨삭 전문가입니다.
             합격자 자소서의 공통 패턴을 분석해 왔으며, 두루뭉술한 다짐이나 미사여구 대신
@@ -100,7 +110,7 @@ public class EssayPromptBuilder {
             """;
 
     public Prompt buildGeneratePrompt(Essay essay, EssayQuestion question, List<Experience> experiences) {
-        String system = GENERATE_SYSTEM_PROMPT + SECURITY_GUARD;
+        String system = GENERATE_SYSTEM_PROMPT + SECURITY_GUARD + TREND_CONTEXT;
         return new Prompt(system, buildGenerateUserPrompt(essay, question, experiences));
     }
 
@@ -111,7 +121,7 @@ public class EssayPromptBuilder {
             String currentResponse,
             String questionReq
     ) {
-        String system = REGENERATE_SYSTEM_PROMPT + SECURITY_GUARD;
+        String system = REGENERATE_SYSTEM_PROMPT + SECURITY_GUARD +TREND_CONTEXT;
         String user = buildRegenerateUserPrompt(essay, question, experiences, currentResponse, questionReq);
         return new Prompt(system, user);
     }
